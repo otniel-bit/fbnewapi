@@ -11460,7 +11460,20 @@ function copyCode(btn) {
 <!-- ═══════════════════════════════════════════════════════════
      WEBMCP + FANBASIS AI AGENT INTEGRATION
      ═══════════════════════════════════════════════════════ -->
-<script src="https://webmcp.dev/webmcp.js"></script>
+<script>
+// ── WebMCP Loader — loads webmcp.js on demand when user clicks Activate ──
+var _webmcpLoaded = false;
+var _webmcpError = false;
+function loadWebMCP(callback) {
+  if (_webmcpLoaded && typeof WebMCP !== 'undefined') { callback(null); return; }
+  if (_webmcpError) { callback('Could not load WebMCP library.'); return; }
+  var s = document.createElement('script');
+  s.src = 'https://webmcp.dev/src/webmcp.js';
+  s.onload = function() { _webmcpLoaded = true; callback(null); };
+  s.onerror = function() { _webmcpError = true; callback('Could not load WebMCP from webmcp.dev. Check your internet connection or try again later.'); };
+  document.head.appendChild(s);
+}
+</script>
 
 <script>
 // ── FanBasis WebMCP Integration (inline) ─────────────────────────────
@@ -11654,6 +11667,7 @@ function copyCode(btn) {
   window.activateFanBasisMCP = function() {
     var input = document.getElementById('mcp-api-key-input');
     var status = document.getElementById('mcp-status');
+    var btn = document.getElementById('mcp-activate-btn');
     var key = input ? input.value.trim() : '';
 
     if (!key) {
@@ -11661,41 +11675,47 @@ function copyCode(btn) {
       return;
     }
 
-    if (typeof WebMCP === 'undefined') {
-      status.innerHTML = '<span style="color:var(--delete);">WebMCP library failed to load. Please refresh the page and try again.</span>';
-      return;
-    }
+    // Show loading state
+    status.innerHTML = '<span style="color:var(--text-muted);">Loading WebMCP library…</span>';
+    if (btn) { btn.textContent = 'Loading…'; btn.style.opacity = '0.6'; }
 
-    _apiKey = key;
+    // Load WebMCP on demand (avoids blocking page load)
+    loadWebMCP(function(err) {
+      if (err || typeof WebMCP === 'undefined') {
+        status.innerHTML = '<span style="color:var(--delete);">' + (err || 'WebMCP library failed to load.') + ' Please check your connection and try again.</span>';
+        if (btn) { btn.textContent = 'Retry Activation'; btn.style.opacity = '1'; }
+        _webmcpError = false; // allow retry
+        return;
+      }
 
-    // Initialize WebMCP
-    _mcp = new WebMCP({
-      color: '#7C3AED',
-      position: 'bottom-right',
-      size: '40px',
-      padding: '15px'
+      _apiKey = key;
+
+      // Initialize WebMCP
+      _mcp = new WebMCP({
+        color: '#7C3AED',
+        position: 'bottom-right',
+        size: '40px',
+        padding: '15px'
+      });
+
+      registerTools(_mcp);
+      registerPrompts(_mcp);
+      registerResources(_mcp);
+
+      status.innerHTML = '<span style="color:var(--post);">✓ AI Agent activated!</span> Look for the purple <span style="display:inline-block;width:14px;height:14px;background:#7C3AED;border-radius:3px;vertical-align:middle;"></span> widget in the bottom-right corner. Connect your MCP client by pasting a token.';
+
+      // Disable the button to prevent double-init
+      if (btn) {
+        btn.textContent = 'Activated ✓';
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'default';
+        btn.onclick = null;
+      }
+
+      // Mask the API key input
+      input.type = 'password';
+      input.disabled = true;
     });
-
-    registerTools(_mcp);
-    registerPrompts(_mcp);
-    registerResources(_mcp);
-
-    status.innerHTML = '<span style="color:var(--post);">✓ AI Agent activated!</span> Look for the blue <span style="display:inline-block;width:14px;height:14px;background:#7C3AED;border-radius:3px;vertical-align:middle;"></span> widget in the bottom-right corner. Connect your MCP client by pasting a token.';
-
-    // Disable the button to prevent double-init
-    var btn = document.getElementById('mcp-activate-btn');
-    if (btn) {
-      btn.textContent = 'Activated ✓';
-      btn.style.opacity = '0.6';
-      btn.style.cursor = 'default';
-      btn.onclick = null;
-    }
-
-    // Mask the API key input
-    input.type = 'password';
-    input.disabled = true;
-
-
   };
 })();
 </script>
