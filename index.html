@@ -2414,8 +2414,21 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.22s ease;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    /* Reset button styles since overlay is now a <button> */
+    border: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
   }
   .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+  /* Sidebar mobile header hidden on desktop */
+  .sidebar-mobile-header { display: none; }
   @media (max-width: 900px) {
     .sidebar-hamburger { display: flex !important; }
     .sidebar {
@@ -2428,6 +2441,55 @@
     .top-tabs-bar { left: 0 !important; }
     .toc-panel { display: none !important; }
     .sidebar-overlay { display: block; }
+    /* Mobile sidebar header row: close ✕ + theme toggle */
+    .sidebar-mobile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px 6px;
+      position: sticky;
+      top: 0;
+      z-index: 12;
+      background: #0C0C17;
+    }
+    .sidebar-close-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-appearance: none;
+      appearance: none;
+      padding: 0;
+      line-height: 1;
+    }
+    .sidebar-close-btn:active { background: rgba(255,255,255,0.25); }
+    .sidebar-mobile-theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: rgba(255,255,255,0.08);
+      color: #9AA3C2;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-appearance: none;
+      appearance: none;
+      padding: 0;
+      line-height: 1;
+    }
+    .sidebar-mobile-theme-toggle:active { background: rgba(255,255,255,0.18); }
   }
   @media (max-width: 640px) {
     .main > section,
@@ -2731,6 +2793,20 @@
   }
   [data-theme="light"] .sidebar-hamburger span {
     background: #374151 !important;
+  }
+  [data-theme="light"] .sidebar-mobile-header {
+    background: #FAFAFA !important;
+  }
+  [data-theme="light"] .sidebar-close-btn {
+    background: rgba(0,0,0,0.08) !important;
+    color: #374151 !important;
+  }
+  [data-theme="light"] .sidebar-close-btn:active {
+    background: rgba(0,0,0,0.15) !important;
+  }
+  [data-theme="light"] .sidebar-mobile-theme-toggle {
+    background: rgba(0,0,0,0.06) !important;
+    color: #475569 !important;
   }
 
   /* ── Sidebar Home link (dark mode default) ───────────────────── */
@@ -4016,8 +4092,13 @@
 
   /* ── Tablet (≤900px) ───────────────────────────────────── */
   @media (max-width: 900px) {
-    /* Navbar */
+    /* Navbar — clean up for mobile */
     .navbar { padding: 0 12px !important; }
+    .navbar-divider { display: none !important; }
+    .navbar-title { display: none !important; }
+    .navbar-badge { display: none !important; }
+    .section-breadcrumb { display: none !important; }
+    .theme-toggle { display: none !important; }
     .navbar-search-btn .nsb-label { display: none; }
     .navbar-search-btn .nsb-kbd { display: none; }
     .navbar-search-btn { min-width: auto; padding: 6px 10px !important; }
@@ -4254,6 +4335,10 @@
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar" role="navigation" aria-label="API documentation navigation">
+  <div class="sidebar-mobile-header" id="sidebarMobileHeader">
+    <button class="sidebar-mobile-theme-toggle" id="mobileThemeToggle" aria-label="Toggle theme" onclick="var t=document.getElementById('themeToggle');if(t)t.click();this.innerHTML=document.documentElement.getAttribute('data-theme')==='light'?'☀️':'🌙';">🌙</button>
+    <button class="sidebar-close-btn" aria-label="Close menu" onclick="var s=document.getElementById('sidebar');var o=document.querySelector('.sidebar-overlay');if(s)s.classList.remove('mobile-open');if(o)o.classList.remove('open');">✕</button>
+  </div>
   <div class="sidebar-search">
     <div class="sidebar-search-wrap">
       <span class="sidebar-search-icon">⌕</span>
@@ -11154,62 +11239,40 @@ function copyCode(btn) {
       hamburger.setAttribute('aria-label', 'Toggle sidebar');
       hamburger.innerHTML = '<span></span><span></span><span></span>';
 
-      // Create overlay
-      var overlay = document.createElement('div');
+      // Create overlay as a real <button> so iOS treats it as tappable
+      var overlay = document.createElement('button');
       overlay.className = 'sidebar-overlay';
+      overlay.setAttribute('aria-label', 'Close menu');
+      overlay.setAttribute('tabindex', '-1');
 
       document.body.appendChild(overlay);
-      // Insert hamburger as first child of navbar
       navbar.insertBefore(hamburger, navbar.firstChild);
 
+      // ── Mobile sidebar open/close ──
       function openSidebar() {
         sidebar.classList.add('mobile-open');
         overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
       }
       function closeSidebar() {
         sidebar.classList.remove('mobile-open');
         overlay.classList.remove('open');
-        document.body.style.overflow = '';
       }
-
-      hamburger.addEventListener('click', function() {
+      window._fbToggleSidebar = function() {
         sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
-      });
-      overlay.addEventListener('click', closeSidebar);
+      };
 
-      // Close when nav link clicked on mobile
-      sidebar.querySelectorAll('a').forEach(function(a) {
-        a.addEventListener('click', function() {
-          if (window.innerWidth <= 900) closeSidebar();
-        });
-      });
+      // All close/toggle triggers use simple onclick
+      hamburger.onclick = function() {
+        sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
+      };
+      overlay.onclick = function() { closeSidebar(); };
 
-      // Swipe-to-close gesture on sidebar and overlay
-      var touchStartX = 0;
-      var touchStartY = 0;
-      var swiping = false;
-
-      function handleTouchStart(e) {
+      // Sidebar links — close after navigation on mobile
+      sidebar.onclick = function(e) {
         if (window.innerWidth > 900) return;
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        swiping = true;
-      }
-      function handleTouchEnd(e) {
-        if (!swiping || window.innerWidth > 900) return;
-        swiping = false;
-        var dx = e.changedTouches[0].clientX - touchStartX;
-        var dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
-        // Swipe left to close (at least 60px horizontal, more horizontal than vertical)
-        if (dx < -60 && dy < Math.abs(dx)) {
-          closeSidebar();
-        }
-      }
-      sidebar.addEventListener('touchstart', handleTouchStart, { passive: true });
-      sidebar.addEventListener('touchend', handleTouchEnd, { passive: true });
-      overlay.addEventListener('touchstart', handleTouchStart, { passive: true });
-      overlay.addEventListener('touchend', handleTouchEnd, { passive: true });
+        var link = e.target.closest('a[href^="#"]');
+        if (link) setTimeout(closeSidebar, 150);
+      };
     }
 
     // ── 8. READING TIME ON SECTION HEADS ────────────────
@@ -11664,7 +11727,7 @@ function copyCode(btn) {
     input.type = 'password';
     input.disabled = true;
 
-    console.log('[FanBasis MCP] Activated — 11 tools, 2 prompts, 1 resource registered');
+
   };
 })();
 </script>
@@ -12032,16 +12095,21 @@ function copyMCPConfig(btn) {
       if (!btn) return;
       var action = btn.dataset.action;
       if (action === 'menu') {
-        var sidebar = document.getElementById('sidebar');
-        var overlay = document.querySelector('.sidebar-overlay');
-        if (sidebar && sidebar.classList.contains('mobile-open')) {
-          sidebar.classList.remove('mobile-open');
-          if (overlay) overlay.classList.remove('open');
-          document.body.style.overflow = '';
+        if (typeof window._fbToggleSidebar === 'function') {
+          window._fbToggleSidebar();
         } else {
-          if (sidebar) sidebar.classList.add('mobile-open');
-          if (overlay) overlay.classList.add('open');
-          document.body.style.overflow = 'hidden';
+          // Fallback if hamburger code hasn't run
+          var sb = document.getElementById('sidebar');
+          var ov = document.querySelector('.sidebar-overlay');
+          if (sb && sb.classList.contains('mobile-open')) {
+            sb.classList.remove('mobile-open');
+            if (ov) ov.classList.remove('open');
+            document.documentElement.classList.remove('sidebar-is-open');
+          } else if (sb) {
+            sb.classList.add('mobile-open');
+            if (ov) ov.classList.add('open');
+            document.documentElement.classList.add('sidebar-is-open');
+          }
         }
       } else if (action === 'search') {
         if (typeof openCmdk === 'function') openCmdk();
