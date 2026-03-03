@@ -11,6 +11,10 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Fanbasis API Reference">
   <meta name="twitter:description" content="Everything you need to collect payments, manage subscriptions, and automate your business with the Fanbasis API.">
+  <meta property="og:url" content="https://fanbasis.com/api-docs">
+  <meta property="og:image" content="https://fanbasis.com/og-api-docs.png">
+  <meta name="twitter:image" content="https://fanbasis.com/og-api-docs.png">
+  <link rel="canonical" href="https://fanbasis.com/api-docs">
   <!-- Anti-flash theme script: must run before CSS paints -->
   <script>
     (function(){
@@ -208,7 +212,7 @@
       background: #0C0C17 !important;
       border-right: 1px solid rgba(255,255,255,0.055) !important;
       overflow-y: auto;
-      padding: 20px 0 48px;
+      padding: 0 0 48px;
     }
     .sidebar::-webkit-scrollbar { width: 3px; }
     .sidebar::-webkit-scrollbar-track { background: transparent; }
@@ -592,8 +596,8 @@
       background-clip: text;
     }
     .cover-subtitle { font-size: 20px; color: var(--text); font-weight: 400; margin-bottom: 14px; opacity: 0.85; }
-    .cover-tagline { font-size: 15px; color: var(--text-muted); margin-bottom: 32px; max-width: 540px; line-height: 1.75; }
-    .cover-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .cover-tagline { font-size: 15px; color: var(--text-muted); margin-bottom: 32px; max-width: 540px; margin-left: auto; margin-right: auto; line-height: 1.75; }
+    .cover-meta { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .cover-meta-item {
       background: var(--bg-elevated);
       border: 1px solid var(--border);
@@ -800,7 +804,13 @@
     }
 
     /* ── SIDEBAR SEARCH ───────────────────────────────────────── */
-    .sidebar-search { padding: 10px 12px 8px; }
+    .sidebar-search {
+      padding: 10px 12px 8px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #0C0C17;
+    }
     .sidebar-search-wrap { position: relative; }
     .sidebar-search-icon {
       position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
@@ -823,6 +833,167 @@
       background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
       border-radius: 4px; padding: 1px 5px; letter-spacing: 0.02em;
       pointer-events: none;
+    }
+
+    /* ── CHANGELOG ────────────────────────────────────────────── */
+    .changelog-entry {
+      position: relative;
+      padding: 20px 0 20px 28px;
+      border-left: 2px solid var(--border);
+    }
+    .changelog-entry::before {
+      content: '';
+      position: absolute;
+      left: -6px; top: 26px;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+    }
+    .changelog-entry:first-child::before {
+      background: linear-gradient(135deg, #7C3AED, #D946EF);
+      box-shadow: 0 0 8px rgba(124,58,237,0.4);
+    }
+    .changelog-date {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .changelog-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .changelog-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .changelog-tag {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 8px;
+      border-radius: 5px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+    .changelog-tag.new {
+      background: var(--post-bg);
+      color: var(--post);
+      border: 1px solid var(--post-border);
+    }
+    .changelog-tag.improved {
+      background: var(--get-bg);
+      color: var(--get);
+      border: 1px solid var(--get-border);
+    }
+    .changelog-tag.fixed {
+      background: var(--put-bg);
+      color: var(--put);
+      border: 1px solid var(--put-border);
+    }
+    .changelog-tag.breaking {
+      background: var(--delete-bg);
+      color: var(--delete);
+      border: 1px solid var(--delete-border);
+    }
+
+    /* ── WORKFLOWS ────────────────────────────────────────────── */
+    .workflow-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 20px;
+      transition: var(--transition);
+    }
+    .workflow-card:hover {
+      border-color: rgba(var(--accent-rgb), 0.3);
+      box-shadow: var(--shadow-sm);
+    }
+    .workflow-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .workflow-card-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      background: var(--accent-soft);
+      flex-shrink: 0;
+    }
+    .workflow-card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .workflow-card-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .workflow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 16px;
+    }
+    .workflow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+      position: relative;
+    }
+    .workflow-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 15px; top: 38px; bottom: -2px;
+      width: 2px;
+      background: var(--border);
+    }
+    .workflow-step-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      border: 2px solid rgba(var(--accent-rgb), 0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .workflow-step-content {
+      flex: 1;
+      padding-top: 4px;
+    }
+    .workflow-step-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .workflow-step-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .workflow-step-endpoint {
+      display: inline-block;
+      margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: var(--code-bg);
+      color: var(--code-text);
     }
 
     /* ── SCROLL TO TOP ────────────────────────────────────────── */
@@ -848,7 +1019,7 @@
     /* ── COVER CTA BUTTONS ────────────────────────────────────── */
     .cover-actions {
       display: flex; gap: 12px; align-items: center;
-      flex-wrap: wrap; margin-top: 28px;
+      flex-wrap: wrap; margin-top: 28px; justify-content: center;
     }
     .cta-primary {
       display: inline-flex; align-items: center; gap: 8px;
@@ -2241,9 +2412,10 @@
     backdrop-filter: blur(4px);
     z-index: 299;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.22s ease;
   }
-  .sidebar-overlay.open { opacity: 1; }
+  .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
   @media (max-width: 900px) {
     .sidebar-hamburger { display: flex !important; }
     .sidebar {
@@ -2403,6 +2575,9 @@
   }
 
   /* ── Sidebar search ──────────────────────────────────────────── */
+  [data-theme="light"] .sidebar-search {
+    background: var(--bg-sidebar) !important;
+  }
   [data-theme="light"] .sidebar-search-icon {
     color: #94A3B8 !important;
   }
@@ -3357,7 +3532,7 @@
   /* ═══════════════════════════════════════════════════════════════
      BEYOND-STRIPE LAYER — Round 2
      Radial theme wipe, sticky endpoint, JSON tree, hover previews,
-     mobile nav, feedback, typing hero, deep linking
+     mobile nav, typing hero, deep linking
   ═══════════════════════════════════════════════════════════════ */
 
   /* ── API PLAYGROUND ────────────────────────────────────────── */
@@ -3728,63 +3903,6 @@
     .scroll-top-btn { bottom: 76px !important; }
   }
 
-  /* ── 6. FEEDBACK WIDGET ────────────────────────────────────── */
-  .feedback-widget {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 0;
-    margin-top: 32px;
-    border-top: 1px solid var(--border);
-  }
-  .feedback-label {
-    font-size: 13.5px;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-  .feedback-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--bg-elevated);
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.18s ease;
-    outline: none;
-    color: var(--text-muted);
-  }
-  .feedback-btn:hover {
-    border-color: rgba(var(--accent-rgb), 0.4);
-    transform: scale(1.1);
-  }
-  .feedback-btn.fb-up:hover,
-  .feedback-btn.fb-up.selected {
-    background: rgba(34,197,94,0.1);
-    border-color: rgba(34,197,94,0.4);
-    color: #22C55E;
-  }
-  .feedback-btn.fb-down:hover,
-  .feedback-btn.fb-down.selected {
-    background: rgba(239,68,68,0.1);
-    border-color: rgba(239,68,68,0.4);
-    color: #EF4444;
-  }
-  .feedback-btn.selected {
-    transform: scale(1.15);
-  }
-  .feedback-thanks {
-    font-size: 12.5px;
-    color: var(--post);
-    font-weight: 600;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .feedback-thanks.show { opacity: 1; }
-
   /* ── 7. TYPING CURSOR ON COVER ─────────────────────────────── */
   .typing-cursor {
     display: inline-block;
@@ -3892,6 +4010,220 @@
 
   /* END BEYOND-STRIPE LAYER */
 
+  /* ═══════════════════════════════════════════════════════════
+     MOBILE OPTIMIZATION — Full responsive pass
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── Tablet (≤900px) ───────────────────────────────────── */
+  @media (max-width: 900px) {
+    /* Navbar */
+    .navbar { padding: 0 12px !important; }
+    .navbar-search-btn .nsb-label { display: none; }
+    .navbar-search-btn .nsb-kbd { display: none; }
+    .navbar-search-btn { min-width: auto; padding: 6px 10px !important; }
+
+    /* Main content spacing for bottom nav */
+    .main > section,
+    .main > .cover {
+      padding: 28px 16px 48px !important;
+    }
+
+    /* Endpoint badges: stack method + path vertically */
+    .endpoint-badge {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 6px !important;
+      padding: 10px 14px !important;
+    }
+    .endpoint-url {
+      font-size: 12px !important;
+      word-break: break-all !important;
+      line-height: 1.5 !important;
+    }
+
+    /* Tables: horizontal scroll wrapper */
+    .param-table, .data-table, .mor-compare {
+      display: block !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+    }
+    .param-table th, .param-table td,
+    .data-table th, .data-table td,
+    .mor-compare th, .mor-compare td {
+      font-size: 12.5px !important;
+      padding: 8px 10px !important;
+      white-space: normal;
+    }
+
+    /* Code blocks: ensure horizontal scroll */
+    .code-block pre {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      font-size: 12px !important;
+    }
+    .code-block pre code {
+      font-size: 12px !important;
+      line-height: 1.55 !important;
+    }
+
+    /* Event cards */
+    .event-card {
+      padding: 16px 14px 14px !important;
+    }
+    .event-card-header {
+      flex-wrap: wrap !important;
+    }
+
+    /* Endpoint section cards */
+    .endpoint-section-card {
+      padding: 14px 16px !important;
+    }
+
+    /* Callouts */
+    .callout {
+      padding: 14px 14px !important;
+      font-size: 13px !important;
+    }
+
+    /* Sticky endpoint bar */
+    .sticky-endpoint {
+      font-size: 11px !important;
+      padding: 6px 10px !important;
+    }
+    .sticky-endpoint .se-path {
+      max-width: 140px !important;
+      font-size: 11px !important;
+    }
+
+    /* CMD+K modal */
+    .cmdkDialog {
+      width: 95vw !important;
+      max-width: 95vw !important;
+      margin: 10vh auto !important;
+    }
+  }
+
+  /* ── Small phone (≤640px) ──────────────────────────────── */
+  @media (max-width: 640px) {
+    /* Cover / Hero */
+    .cover-logo {
+      font-size: 30px !important;
+    }
+    .cover-subtitle {
+      font-size: 15px !important;
+      line-height: 1.5 !important;
+    }
+    .cover-meta {
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    .cover-actions {
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    .cover-actions a,
+    .cover-actions button {
+      width: 100% !important;
+      text-align: center !important;
+      justify-content: center !important;
+    }
+
+    /* Section headings */
+    h2.endpoint-title {
+      font-size: 18px !important;
+      line-height: 1.35 !important;
+    }
+    h3.subsection-title {
+      font-size: 15px !important;
+    }
+
+    /* Typography */
+    .main p {
+      font-size: 14px !important;
+      line-height: 1.65 !important;
+    }
+
+    /* Endpoint badge URLs: smaller font for long paths */
+    .endpoint-url {
+      font-size: 11px !important;
+    }
+
+    /* Param tables: ensure minimum column widths */
+    .param-table th:first-child,
+    .param-table td:first-child {
+      min-width: 100px;
+    }
+
+    /* Prev/Next nav cards */
+    .prev-next-nav {
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    .pn-card {
+      width: 100% !important;
+    }
+
+    /* Sidebar when open */
+    .sidebar {
+      width: 85vw !important;
+      max-width: 320px !important;
+    }
+
+    /* Playground picker */
+    .pg-picker-grid {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Webhook event type grid */
+    .event-type-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* ── Very small phone (≤400px) ─────────────────────────── */
+  @media (max-width: 400px) {
+    .main > section,
+    .main > .cover {
+      padding: 20px 12px 48px !important;
+    }
+    .cover-logo {
+      font-size: 26px !important;
+    }
+    .code-block pre code {
+      font-size: 11px !important;
+    }
+    .endpoint-badge {
+      padding: 8px 10px !important;
+    }
+    .method {
+      font-size: 10px !important;
+      padding: 2px 7px !important;
+    }
+  }
+
+  /* ── Touch-friendly improvements ───────────────────────── */
+  @media (hover: none) and (pointer: coarse) {
+    /* Larger tap targets for sidebar links */
+    .sidebar-link {
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
+      min-height: 36px;
+    }
+
+    /* Disable hover-dependent animations on touch */
+    .endpoint-badge:hover,
+    .event-card:hover {
+      transform: none !important;
+    }
+
+    /* Larger tap target for copy buttons */
+    .copy-btn {
+      min-width: 36px !important;
+      min-height: 36px !important;
+    }
+  }
+
   </style>
 </head>
 <body>
@@ -3917,7 +4249,6 @@
     <button class="top-tab" data-tab-id="errors-limits" data-tab-entry="rate-limits"><span class="tab-icon">⚠</span>Errors & Limits</button>
     <button class="top-tab" data-tab-id="faq-support" data-tab-entry="faq"><span class="tab-icon">💬</span>FAQ & Support</button>
     <button class="top-tab" data-tab-id="developer-resources" data-tab-entry="sdk-overview"><span class="tab-icon">🛠</span>Developer Resources</button>
-    <button class="top-tab" data-tab-id="features" data-tab-entry="feature-subscriptions"><span class="tab-icon">✦</span>Features</button>
 </div>
 
 
@@ -3987,7 +4318,7 @@
   </div>
   <div class="sidebar-section">
     <a href="#subscribers">Subscribers</a>
-    <a href="#list-subscribers" class="sub">List Subscribers</a>
+    <a href="#sub-list" class="sub">List Subscribers</a>
     <a href="#session-subscriptions" class="sub">Session Subscriptions</a>
     <a href="#product-subscriptions" class="sub">Product Subscriptions</a>
     <a href="#cancel-subscription" class="sub">Cancel a Subscription</a>
@@ -4007,7 +4338,7 @@
   </div>
   <div class="sidebar-section">
     <a href="#transactions">Transactions</a>
-    <a href="#get-transaction" class="sub">Get Transaction</a>
+    <a href="#txn-get" class="sub">Get Transaction</a>
     <a href="#checkout-transactions" class="sub">All Transactions</a>
   </div>
   <div class="sidebar-section">
@@ -4042,16 +4373,21 @@
   <div class="sidebar-section">
     <a href="#support">Help &amp; Support</a>
   </div>
+  <div class="sidebar-section">
+    <a href="#common-workflows">Common Workflows</a>
+    <a href="#wf-one-time" class="sub">One-Time Payment</a>
+    <a href="#wf-subscription" class="sub">Recurring Subscription</a>
+    <a href="#wf-discount" class="sub">Discount Campaign</a>
+    <a href="#wf-refund" class="sub">Issue a Refund</a>
+    <a href="#wf-webhook-setup" class="sub">Webhook Automation</a>
+  </div>
+  <div class="sidebar-section">
+    <a href="#changelog">Changelog</a>
+  </div>
   <!-- ── DEVELOPER RESOURCES ── -->
   <div class="sidebar-section">
     <div class="sidebar-section-title">Developer Resources</div>
     <a href="#sdk-overview">SDK Overview</a>
-  </div>
-  <!-- ── FEATURES ── -->
-  <div class="sidebar-section">
-    <div class="sidebar-section-title">Features</div>
-    <a href="#feature-subscriptions">Subscriptions</a>
-    <a href="#feat-tiers" class="sub">Managing Subscriptions</a>
   </div>
   <!-- ── TOOLS ── -->
   <div class="sidebar-section">
@@ -4094,10 +4430,6 @@
     <div class="cover-meta-item">
       <div class="cover-meta-label">QA URL</div>
       <div class="cover-meta-value">https://qa.dev-fan-basis.com</div>
-    </div>
-    <div class="cover-meta-item">
-      <div class="cover-meta-label">Environment</div>
-      <div class="cover-meta-value" style="color:var(--post);">● Live / Sandbox</div>
     </div>
   </div>
   <div class="cover-actions" style="position:relative;z-index:1;">
@@ -4543,11 +4875,11 @@
   <p>Use these endpoints to manage which URLs receive your events and which event types they listen for.</p>
 
   <!-- List Webhooks -->
-  <div class="endpoint-badge" style="margin-top:28px;" id="wh-list">
+  <h2 class="endpoint-title">List Your Webhook Subscriptions</h2>
+<div class="endpoint-badge" style="margin-top:28px;" id="wh-list">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/webhook-subscriptions</span>
   </div>
-  <h2 class="endpoint-title">List Your Webhook Subscriptions</h2>
   <p>Shows all webhook endpoints you've registered, what events they're listening for, and whether they're active.</p>
   <div class="code-block">
     <div class="code-label request">Request</div>
@@ -4571,11 +4903,11 @@
   </div>
 
   <!-- Create Webhook -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="wh-create">
+  <h2 class="endpoint-title">Create a Webhook Subscription</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="wh-create">
     <span class="method post">POST</span>
     <span class="endpoint-url">/public-api/webhook-subscriptions</span>
   </div>
-  <h2 class="endpoint-title">Create a Webhook Subscription</h2>
   <p>Registers a new URL to receive webhook events. You choose which events to subscribe to. The response includes a <code>secret_key</code> — use it to verify that incoming requests are genuinely from Fanbasis.</p>
   <div class="callout warning" style="margin-top:16px;">
     <div class="callout-title">⚠ Save your secret key now</div>
@@ -4619,11 +4951,11 @@
   </div>
 
   <!-- Delete Webhook -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="wh-delete">
+  <h2 class="endpoint-title">Delete a Webhook Subscription</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="wh-delete">
     <span class="method delete">DELETE</span>
     <span class="endpoint-url">/public-api/webhook-subscriptions/:webhookSubscriptionId</span>
   </div>
-  <h2 class="endpoint-title">Delete a Webhook Subscription</h2>
   <p>Removes a webhook subscription. Fanbasis will immediately stop sending events to that URL.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -4647,11 +4979,11 @@
   </div>
 
   <!-- Test Webhook -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="wh-test">
+  <h2 class="endpoint-title">Test a Webhook Subscription</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="wh-test">
     <span class="method post">POST</span>
     <span class="endpoint-url">/public-api/webhook-subscriptions/:webhookSubscriptionId/test</span>
   </div>
-  <h2 class="endpoint-title">Test a Webhook Subscription</h2>
   <p>Sends a simulated event to your webhook URL so you can verify everything is working before going live. Great for testing your server's response logic without needing a real payment.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -6333,11 +6665,11 @@ end</code></pre>
   </div>
 
   <!-- Create Checkout Session -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-create">
+  <h2 id="create-checkout" class="endpoint-title">Create a Checkout Session</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-create">
     <span class="method post">POST</span>
     <span class="endpoint-url">/public-api/checkout-sessions</span>
   </div>
-  <h2 id="create-checkout" class="endpoint-title">Create a Checkout Session</h2>
   <p>This is the most important endpoint — you'll call it every time you want to offer a product for purchase. The payment link you get back is ready to use immediately.</p>
   <div class="callout example" style="margin-top:14px;">
     <div class="callout-title">✦ When would I use this?</div>
@@ -6407,11 +6739,11 @@ end</code></pre>
   </div>
 
   <!-- Get Checkout Session -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-get">
+  <h2 id="get-checkout" class="endpoint-title">Look Up a Checkout Session</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-get">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId</span>
   </div>
-  <h2 id="get-checkout" class="endpoint-title">Look Up a Checkout Session</h2>
   <p>Retrieves all the details of a checkout session — the product info, pricing, subscription settings, and expiration date. Useful if you've lost track of a session's configuration.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -6444,11 +6776,11 @@ end</code></pre>
   </div>
 
   <!-- Delete Checkout Session -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-delete">
+  <h2 id="delete-checkout" class="endpoint-title">Delete a Checkout Session</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-delete">
     <span class="method delete">DELETE</span>
     <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId</span>
   </div>
-  <h2 id="delete-checkout" class="endpoint-title">Delete a Checkout Session</h2>
   <p>Permanently deletes a checkout session and deactivates its payment link. Anyone who visits the link afterwards will see a "not found" error.</p>
   <div class="callout warning" style="margin-top:14px;">
     <div class="callout-title">⚠ This cannot be undone</div>
@@ -6471,53 +6803,13 @@ end</code></pre>
     <pre><code>{ "status": "success", "message": "Checkout session deleted successfully", "data": [] }</code></pre>
   </div>
 
-  <!-- Get All Transactions -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-transactions">
-    <span class="method get">GET</span>
-    <span class="endpoint-url">/public-api/checkout-sessions/transactions</span>
-  </div>
-  <h2 id="checkout-transactions" class="endpoint-title">Get All Transactions</h2>
-  <p>Returns every payment that's been made across all your products. Each result shows who paid, what they bought, your fee, and your net payout. You can filter by product or customer.</p>
-  <h3 class="subsection-title">Query Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>product_id</code></td><td>string</td><td>No</td><td>Only show transactions for this product.</td></tr>
-      <tr><td><code>customer_id</code></td><td>string</td><td>No</td><td>Only show transactions from this customer.</td></tr>
-      <tr><td><code>page</code></td><td>integer</td><td>No</td><td>Which page of results to show. Starts at 1.</td></tr>
-      <tr><td><code>per_page</code></td><td>integer</td><td>No</td><td>How many results per page (max 100).</td></tr>
-    </tbody>
-  </table>
-  <div class="code-block">
-    <div class="code-label request">Request</div>
-    <pre><code>curl "https://www.fanbasis.com/public-api/checkout-sessions/transactions?page=1&amp;per_page=20" \
-  -H "x-api-key: YOUR_API_KEY"</code></pre>
-  </div>
-  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-transactions">
-    <div class="code-label response">Response</div>
-    <pre><code>{
-  "status": "success",
-  "data": {
-    "transactions": [
-      {
-        "id": "txn_abc123",
-        "fan": { "name": "Jane Doe", "email": "jane@example.com" },
-        "service": { "title": "Pro Monthly Membership", "price": 29.99 },
-        "fee_amount": 1.20,
-        "net_amount": 28.79
-      }
-    ],
-    "pagination": { "current_page": 1, "total_pages": 5, "total_items": 95, "has_more": true }
-  }
-}</code></pre>
-  </div>
 
   <!-- Get Transactions for a Checkout Session -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-session-transactions">
+  <h2 id="session-transactions" class="endpoint-title">Get Transactions for a Checkout Session</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-session-transactions">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId/transactions</span>
   </div>
-  <h2 id="session-transactions" class="endpoint-title">Get Transactions for a Checkout Session</h2>
   <p>Returns all transactions associated with a specific checkout session. Useful when a single session has produced multiple payments (e.g. subscription renewals tied to the same session).</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -6558,214 +6850,12 @@ end</code></pre>
 }</code></pre>
   </div>
 
-  <!-- Get Subscriptions for a Checkout Session -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-session-subscriptions">
-    <span class="method get">GET</span>
-    <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId/subscriptions</span>
-  </div>
-  <h2 id="session-subscriptions" class="endpoint-title">Get Subscriptions for a Checkout Session</h2>
-  <p>Returns all subscriptions created from a specific checkout session. Useful for subscription products that have multiple subscribers through the same session.</p>
-  <h3 class="subsection-title">Path Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>checkoutSessionId</code></td><td>string</td><td>Yes</td><td>The checkout session ID.</td></tr>
-    </tbody>
-  </table>
-  <h3 class="subsection-title">Query Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>page</code></td><td>integer</td><td>No</td><td>Page number.</td></tr>
-      <tr><td><code>per_page</code></td><td>integer</td><td>No</td><td>Results per page (max 100).</td></tr>
-    </tbody>
-  </table>
-  <div class="code-block">
-    <div class="code-label request">Request</div>
-    <pre><code>curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?page=1" \
-  -H "x-api-key: YOUR_API_KEY"</code></pre>
-  </div>
-  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-session-subscriptions">
-    <div class="code-label response">Response</div>
-    <pre><code>{
-  "status": "success",
-  "data": {
-    "subscriptions": [
-      {
-        "id": "sub_1",
-        "email": "jane@example.com",
-        "subscription_status": "active",
-        "next_renewal_date": "2025-02-15T00:00:00Z"
-      }
-    ],
-    "pagination": { "current_page": 1, "total_pages": 1, "total_items": 12 }
-  }
-}</code></pre>
-  </div>
-
-  <!-- Get Product Subscriptions -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-subscriptions">
-    <span class="method get">GET</span>
-    <span class="endpoint-url">/public-api/checkout-sessions/:productId/subscriptions</span>
-  </div>
-  <h2 id="product-subscriptions" class="endpoint-title">Get Subscriptions for a Product</h2>
-  <p>Lists every subscriber to a specific product. Shows their email, subscription status, and when they'll next be billed. Great for managing your member list.</p>
-  <h3 class="subsection-title">Path Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>productId</code></td><td>string</td><td>Yes</td><td>The <code>checkout_session_id</code> of the product to get subscribers for.</td></tr>
-    </tbody>
-  </table>
-  <h3 class="subsection-title">Query Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>page</code></td><td>integer</td><td>No</td><td>Page number.</td></tr>
-      <tr><td><code>per_page</code></td><td>integer</td><td>No</td><td>Results per page (max 100).</td></tr>
-    </tbody>
-  </table>
-  <div class="code-block">
-    <div class="code-label request">Request</div>
-    <pre><code>curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?page=1" \
-  -H "x-api-key: YOUR_API_KEY"</code></pre>
-  </div>
-  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-subscriptions">
-    <div class="code-label response">Response</div>
-    <pre><code>{
-  "status": "success",
-  "data": {
-    "subscriptions": [
-      {
-        "id": "sub_1",
-        "email": "jane@example.com",
-        "subscription_status": "active",
-        "next_renewal_date": "2025-02-15T00:00:00Z"
-      }
-    ],
-    "pagination": { "current_page": 1, "total_pages": 2, "total_items": 40 }
-  }
-}</code></pre>
-  </div>
-
-  <!-- Cancel a Subscription -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-cancel">
-    <span class="method delete">DELETE</span>
-    <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId</span>
-  </div>
-  <h2 id="cancel-subscription" class="endpoint-title">Cancel a Subscription</h2>
-  <p>Cancels a customer's subscription. They keep access until the end of the current billing period but won't be charged again.</p>
-  <div class="callout note" style="margin-top:14px;">
-    <div class="callout-title">● Finding the subscriptionId</div>
-    <p>The <code>subscriptionId</code> is the <code>id</code> field returned in the subscription list above — not the customer's user ID.</p>
-  </div>
-  <h3 class="subsection-title">Path Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>checkoutSessionId</code></td><td>string</td><td>Yes</td><td>The ID of the product the subscription belongs to.</td></tr>
-      <tr><td><code>subscriptionId</code></td><td>string</td><td>Yes</td><td>The subscription ID from the subscription list (the <code>id</code> field).</td></tr>
-    </tbody>
-  </table>
-  <div class="code-block">
-    <div class="code-label request">Request</div>
-    <pre><code>curl -X DELETE \
-  "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions/sub_xyz789" \
-  -H "x-api-key: YOUR_API_KEY"</code></pre>
-  </div>
-  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-cancel">
-    <div class="code-label response">Response</div>
-    <pre><code>{
-  "status": "success",
-  "message": "Subscription cancelled successfully",
-  "data": { "id": "sub_1", "cancelled_at": "2025-01-15T14:00:00Z", "subscription_status": "cancelled" }
-}</code></pre>
-  </div>
-
-  <!-- Refund a Transaction -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-refund">
-    <span class="method post">POST</span>
-    <span class="endpoint-url">/public-api/checkout-sessions/transactions/:transactionId/refund</span>
-  </div>
-  <h2 id="refund-transaction" class="endpoint-title">Refund a Transaction</h2>
-  <p>Issues a full or partial refund for a payment. For a full refund, don't include <code>amount_cents</code>. For a partial refund, specify exactly how much to refund.</p>
-  <div class="callout warning" style="margin-top:14px;">
-    <div class="callout-title">⚠ Refunds are irreversible</div>
-    <p>Once issued, a refund cannot be canceled. The customer receives the refunded amount back to their original payment method within a few business days.</p>
-  </div>
-  <h3 class="subsection-title">Path Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>transactionId</code></td><td>string</td><td>Yes</td><td>The ID of the transaction to refund.</td></tr>
-    </tbody>
-  </table>
-  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
-  <div class="code-label req-body">Request Body</div>
-  <pre><code>{
-  "amount_cents": 1500
-}</code></pre>
-</div>
-  <div class="code-block">
-    <div class="code-label request">Request</div>
-    <pre><code># Full refund — omit amount_cents
-curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions/txn_abc123/refund" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{}'</code></pre>
-  </div>
-  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-refund">
-    <div class="code-label response">Response</div>
-    <pre><code>{
-  "status": "success",
-  "message": "Transaction refunded successfully",
-  "data": { "refund_id": "re_1234567890", "transaction_id": "txn_abc123", "refund_amount": 29.99, "refund_type": "full" }
-}</code></pre>
-  </div>
-
-  <!-- Extend a Subscription -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-extend">
-    <span class="method post">POST</span>
-    <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId/extend-subscription</span>
-  </div>
-  <h2 id="extend-subscription" class="endpoint-title">Extend a Subscription</h2>
-  <p>Pushes out a customer's next billing date by a given number of days. Use this to comp members for downtime, run a loyalty promotion, or manually extend access.</p>
-  <h3 class="subsection-title">Path Parameters</h3>
-  <table class="param-table">
-    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>checkoutSessionId</code></td><td>string</td><td>Yes</td><td>The ID of the product the subscription belongs to.</td></tr>
-    </tbody>
-  </table>
-  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
-  <div class="code-label req-body">Request Body</div>
-  <pre><code>{
-  "user_id": "usr_abc123",
-  "duration_days": 30
-}</code></pre>
-</div>
-  <div class="code-block">
-    <div class="code-label request">Request</div>
-    <pre><code>curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend-subscription" \
-  -H "x-api-key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "user_id": "usr_456", "duration_days": 30 }'</code></pre>
-  </div>
-  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-extend">
-    <div class="code-label response">Response</div>
-    <pre><code>{
-  "status": "success",
-  "message": "Subscription extended successfully",
-  "data": { "subscription_id": "sub_1", "new_completion_date": "2025-04-15T00:00:00Z" }
-}</code></pre>
-  </div>
-
   <!-- Embedded Checkout -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cs-embedded">
+  <h2 id="embedded-checkout" class="endpoint-title">Create an Embedded Checkout Session</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-embedded">
     <span class="method post">POST</span>
     <span class="endpoint-url">/public-api/checkout-sessions/embedded</span>
   </div>
-  <h2 id="embedded-checkout" class="endpoint-title">Create an Embedded Checkout Session</h2>
   <p>Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Requires an existing Fanbasis <code>product_id</code>. Returns a <code>checkout_session_secret</code> you use to construct the embedded checkout URL.</p>
   <div class="callout tip" style="margin-top:8px;margin-bottom:8px;">
     <div class="callout-title">✓ Reusable session secret</div>
@@ -6819,11 +6909,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- List Customers -->
-  <div class="endpoint-badge" style="margin-top:32px;" id="cust-list">
+  <h2 id="list-customers" class="endpoint-title">List Your Customers</h2>
+<div class="endpoint-badge" style="margin-top:32px;" id="cust-list">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/customers</span>
   </div>
-  <h2 id="list-customers" class="endpoint-title">List Your Customers</h2>
   <p>Returns a searchable, paginated list of all your customers — with their total spend, transaction count, and last payment date.</p>
   <h3 class="subsection-title">Query Parameters</h3>
   <table class="param-table">
@@ -6860,11 +6950,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- Get Payment Methods -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cust-pm">
+  <h2 id="payment-methods" class="endpoint-title">Get a Customer's Saved Payment Methods</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cust-pm">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/customers/:customerId/payment-methods</span>
   </div>
-  <h2 id="payment-methods" class="endpoint-title">Get a Customer's Saved Payment Methods</h2>
   <p>Shows all payment cards a customer has on file. You'll need the payment method ID to charge them directly.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -6900,11 +6990,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- Charge Customer -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="cust-charge">
+  <h2 id="charge-customer" class="endpoint-title">Charge a Customer Directly</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cust-charge">
     <span class="method post">POST</span>
     <span class="endpoint-url">/public-api/customers/:customerId/charge</span>
   </div>
-  <h2 id="charge-customer" class="endpoint-title">Charge a Customer Directly</h2>
   <p>Charges a customer using a saved payment method. No checkout page needed — the charge happens immediately.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -6959,11 +7049,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   <p>The Subscribers endpoint gives you a unified view of who is subscribed to what — combining customer profile info with their subscription status across all your products. Think of it as a live member directory.</p>
 
   <!-- List Subscribers -->
-  <div class="endpoint-badge" style="margin-top:28px;" id="sub-list">
+  <h2 class="endpoint-title">List All Subscribers</h2>
+<div class="endpoint-badge" style="margin-top:28px;" id="sub-list">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/subscribers</span>
   </div>
-  <h2 class="endpoint-title">List All Subscribers</h2>
   <p>Returns every subscriber across all your products. Filter by customer or product to narrow results.</p>
   <h3 class="subsection-title">Query Parameters</h3>
   <table class="param-table">
@@ -7002,6 +7092,209 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   }
 }</code></pre>
   </div>
+
+  <!-- Get Subscriptions for a Checkout Session -->
+  <h2 id="session-subscriptions" class="endpoint-title">Get Subscriptions for a Checkout Session</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-session-subscriptions">
+    <span class="method get">GET</span>
+    <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId/subscriptions</span>
+  </div>
+  <p>Returns all subscriptions created from a specific checkout session. Useful for subscription products that have multiple subscribers through the same session.</p>
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>checkoutSessionId</code></td><td>string</td><td>Yes</td><td>The checkout session ID.</td></tr>
+    </tbody>
+  </table>
+  <h3 class="subsection-title">Query Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>page</code></td><td>integer</td><td>No</td><td>Page number.</td></tr>
+      <tr><td><code>per_page</code></td><td>integer</td><td>No</td><td>Results per page (max 100).</td></tr>
+    </tbody>
+  </table>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?page=1" \
+  -H "x-api-key: YOUR_API_KEY"</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-session-subscriptions">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "data": {
+    "subscriptions": [
+      {
+        "id": "sub_1",
+        "email": "jane@example.com",
+        "subscription_status": "active",
+        "next_renewal_date": "2025-02-15T00:00:00Z"
+      }
+    ],
+    "pagination": { "current_page": 1, "total_pages": 1, "total_items": 12 }
+  }
+}</code></pre>
+  </div>
+
+  <!-- Get Product Subscriptions -->
+  <h2 id="product-subscriptions" class="endpoint-title">Get Subscriptions for a Product</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-subscriptions">
+    <span class="method get">GET</span>
+    <span class="endpoint-url">/public-api/checkout-sessions/:productId/subscriptions</span>
+  </div>
+  <p>Lists every subscriber to a specific product. Shows their email, subscription status, and when they'll next be billed. Great for managing your member list.</p>
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>productId</code></td><td>string</td><td>Yes</td><td>The <code>checkout_session_id</code> of the product to get subscribers for.</td></tr>
+    </tbody>
+  </table>
+  <h3 class="subsection-title">Query Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>page</code></td><td>integer</td><td>No</td><td>Page number.</td></tr>
+      <tr><td><code>per_page</code></td><td>integer</td><td>No</td><td>Results per page (max 100).</td></tr>
+    </tbody>
+  </table>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?page=1" \
+  -H "x-api-key: YOUR_API_KEY"</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-subscriptions">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "data": {
+    "subscriptions": [
+      {
+        "id": "sub_1",
+        "email": "jane@example.com",
+        "subscription_status": "active",
+        "next_renewal_date": "2025-02-15T00:00:00Z"
+      }
+    ],
+    "pagination": { "current_page": 1, "total_pages": 2, "total_items": 40 }
+  }
+}</code></pre>
+  </div>
+
+  <!-- Cancel a Subscription -->
+  <h2 id="cancel-subscription" class="endpoint-title">Cancel a Subscription</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-cancel">
+    <span class="method delete">DELETE</span>
+    <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId</span>
+  </div>
+  <p>Cancels a customer's subscription. They keep access until the end of the current billing period but won't be charged again.</p>
+  <div class="callout note" style="margin-top:14px;">
+    <div class="callout-title">● Finding the subscriptionId</div>
+    <p>The <code>subscriptionId</code> is the <code>id</code> field returned in the subscription list above — not the customer's user ID.</p>
+  </div>
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>checkoutSessionId</code></td><td>string</td><td>Yes</td><td>The ID of the product the subscription belongs to.</td></tr>
+      <tr><td><code>subscriptionId</code></td><td>string</td><td>Yes</td><td>The subscription ID from the subscription list (the <code>id</code> field).</td></tr>
+    </tbody>
+  </table>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X DELETE \
+  "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions/sub_xyz789" \
+  -H "x-api-key: YOUR_API_KEY"</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-cancel">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "message": "Subscription cancelled successfully",
+  "data": { "id": "sub_1", "cancelled_at": "2025-01-15T14:00:00Z", "subscription_status": "cancelled" }
+}</code></pre>
+  </div>
+
+  <!-- Refund a Transaction -->
+  <h2 id="refund-transaction" class="endpoint-title">Refund a Transaction</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-refund">
+    <span class="method post">POST</span>
+    <span class="endpoint-url">/public-api/checkout-sessions/transactions/:transactionId/refund</span>
+  </div>
+  <p>Issues a full or partial refund for a payment. For a full refund, don't include <code>amount_cents</code>. For a partial refund, specify exactly how much to refund.</p>
+  <div class="callout warning" style="margin-top:14px;">
+    <div class="callout-title">⚠ Refunds are irreversible</div>
+    <p>Once issued, a refund cannot be canceled. The customer receives the refunded amount back to their original payment method within a few business days.</p>
+  </div>
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>transactionId</code></td><td>string</td><td>Yes</td><td>The ID of the transaction to refund.</td></tr>
+    </tbody>
+  </table>
+  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
+  <div class="code-label req-body">Request Body</div>
+  <pre><code>{
+  "amount_cents": 1500
+}</code></pre>
+</div>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code># Full refund — omit amount_cents
+curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions/txn_abc123/refund" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-refund">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "message": "Transaction refunded successfully",
+  "data": { "refund_id": "re_1234567890", "transaction_id": "txn_abc123", "refund_amount": 29.99, "refund_type": "full" }
+}</code></pre>
+  </div>
+
+  <!-- Extend a Subscription -->
+  <h2 id="extend-subscription" class="endpoint-title">Extend a Subscription</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-extend">
+    <span class="method post">POST</span>
+    <span class="endpoint-url">/public-api/checkout-sessions/:checkoutSessionId/extend-subscription</span>
+  </div>
+  <p>Pushes out a customer's next billing date by a given number of days. Use this to comp members for downtime, run a loyalty promotion, or manually extend access.</p>
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>checkoutSessionId</code></td><td>string</td><td>Yes</td><td>The ID of the product the subscription belongs to.</td></tr>
+    </tbody>
+  </table>
+  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
+  <div class="code-label req-body">Request Body</div>
+  <pre><code>{
+  "user_id": "usr_abc123",
+  "duration_days": 30
+}</code></pre>
+</div>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend-subscription" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "user_id": "usr_456", "duration_days": 30 }'</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-extend">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "message": "Subscription extended successfully",
+  "data": { "subscription_id": "sub_1", "new_completion_date": "2025-04-15T00:00:00Z" }
+}</code></pre>
+  </div>
+
 </section>
 
 <!-- ═══════════════════════ DISCOUNT CODES ═══════════════════════ -->
@@ -7019,11 +7312,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- List Discount Codes -->
-  <div class="endpoint-badge" style="margin-top:32px;" id="dc-list">
+  <h2 id="list-discounts" class="endpoint-title">List Discount Codes</h2>
+<div class="endpoint-badge" style="margin-top:32px;" id="dc-list">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/discount-codes</span>
   </div>
-  <h2 id="list-discounts" class="endpoint-title">List Discount Codes</h2>
   <p>Returns all your discount codes. Use the search parameter to quickly find a specific code.</p>
   <h3 class="subsection-title">Query Parameters</h3>
   <table class="param-table">
@@ -7060,11 +7353,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- Create Discount Code -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="dc-create">
+  <h2 id="create-discount" class="endpoint-title">Create a Discount Code</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="dc-create">
     <span class="method post">POST</span>
     <span class="endpoint-url">/public-api/discount-codes</span>
   </div>
-  <h2 id="create-discount" class="endpoint-title">Create a Discount Code</h2>
   <p>Creates a new discount code with the settings you define.</p>
   <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
   <div class="code-label req-body">Request Body</div>
@@ -7103,11 +7396,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- Get Discount Code -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="dc-get">
+  <h2 id="get-discount" class="endpoint-title">Get a Discount Code</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="dc-get">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/discount-codes/:id</span>
   </div>
-  <h2 id="get-discount" class="endpoint-title">Get a Discount Code</h2>
   <p>Fetches the details of one discount code, including how many times it's been used.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -7139,11 +7432,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- Update Discount Code -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="dc-update">
+  <h2 id="update-discount" class="endpoint-title">Update a Discount Code</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="dc-update">
     <span class="method put">PUT</span>
     <span class="endpoint-url">/public-api/discount-codes/:id</span>
   </div>
-  <h2 id="update-discount" class="endpoint-title">Update a Discount Code</h2>
   <p>Updates an existing discount code. Only include the fields you want to change.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -7181,11 +7474,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   </div>
 
   <!-- Delete Discount Code -->
-  <div class="endpoint-badge" style="margin-top:36px;" id="dc-delete">
+  <h2 id="delete-discount" class="endpoint-title">Delete a Discount Code</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="dc-delete">
     <span class="method delete">DELETE</span>
     <span class="endpoint-url">/public-api/discount-codes/:id</span>
   </div>
-  <h2 id="delete-discount" class="endpoint-title">Delete a Discount Code</h2>
   <p>Deletes a discount code. Customers with active subscriptions already using this code won't be affected — they'll keep their discount.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -7214,11 +7507,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   <p>Products (called "services" in some parts of the API) are the items you've set up to sell. Each product has its own payment link. Use the Products endpoint to pull a list of everything you offer — useful for building dynamic product pages or dropdowns in your own app.</p>
 
   <!-- List Products -->
-  <div class="endpoint-badge" style="margin-top:28px;" id="prod-list">
+  <h2 class="endpoint-title">List Your Products</h2>
+<div class="endpoint-badge" style="margin-top:28px;" id="prod-list">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/products</span>
   </div>
-  <h2 class="endpoint-title">List Your Products</h2>
   <p>Returns all your products with their titles, prices, and ready-to-use payment links.</p>
   <h3 class="subsection-title">Query Parameters</h3>
   <table class="param-table">
@@ -7263,11 +7556,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   <p>A transaction is a record of a single completed payment. Every time a customer pays — one-time or recurring — a transaction is created. The Transactions API lets you pull detailed records including customer info, the product sold, Fanbasis's fee, and your net payout.</p>
 
   <!-- Look Up Transaction -->
-  <div class="endpoint-badge" style="margin-top:28px;" id="txn-get">
+  <h2 class="endpoint-title">Look Up a Transaction</h2>
+<div class="endpoint-badge" style="margin-top:28px;" id="txn-get">
     <span class="method get">GET</span>
     <span class="endpoint-url">/public-api/transactions/:transactionId</span>
   </div>
-  <h2 class="endpoint-title">Look Up a Transaction</h2>
   <p>Returns the full details of a single payment. Useful for customer support lookups, accounting, or building transaction receipts.</p>
   <h3 class="subsection-title">Path Parameters</h3>
   <table class="param-table">
@@ -7300,6 +7593,47 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
     "fee_amount": 1.20,
     "net_amount": 28.79,
     "refunds": []
+  }
+}</code></pre>
+  </div>
+
+  <!-- Get All Transactions -->
+  <h2 id="checkout-transactions" class="endpoint-title">Get All Transactions</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-transactions">
+    <span class="method get">GET</span>
+    <span class="endpoint-url">/public-api/checkout-sessions/transactions</span>
+  </div>
+  <p>Returns every payment that's been made across all your products. Each result shows who paid, what they bought, your fee, and your net payout. You can filter by product or customer.</p>
+  <h3 class="subsection-title">Query Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>product_id</code></td><td>string</td><td>No</td><td>Only show transactions for this product.</td></tr>
+      <tr><td><code>customer_id</code></td><td>string</td><td>No</td><td>Only show transactions from this customer.</td></tr>
+      <tr><td><code>page</code></td><td>integer</td><td>No</td><td>Which page of results to show. Starts at 1.</td></tr>
+      <tr><td><code>per_page</code></td><td>integer</td><td>No</td><td>How many results per page (max 100).</td></tr>
+    </tbody>
+  </table>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl "https://www.fanbasis.com/public-api/checkout-sessions/transactions?page=1&amp;per_page=20" \
+  -H "x-api-key: YOUR_API_KEY"</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-transactions">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "data": {
+    "transactions": [
+      {
+        "id": "txn_abc123",
+        "fan": { "name": "Jane Doe", "email": "jane@example.com" },
+        "service": { "title": "Pro Monthly Membership", "price": 29.99 },
+        "fee_amount": 1.20,
+        "net_amount": 28.79
+      }
+    ],
+    "pagination": { "current_page": 1, "total_pages": 5, "total_items": 95, "has_more": true }
   }
 }</code></pre>
   </div>
@@ -8153,6 +8487,300 @@ Content-Type: application/json
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
+     COMMON WORKFLOWS
+     ═══════════════════════════════════════════════════════ -->
+<section id="common-workflows">
+  <div class="section-head">
+    <h1>Common Workflows</h1>
+  </div>
+  <p>Step-by-step guides for the most common seller scenarios. Each workflow shows the exact API calls in order, so you can go from zero to production fast.</p>
+
+  <!-- Workflow 1: One-Time Payment -->
+  <div class="workflow-card" id="wf-one-time">
+    <div class="workflow-card-header">
+      <div class="workflow-card-icon">💳</div>
+      <div>
+        <div class="workflow-card-title">Collect a One-Time Payment</div>
+        <div class="workflow-card-subtitle">Sell a product, ticket, or digital download with a single checkout</div>
+      </div>
+    </div>
+    <div class="workflow-steps">
+      <div class="workflow-step">
+        <div class="workflow-step-num">1</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Create a Checkout Session</div>
+          <div class="workflow-step-desc">Pass your product details, price, and a <code class="inline">success_url</code> where the buyer lands after payment.</div>
+          <span class="workflow-step-endpoint">POST /public-api/checkout-sessions</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">2</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Redirect the Buyer</div>
+          <div class="workflow-step-desc">Use the <code class="inline">checkout_url</code> from the response to send your buyer to the Fanbasis-hosted payment page.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">3</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Listen for the Webhook</div>
+          <div class="workflow-step-desc">Your server receives a <code class="inline">payment.succeeded</code> event confirming the charge. Verify the signature, then fulfill the order.</div>
+          <span class="workflow-step-endpoint">Webhook: payment.succeeded</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">4</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Deliver the Product</div>
+          <div class="workflow-step-desc">Grant access, send a download link, or ship the item. The transaction is complete and funds are on the way to your balance.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow 2: Recurring Subscription -->
+  <div class="workflow-card" id="wf-subscription">
+    <div class="workflow-card-header">
+      <div class="workflow-card-icon">🔄</div>
+      <div>
+        <div class="workflow-card-title">Set Up a Recurring Subscription</div>
+        <div class="workflow-card-subtitle">Bill customers weekly, monthly, or yearly — automatically</div>
+      </div>
+    </div>
+    <div class="workflow-steps">
+      <div class="workflow-step">
+        <div class="workflow-step-num">1</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Create a Product with Recurring Billing</div>
+          <div class="workflow-step-desc">Set up your product in the dashboard with a recurring price interval (weekly, monthly, or yearly). Note the <code class="inline">product_id</code>.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">2</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Create a Checkout Session</div>
+          <div class="workflow-step-desc">Pass the <code class="inline">product_id</code> and set <code class="inline">mode: "subscription"</code>. The buyer will see the recurring terms on the checkout page.</div>
+          <span class="workflow-step-endpoint">POST /public-api/checkout-sessions</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">3</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Handle Subscription Events</div>
+          <div class="workflow-step-desc">Listen for <code class="inline">subscription.created</code> to activate access, <code class="inline">subscription.renewed</code> for renewals, and <code class="inline">subscription.payment_failed</code> to pause access.</div>
+          <span class="workflow-step-endpoint">Webhook: subscription.created</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">4</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Manage the Subscription</div>
+          <div class="workflow-step-desc">Use the API to cancel, extend, or look up subscriber status anytime. Subscribers can also be managed from the dashboard.</div>
+          <span class="workflow-step-endpoint">DELETE /public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow 3: Discount Campaign -->
+  <div class="workflow-card" id="wf-discount">
+    <div class="workflow-card-header">
+      <div class="workflow-card-icon">🏷️</div>
+      <div>
+        <div class="workflow-card-title">Run a Discount Campaign</div>
+        <div class="workflow-card-subtitle">Create promo codes for launches, seasonal sales, or influencer partnerships</div>
+      </div>
+    </div>
+    <div class="workflow-steps">
+      <div class="workflow-step">
+        <div class="workflow-step-num">1</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Create a Discount Code</div>
+          <div class="workflow-step-desc">Set a percentage or fixed-amount discount with optional limits: max uses, expiration date, and minimum purchase amount.</div>
+          <span class="workflow-step-endpoint">POST /public-api/discount-codes</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">2</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Share the Code</div>
+          <div class="workflow-step-desc">Distribute via email, social media, or embed it directly in your checkout URL as a query parameter. Buyers enter it at checkout.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">3</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Track Usage</div>
+          <div class="workflow-step-desc">Pull code stats via the API to see how many times it's been redeemed. Update the code or delete it when the campaign is over.</div>
+          <span class="workflow-step-endpoint">GET /public-api/discount-codes/:discountCodeId</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow 4: Issue a Refund -->
+  <div class="workflow-card" id="wf-refund">
+    <div class="workflow-card-header">
+      <div class="workflow-card-icon">↩️</div>
+      <div>
+        <div class="workflow-card-title">Issue a Refund</div>
+        <div class="workflow-card-subtitle">Process full or partial refunds for transactions</div>
+      </div>
+    </div>
+    <div class="workflow-steps">
+      <div class="workflow-step">
+        <div class="workflow-step-num">1</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Find the Transaction</div>
+          <div class="workflow-step-desc">Look up the original transaction by ID or list all transactions for the customer to locate the charge.</div>
+          <span class="workflow-step-endpoint">GET /public-api/transactions/:transactionId</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">2</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Submit the Refund</div>
+          <div class="workflow-step-desc">Call the refund endpoint with the <code class="inline">transaction_id</code> and optionally a partial <code class="inline">amount</code>. If omitted, the full amount is refunded.</div>
+          <span class="workflow-step-endpoint">POST /public-api/checkout-sessions/transactions/:transactionId/refund</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">3</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Confirm via Webhook</div>
+          <div class="workflow-step-desc">A <code class="inline">refund.created</code> event fires once the refund is processed. Update your records and notify the customer.</div>
+          <span class="workflow-step-endpoint">Webhook: refund.created</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow 5: Webhook Automation -->
+  <div class="workflow-card" id="wf-webhook-setup">
+    <div class="workflow-card-header">
+      <div class="workflow-card-icon">⚡</div>
+      <div>
+        <div class="workflow-card-title">Set Up Webhook Automation</div>
+        <div class="workflow-card-subtitle">Get real-time notifications for every payment, subscription, and dispute event</div>
+      </div>
+    </div>
+    <div class="workflow-steps">
+      <div class="workflow-step">
+        <div class="workflow-step-num">1</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Register Your Endpoint</div>
+          <div class="workflow-step-desc">Deploy an HTTPS endpoint on your server and register it via the API or dashboard. Choose which events to subscribe to.</div>
+          <span class="workflow-step-endpoint">POST /public-api/webhook-subscriptions</span>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">2</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Implement Signature Verification</div>
+          <div class="workflow-step-desc">Every webhook includes an HMAC-SHA256 signature header. Verify it matches the payload using your webhook secret to prevent spoofing.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">3</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Return 200 Immediately</div>
+          <div class="workflow-step-desc">Acknowledge the webhook fast — return HTTP 200 before doing heavy work. Queue processing asynchronously to avoid timeouts and retries.</div>
+        </div>
+      </div>
+      <div class="workflow-step">
+        <div class="workflow-step-num">4</div>
+        <div class="workflow-step-content">
+          <div class="workflow-step-label">Handle Idempotency</div>
+          <div class="workflow-step-desc">Webhooks may be retried. Store the event <code class="inline">id</code> and skip duplicates so you never double-process a payment or refund.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout tip" style="margin-top:8px;">
+    <div class="callout-title">✦ Pro tip</div>
+    <p>Combine these workflows together for powerful automations. For example, create a subscription checkout with a discount code applied, then handle renewals, cancellations, and refunds all through webhooks — fully automated, no manual work needed.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     CHANGELOG
+     ═══════════════════════════════════════════════════════ -->
+<section id="changelog">
+  <div class="section-head">
+    <h1>Changelog</h1>
+  </div>
+  <p>A running log of API updates, new features, and breaking changes. Subscribe to webhook event <code class="inline">api.changelog</code> (coming soon) to get notified automatically.</p>
+
+  <div style="margin-top:28px;">
+
+    <div class="changelog-entry">
+      <div class="changelog-date">February 2026</div>
+      <div class="changelog-title">AI Agent MCP Integration</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Connect Claude, ChatGPT, or Grok directly to your Fanbasis account via MCP. Query transactions, customers, products, and subscribers with natural language. Includes full setup guides for Claude Desktop, ChatGPT, and Grok.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">February 2026</div>
+      <div class="changelog-title">API Playground</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Interactive API explorer built right into the docs. Test any endpoint with your API key, see real responses, and build requests without writing code. Includes request history and environment switching.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">February 2026</div>
+      <div class="changelog-title">Common Workflows Guide</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Step-by-step guides for the five most common seller scenarios: one-time payments, recurring subscriptions, discount campaigns, refunds, and webhook automation.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">February 2026</div>
+      <div class="changelog-title">Premium Documentation Redesign</div>
+      <span class="changelog-tag improved">Improved</span>
+      <div class="changelog-desc">Complete UI overhaul with dark mode support, multi-language code examples (Shell, Python, Node, PHP), sidebar search, scroll animations, and a new design system inspired by the best API docs in the industry.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">January 2026</div>
+      <div class="changelog-title">Embedded Checkout</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Embed the Fanbasis checkout directly on your website using an iframe. No redirects needed — buyers stay on your domain for a seamless purchase experience.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">January 2026</div>
+      <div class="changelog-title">Discount Codes API</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Full CRUD API for discount codes. Create percentage or fixed-amount discounts, set usage limits and expiration dates, and track redemptions programmatically.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">January 2026</div>
+      <div class="changelog-title">Webhook Signature Validation</div>
+      <span class="changelog-tag improved">Improved</span>
+      <div class="changelog-desc">Enhanced webhook security with HMAC-SHA256 signature verification. Updated docs now include validation examples in Python, Node.js, and PHP.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">December 2025</div>
+      <div class="changelog-title">Disputes &amp; Chargebacks</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">New dispute lifecycle documentation covering chargeback notifications, evidence submission deadlines, and webhook events for real-time dispute tracking.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">December 2025</div>
+      <div class="changelog-title">Rate Limiting Update</div>
+      <span class="changelog-tag improved">Improved</span>
+      <div class="changelog-desc">Rate limits increased to 100 requests per minute across all endpoints. New <code class="inline">X-RateLimit-Remaining</code> and <code class="inline">X-RateLimit-Reset</code> headers included in every response.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
      DEVELOPER RESOURCES SECTIONS
      ═══════════════════════════════════════════════════════ -->
 
@@ -8170,76 +8798,80 @@ Content-Type: application/json
 </section>
 
 
-<!-- ═══════════════════════════════════════════════════════════
-     FEATURES SECTIONS
-     ═══════════════════════════════════════════════════════ -->
 
-<!-- SUBSCRIPTIONS FEATURE -->
-<section id="feature-subscriptions">
+<!-- ═══════════════════════════════════════════ -->
+<!-- API PLAYGROUND                             -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="api-playground">
   <div class="section-head">
-    <span class="section-num">FEATURES</span>
-    <h1>Subscriptions</h1>
+    <span class="section-num">TOOLS</span>
+    <h1>API Playground</h1>
   </div>
-  <p>Subscriptions are the backbone of recurring revenue for creators on Fanbasis. Fans pay a recurring fee — monthly or annually — to access exclusive content, communities, or perks you define.</p>
+  <p style="max-width:680px;">Test any FanBasis API endpoint directly from these docs. Enter your API key, pick an endpoint, fill in the parameters, and hit Send. No terminal, no Postman — just click and go.</p>
 
-  <div class="feature-grid" style="margin-top:20px;">
-    <div class="feature-card">
-      <div class="feature-card-title">🔄 Recurring Billing</div>
-      <div class="feature-card-desc">Automatic monthly or annual charges. No manual invoicing or collection required.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-card-title">🎯 Multiple Tiers</div>
-      <div class="feature-card-desc">Create Fan, Supporter, and VIP tiers — each with its own price and access level.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-card-title">🎁 Free Trials</div>
-      <div class="feature-card-desc">Offer 7- or 14-day free trials to lower sign-up friction for new fans.</div>
-    </div>
+  <!-- API Key Bar -->
+  <div class="pg-key-bar">
+    <label for="pgApiKey">🔑 API Key</label>
+    <input type="password" class="pg-key-input" id="pgApiKey" placeholder="Paste your API key…" autocomplete="off" spellcheck="false" />
+    <button class="pg-key-toggle" id="pgKeyToggle" title="Show / hide key">👁</button>
   </div>
 
-  <h3 class="subsection-title" id="feat-tiers">Managing Subscriptions via API</h3>
-  <p>Each subscription is created through a checkout session with <code class="inline">type: "subscription"</code>. You control the price, billing interval, free trial period, and auto-expiration — all at the API level when creating the session.</p>
+  <!-- Environment Toggle -->
+  <div class="pg-env-bar">
+    <label>Environment</label>
+    <span class="pg-env-pill sandbox active" data-env="sandbox" id="pgEnvSandbox">
+      <span class="pg-env-dot"></span> Sandbox
+    </span>
+    <span class="pg-env-pill production" data-env="production" id="pgEnvProd">
+      <span class="pg-env-dot"></span> Production
+    </span>
+    <span class="pg-prod-warn" id="pgProdWarn">⚠ You're pointing at live data</span>
+  </div>
 
-  <table class="param-table" style="margin-top:14px;">
-    <thead>
-      <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
-    </thead>
-    <tbody>
-      <tr><td><span class="param-name">type</span></td><td><span class="param-type">string</span></td><td>Set to <code class="inline">"subscription"</code> to create a recurring product.</td></tr>
-      <tr><td><span class="param-name">amount_cents</span></td><td><span class="param-type">integer</span></td><td>Recurring charge amount in cents (e.g. 2900 = $29.00).</td></tr>
-      <tr><td><span class="param-name">subscription.frequency_days</span></td><td><span class="param-type">integer</span></td><td>Billing interval in days. Use 30 for monthly, 365 for annual, or any custom interval.</td></tr>
-      <tr><td><span class="param-name">subscription.free_trial_days</span></td><td><span class="param-type">integer</span></td><td>Number of free trial days before the first charge. Omit or set to 0 for no trial.</td></tr>
-      <tr><td><span class="param-name">subscription.initial_fee</span></td><td><span class="param-type">integer</span></td><td>Optional one-time setup fee charged on the first payment (in cents).</td></tr>
-      <tr><td><span class="param-name">subscription.auto_expire_after_x_periods</span></td><td><span class="param-type">integer|null</span></td><td>Automatically complete the subscription after this many billing cycles. Set to <code class="inline">null</code> for indefinite.</td></tr>
-    </tbody>
-  </table>
+  <!-- Endpoint Picker -->
+  <h3 class="subsection-title" id="pg-pick-endpoint" style="margin-top:8px;">Choose an Endpoint</h3>
+  <input type="text" class="pg-picker-search" id="pgPickerSearch" placeholder="Search endpoints…" autocomplete="off" spellcheck="false" />
+  <div id="pgPickerList"></div>
 
-  <h3 class="subsection-title">Key Subscription Actions</h3>
-  <div class="feature-grid">
-    <div class="feature-card">
-      <div class="feature-card-title">List Subscribers</div>
-      <div class="feature-card-desc"><code class="inline">GET /subscribers</code> — View all active subscribers across products. Filter by <code class="inline">product_id</code> or <code class="inline">customer_id</code>.</div>
+  <!-- Request Builder -->
+  <div class="pg-builder" id="pgBuilder">
+    <div class="pg-builder-header">
+      <span class="method" id="pgBuilderMethod"></span>
+      <span class="pg-builder-url" id="pgBuilderUrl"></span>
     </div>
-    <div class="feature-card">
-      <div class="feature-card-title">Cancel a Subscription</div>
-      <div class="feature-card-desc"><code class="inline">DELETE /checkout-sessions/:id/subscriptions/:subId</code> — Cancel immediately. The fan keeps access until end of the current period.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-card-title">Extend a Subscription</div>
-      <div class="feature-card-desc"><code class="inline">POST /checkout-sessions/:id/extend-subscription</code> — Push the next billing date forward by a set number of days (e.g. for gifting extra time).</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-card-title">Refund a Subscription Payment</div>
-      <div class="feature-card-desc"><code class="inline">POST /checkout-sessions/transactions/:txnId/refund</code> — Issue a full or partial refund for any subscription charge.</div>
+    <div class="pg-builder-body">
+      <div id="pgPathFields"></div>
+      <div id="pgQueryFields"></div>
+      <div id="pgBodyWrap" style="display:none;">
+        <div class="pg-field-group">
+          <div class="pg-field-group-title">Request Body (JSON)</div>
+          <textarea class="pg-body-editor" id="pgBodyEditor" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="pg-actions">
+        <button class="pg-send-btn" id="pgSendBtn">Send Request</button>
+      </div>
     </div>
   </div>
 
-  <div class="callout concept">
-    <div class="callout-title">◆ Subscription lifecycle events</div>
-    <p>Listen to <code class="inline">subscription.created</code>, <code class="inline">subscription.renewed</code>, <code class="inline">subscription.canceled</code>, <code class="inline">subscription.completed</code>, and <code class="inline">subscription.payment_failed</code> webhooks to keep your database in sync with subscriber state. See the <a href="#webhook-events-reference" style="color:var(--accent);">Webhook Events Reference</a> for full payload schemas.</p>
+  <!-- Response Panel -->
+  <div class="pg-response" id="pgResponse">
+    <div class="pg-response-header">
+      <span class="pg-status" id="pgRespStatus"></span>
+      <span class="pg-resp-time" id="pgRespTime"></span>
+    </div>
+    <pre class="pg-resp-body" id="pgRespBody"></pre>
+    <div class="pg-resp-error" id="pgRespError" style="display:none;"></div>
+  </div>
+
+  <!-- History -->
+  <div class="pg-history" id="pgHistory">
+    <div class="pg-history-title">Recent Requests</div>
+    <div class="pg-history-list" id="pgHistoryList">
+      <div class="pg-history-empty">No requests yet — pick an endpoint above and hit Send.</div>
+    </div>
   </div>
 </section>
-
 
 <!-- ═══════════════════════════════════════════════════════════
      AI AGENT — Multi-Platform MCP Integration
@@ -8289,21 +8921,21 @@ Content-Type: application/json
     </button>
     <div class="fb-ai-menu" id="aiDropdownMenu">
       <div class="fb-ai-menu-label">Open in AI Assistant</div>
-      <a class="fb-ai-menu-item" href="https://chatgpt.com/?q=Read+from+https%3A%2F%2Fwww.fanbasis.com%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
+      <a class="fb-ai-menu-item" href="https://chatgpt.com/?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#10A37F"/><path d="M8 12h8M12 8v8" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
         Open in ChatGPT
       </a>
-      <a class="fb-ai-menu-item" href="https://claude.ai/new?q=Read+from+https%3A%2F%2Fwww.fanbasis.com%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
+      <a class="fb-ai-menu-item" href="https://claude.ai/new?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#CC785C" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Open in Claude
       </a>
-      <a class="fb-ai-menu-item" href="https://grok.com/?q=Read+from+https%3A%2F%2Fwww.fanbasis.com%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
+      <a class="fb-ai-menu-item" href="https://grok.com/?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="4" fill="#111"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="12" font-weight="bold" font-family="sans-serif">𝕏</text></svg>
         Open in Grok
       </a>
       <div class="fb-ai-menu-sep"></div>
       <div class="fb-ai-menu-label">API Docs for AI</div>
-      <a class="fb-ai-menu-item" href="https://www.fanbasis.com/api-docs.md" target="_blank" rel="noopener">
+      <a class="fb-ai-menu-item" href="https://raw.githubusercontent.com/otniel-bit/fbnewapi/main/api-docs.md" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         View as Markdown
       </a>
@@ -8385,7 +9017,7 @@ Content-Type: application/json
 
   <div class="ai-connect-grid">
     <!-- ChatGPT -->
-    <a class="ai-connect-card chatgpt" href="https://chatgpt.com/?q=Read+from+https%3A%2F%2Fwww.fanbasis.com%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
+    <a class="ai-connect-card chatgpt" href="https://chatgpt.com/?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
       <div class="ai-icon">
         <svg viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="12" r="10" fill="#10A37F"/><path d="M8 12h8M12 8v8" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
       </div>
@@ -8395,7 +9027,7 @@ Content-Type: application/json
     </a>
 
     <!-- Claude -->
-    <a class="ai-connect-card claude" href="https://claude.ai/new?q=Read+from+https%3A%2F%2Fwww.fanbasis.com%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
+    <a class="ai-connect-card claude" href="https://claude.ai/new?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
       <div class="ai-icon">
         <svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#CC785C" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
@@ -8405,7 +9037,7 @@ Content-Type: application/json
     </a>
 
     <!-- Grok -->
-    <a class="ai-connect-card grok" href="https://grok.com/?q=Read+from+https%3A%2F%2Fwww.fanbasis.com%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
+    <a class="ai-connect-card grok" href="https://grok.com/?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+Fanbasis+API.+I+am+a+seller+on+Fanbasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
       <div class="ai-icon">
         <svg viewBox="0 0 24 24" width="28" height="28"><rect width="24" height="24" rx="6" fill="#111"/><path d="M7 7l10 10M17 7L7 17" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
       </div>
@@ -8615,83 +9247,6 @@ Content-Type: application/json
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- API PLAYGROUND                             -->
-<!-- ═══════════════════════════════════════════ -->
-<section id="api-playground">
-  <div class="section-head">
-    <span class="section-num">TOOLS</span>
-    <h1>API Playground</h1>
-  </div>
-  <p style="max-width:680px;">Test any FanBasis API endpoint directly from these docs. Enter your API key, pick an endpoint, fill in the parameters, and hit Send. No terminal, no Postman — just click and go.</p>
-
-  <!-- API Key Bar -->
-  <div class="pg-key-bar">
-    <label for="pgApiKey">🔑 API Key</label>
-    <input type="password" class="pg-key-input" id="pgApiKey" placeholder="Paste your API key…" autocomplete="off" spellcheck="false" />
-    <button class="pg-key-toggle" id="pgKeyToggle" title="Show / hide key">👁</button>
-  </div>
-
-  <!-- Environment Toggle -->
-  <div class="pg-env-bar">
-    <label>Environment</label>
-    <span class="pg-env-pill sandbox active" data-env="sandbox" id="pgEnvSandbox">
-      <span class="pg-env-dot"></span> Sandbox
-    </span>
-    <span class="pg-env-pill production" data-env="production" id="pgEnvProd">
-      <span class="pg-env-dot"></span> Production
-    </span>
-    <span class="pg-prod-warn" id="pgProdWarn">⚠ You're pointing at live data</span>
-  </div>
-
-  <!-- Endpoint Picker -->
-  <h3 class="subsection-title" id="pg-pick-endpoint" style="margin-top:8px;">Choose an Endpoint</h3>
-  <input type="text" class="pg-picker-search" id="pgPickerSearch" placeholder="Search endpoints…" autocomplete="off" spellcheck="false" />
-  <div id="pgPickerList"></div>
-
-  <!-- Request Builder -->
-  <div class="pg-builder" id="pgBuilder">
-    <div class="pg-builder-header">
-      <span class="method" id="pgBuilderMethod"></span>
-      <span class="pg-builder-url" id="pgBuilderUrl"></span>
-    </div>
-    <div class="pg-builder-body">
-      <div id="pgPathFields"></div>
-      <div id="pgQueryFields"></div>
-      <div id="pgBodyWrap" style="display:none;">
-        <div class="pg-field-group">
-          <div class="pg-field-group-title">Request Body (JSON)</div>
-          <textarea class="pg-body-editor" id="pgBodyEditor" spellcheck="false"></textarea>
-        </div>
-      </div>
-      <div class="pg-actions">
-        <button class="pg-send-btn" id="pgSendBtn">Send Request</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Response Panel -->
-  <div class="pg-response" id="pgResponse">
-    <div class="pg-response-header">
-      <span class="pg-status" id="pgRespStatus"></span>
-      <span class="pg-resp-time" id="pgRespTime"></span>
-    </div>
-    <pre class="pg-resp-body" id="pgRespBody"></pre>
-    <div class="pg-resp-error" id="pgRespError" style="display:none;"></div>
-  </div>
-
-  <!-- History -->
-  <div class="pg-history" id="pgHistory">
-    <div class="pg-history-title">Recent Requests</div>
-    <div class="pg-history-list" id="pgHistoryList">
-      <div class="pg-history-empty">No requests yet — pick an endpoint above and hit Send.</div>
-    </div>
-  </div>
-
-  <div class="section-nav">
-    <a class="section-nav-btn prev" onclick="event.preventDefault();window._fbShowSection&&window._fbShowSection('feat-tiers')">← Managing Subscriptions</a>
-  </div>
-</section>
 
 </main>
 
@@ -8907,14 +9462,33 @@ function copyCode(btn) {
         link.classList.add('active');
       }
     });
-    // Propagate section-active-parent within titled sidebar groups only.
-    // Groups with a section-title (e.g. "Webhooks") may contain links to multiple
-    // content sections. When any section in the group is active, show all sub-links.
-    // Groups WITHOUT a title contain a single parent section — no propagation needed.
+    // Only show sub-links whose parent (first non-sub link in the same
+    // sidebar-section) matches the current active section.  This prevents
+    // sub-links in one group from expanding when a different group is active,
+    // even if they share anchorMap targets.
     document.querySelectorAll('.sidebar .sidebar-section').forEach(function(section) {
-      if (!section.querySelector('.sidebar-section-title')) return;
-      var hasActive = section.querySelector('a.section-active-parent');
-      if (hasActive) {
+      // For titled groups (e.g. "Webhooks"), propagate if any link is active
+      if (section.querySelector('.sidebar-section-title')) {
+        var hasActive = section.querySelector('a.section-active-parent');
+        if (hasActive) {
+          section.querySelectorAll('a.sub').forEach(function(sub) {
+            sub.classList.add('section-active-parent');
+          });
+        }
+        return;
+      }
+      // For untitled groups: only show subs if the parent link itself is active
+      var parentLink = section.querySelector('a:not(.sub)');
+      if (!parentLink) return;
+      var parentHref = (parentLink.getAttribute('href') || '').slice(1);
+      var parentIsActive = (parentHref === sectionId);
+      if (!parentIsActive) {
+        // Hide sub-links that may have been marked active via anchorMap
+        section.querySelectorAll('a.sub').forEach(function(sub) {
+          sub.classList.remove('section-active-parent');
+        });
+      } else {
+        // Parent is active — ensure all its subs are visible
         section.querySelectorAll('a.sub').forEach(function(sub) {
           sub.classList.add('section-active-parent');
         });
@@ -9321,10 +9895,11 @@ function copyCode(btn) {
   "error-reference": "errors-limits",
   "faq": "faq-support",
   "support": "faq-support",
+  "common-workflows": "faq-support",
+  "changelog": "developer-resources",
   "sdk-overview": "developer-resources",
-  "feature-subscriptions": "features",
-  "feat-tiers": "features",
   "api-playground": "tools",
+  "ai-agent": "tools",
 };
   var ALL_SECTIONS = [
   "introduction",
@@ -9346,10 +9921,11 @@ function copyCode(btn) {
   "error-reference",
   "faq",
   "support",
+  "common-workflows",
+  "changelog",
   "sdk-overview",
-  "feature-subscriptions",
-  "feat-tiers",
   "api-playground",
+  "ai-agent",
 ];
   var SECTION_LABELS = {
   "introduction": "Introduction",
@@ -9371,10 +9947,11 @@ function copyCode(btn) {
   "error-reference": "Error Reference",
   "faq": "FAQ",
   "support": "Help & Support",
+  "common-workflows": "Common Workflows",
+  "changelog": "Changelog",
   "sdk-overview": "SDK Overview",
-  "feature-subscriptions": "Subscriptions",
-  "feat-tiers": "Managing Subscriptions",
   "api-playground": "API Playground",
+  "ai-agent": "Connect an AI Agent",
 };
   var currentSection = 'introduction';
 
@@ -9386,7 +9963,6 @@ function copyCode(btn) {
     'errors-limits':   {'entry': 'rate-limits', 'label': 'Errors & Limits'},
     'faq-support':          {'entry': 'faq',                   'label': 'FAQ & Support'},
     'developer-resources':  {'entry': 'sdk-overview',          'label': 'Developer Resources'},
-    'features':             {'entry': 'feature-subscriptions', 'label': 'Features'},
     'tools':                {'entry': 'api-playground',        'label': 'Tools'}
   };
 
@@ -10608,6 +11184,32 @@ function copyCode(btn) {
           if (window.innerWidth <= 900) closeSidebar();
         });
       });
+
+      // Swipe-to-close gesture on sidebar and overlay
+      var touchStartX = 0;
+      var touchStartY = 0;
+      var swiping = false;
+
+      function handleTouchStart(e) {
+        if (window.innerWidth > 900) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        swiping = true;
+      }
+      function handleTouchEnd(e) {
+        if (!swiping || window.innerWidth > 900) return;
+        swiping = false;
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        var dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+        // Swipe left to close (at least 60px horizontal, more horizontal than vertical)
+        if (dx < -60 && dy < Math.abs(dx)) {
+          closeSidebar();
+        }
+      }
+      sidebar.addEventListener('touchstart', handleTouchStart, { passive: true });
+      sidebar.addEventListener('touchend', handleTouchEnd, { passive: true });
+      overlay.addEventListener('touchstart', handleTouchStart, { passive: true });
+      overlay.addEventListener('touchend', handleTouchEnd, { passive: true });
     }
 
     // ── 8. READING TIME ON SECTION HEADS ────────────────
@@ -11095,7 +11697,7 @@ function copyPageAsMarkdown(btn) {
 }
 
 function copyDocsUrl(btn) {
-  navigator.clipboard.writeText('https://www.fanbasis.com/api-docs.md').then(function() {
+  navigator.clipboard.writeText('https://raw.githubusercontent.com/otniel-bit/fbnewapi/main/api-docs.md').then(function() {
     var orig = btn.innerHTML;
     btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
     btn.style.background = '#DCFCE7';
@@ -11432,8 +12034,15 @@ function copyMCPConfig(btn) {
       if (action === 'menu') {
         var sidebar = document.getElementById('sidebar');
         var overlay = document.querySelector('.sidebar-overlay');
-        if (sidebar) sidebar.classList.toggle('mobile-open');
-        if (overlay) overlay.classList.toggle('open');
+        if (sidebar && sidebar.classList.contains('mobile-open')) {
+          sidebar.classList.remove('mobile-open');
+          if (overlay) overlay.classList.remove('open');
+          document.body.style.overflow = '';
+        } else {
+          if (sidebar) sidebar.classList.add('mobile-open');
+          if (overlay) overlay.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        }
       } else if (action === 'search') {
         if (typeof openCmdk === 'function') openCmdk();
       } else if (action === 'prev') {
@@ -11446,44 +12055,6 @@ function copyMCPConfig(btn) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
-  })();
-
-  // ── 6. FEEDBACK WIDGETS — inject into each section ────────
-  (function() {
-    function injectFeedback() {
-      document.querySelectorAll('.active-section .section-nav').forEach(function(nav) {
-        // Skip the cover/home section
-        var section = nav.closest('.active-section');
-        if (section && section.id === 'cover') return;
-        if (nav.previousElementSibling && nav.previousElementSibling.classList.contains('feedback-widget')) return;
-        var widget = document.createElement('div');
-        widget.className = 'feedback-widget';
-        widget.innerHTML =
-          '<span class="feedback-label">Was this page helpful?</span>' +
-          '<button class="feedback-btn fb-up" aria-label="Yes">👍</button>' +
-          '<button class="feedback-btn fb-down" aria-label="No">👎</button>' +
-          '<span class="feedback-thanks">Thanks for your feedback!</span>';
-        nav.parentNode.insertBefore(widget, nav);
-
-        widget.querySelectorAll('.feedback-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            widget.querySelectorAll('.feedback-btn').forEach(function(b) { b.classList.remove('selected'); });
-            btn.classList.add('selected');
-            widget.querySelector('.feedback-thanks').classList.add('show');
-          });
-        });
-      });
-    }
-
-    // Run after section change
-    var _orig = window._fbShowSection;
-    if (typeof _orig === 'function') {
-      window._fbShowSection = function() {
-        _orig.apply(this, arguments);
-        setTimeout(injectFeedback, 100);
-      };
-    }
-    setTimeout(injectFeedback, 200);
   })();
 
   // ── 7. DEEP LINK URL HASH SYNC ───────────────────────────
