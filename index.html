@@ -4358,6 +4358,19 @@
   }
 
   </style>
+<!-- Preload Google Translate so the combo is ready when user clicks -->
+<script>
+var _gtLoaded = false;
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'en',
+    autoDisplay: false,
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+  }, 'google_translate_element');
+  _gtLoaded = true;
+}
+</script>
+<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
 </head>
 <body>
 <div id="progress-bar"></div>
@@ -12758,18 +12771,6 @@ function copyMCPConfig(btn) {
      GOOGLE TRANSLATE INTEGRATION
      ═══════════════════════════════════════════════════════ -->
 <div id="google_translate_element" style="position:fixed;top:0;left:0;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);z-index:-1;"></div>
-<script>
-var _gtLoaded = false;
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement({
-    pageLanguage: 'en',
-    autoDisplay: false,
-    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-  }, 'google_translate_element');
-  _gtLoaded = true;
-}
-</script>
-<script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
 <script>
 (function() {
@@ -12794,53 +12795,34 @@ function googleTranslateElementInit() {
     { code: 'th', label: 'ไทย', flag: '🇹🇭' }
   ];
 
-  // Wait for the Google Translate select to appear, then trigger it
-  function triggerTranslate(langCode, retries) {
-    retries = retries || 0;
+  // Try the fast combo approach first, fall back to cookie+reload
+  function triggerTranslate(langCode) {
     var combo = document.querySelector('.goog-te-combo');
     if (combo) {
       combo.value = langCode;
       combo.dispatchEvent(new Event('change'));
-      // Verify translation started after a short delay
-      setTimeout(function() {
-        if (!document.querySelector('.translated-ltr') && !document.querySelector('.translated-rtl')) {
-          // Combo change didn't work — try cookie approach
-          setCookieAndReload(langCode);
-        }
-      }, 1500);
-      return;
+      return true;
     }
-    // Retry up to 30 times (3 seconds total) if combo not ready yet
-    if (retries < 30) {
-      setTimeout(function() { triggerTranslate(langCode, retries + 1); }, 100);
-    } else {
-      // Combo never appeared — fall back to cookie approach
-      setCookieAndReload(langCode);
-    }
-  }
-
-  function setCookieAndReload(langCode) {
-    var val = '/en/' + langCode;
-    document.cookie = 'googtrans=' + val + '; path=/;';
-    document.cookie = 'googtrans=' + val + '; path=/; domain=' + location.hostname + ';';
-    location.reload();
+    return false;
   }
 
   function setLanguage(langCode) {
     if (langCode === 'en') {
-      // Clear the googtrans cookie and reload to reset
+      // Reset to English: clear cookie, try combo, then reload
       document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + location.hostname + ';';
-      // Also try to use the combo directly
       var combo = document.querySelector('.goog-te-combo');
-      if (combo) {
-        combo.value = '';
-        combo.dispatchEvent(new Event('change'));
-      }
+      if (combo) { combo.value = ''; combo.dispatchEvent(new Event('change')); }
       location.reload();
       return;
     }
-    triggerTranslate(langCode);
+    // Fast path: if combo exists, use it directly (instant, no reload)
+    if (triggerTranslate(langCode)) return;
+    // Slow path: set cookie and reload (combo not ready yet)
+    var val = '/en/' + langCode;
+    document.cookie = 'googtrans=' + val + '; path=/;';
+    document.cookie = 'googtrans=' + val + '; path=/; domain=' + location.hostname + ';';
+    location.reload();
   }
 
   function buildDropdown(container) {
