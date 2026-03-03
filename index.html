@@ -4386,7 +4386,7 @@ function googleTranslateElementInit() {
     <span id="breadcrumbSep" class="breadcrumb-sep" style="display:none;color:var(--text-light);font-size:13px;margin:0 8px;">·</span>
     <span id="sectionCounter" style="font-size:11.5px;color:var(--text-muted);font-weight:500;background:var(--bg-alt);padding:2px 8px;border-radius:6px;border:1px solid var(--border);white-space:nowrap;"></span>
   </span>
-  <div class="translate-wrap" id="translateWrap" style="position:relative;margin-left:10px;">
+  <div class="translate-wrap notranslate" id="translateWrap" style="position:relative;margin-left:10px;" translate="no">
     <button class="theme-toggle" id="translateBtn" title="Translate page" aria-label="Translate page" style="font-size:15px;">🌐</button>
     <div class="translate-dropdown" id="translateDropdown"></div>
   </div>
@@ -12883,7 +12883,8 @@ function copyMCPConfig(btn) {
       }
       var dd = document.createElement('div');
       dd.id = 'mobileTranslateDropdown';
-      dd.className = 'translate-dropdown open';
+      dd.className = 'translate-dropdown open notranslate';
+      dd.setAttribute('translate', 'no');
       dd.style.position = 'fixed';
       dd.style.top = '110px';
       dd.style.left = '12px';
