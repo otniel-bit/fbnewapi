@@ -4661,33 +4661,6 @@
   <p style="margin-top:10px;">No manual work, no chasing payments — the entire lifecycle runs on webhooks.</p>
 </div>
 
-<p class="mt-16">Here's the minimum code to create your first checkout session:</p>
-<div class="code-block" data-endpoint-id="cs-create">
-  <div class="code-label request">EXAMPLE REQUEST</div>
-  <pre><code>curl -X POST https://www.fanbasis.com/public-api/checkout-sessions \
-  -H "x-api-key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "product": { "title": "Pro Monthly Membership" },
-    "amount_cents": 2900,
-    "type": "subscription",
-    "subscription": { "frequency_days": 30 },
-    "success_url": "https://yoursite.com/welcome"
-  }'</code></pre>
-</div>
-<div class="code-block" data-endpoint-id="cs-create">
-  <div class="code-label response">EXAMPLE RESPONSE</div>
-  <pre><code>{
-  "status": "success",
-  "message": "Created Product",
-  "data": {
-    "id": "NLxj6",
-    "checkout_session_id": 345424,
-    "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/NLxj6"
-  },
-  "request_id": "Root=1-xxxxxxxx-xxxxxxxxxxxxxxxxxxxx"
-}</code></pre>
-</div>
 
 <!-- ═══════════════════════════════════ ENVIRONMENTS ═══════════════════════════════════ -->
 </section>
