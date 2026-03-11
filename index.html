@@ -9241,41 +9241,60 @@ Content-Type: application/json
     <summary style="padding:14px 18px;font-weight:700;font-size:14px;cursor:pointer;background:var(--bg-alt);
       display:flex;align-items:center;gap:8px;user-select:none;">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#CC785C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Claude Desktop — MCP Setup
+      Claude Desktop — One-Click MCP Setup
     </summary>
     <div style="padding:16px 18px;border-top:1px solid var(--border-dark);">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Connect Claude Desktop to your live FanBasis account in seconds. Claude will be able to list products, search customers, view transactions, manage subscriptions, and more — all through natural language.</p>
       <div class="ai-step-row">
         <div class="ai-step-num">1</div>
         <div class="ai-step-content">
-          <strong>Copy the MCP Config</strong>
-          <p>Click below to copy, then paste into <strong>Claude Desktop → Settings → Developer → Edit Config</strong>:</p>
-          <div style="margin-top:8px;">
-            <button class="ai-copy-btn" onclick="copyMCPConfig(this)">📋 Copy Config to Clipboard</button>
-          </div>
-          <div class="code-block" style="margin-top:8px;">
-            <div class="code-label plain">claude_desktop_config.json</div>
-            <pre><code>{
-  <span class="token-key">"mcpServers"</span>: {
-    <span class="token-key">"webmcp"</span>: {
-      <span class="token-key">"command"</span>: <span class="token-str">"npx"</span>,
-      <span class="token-key">"args"</span>: [<span class="token-str">"-y"</span>, <span class="token-str">"@jason.today/webmcp@latest"</span>, <span class="token-str">"--mcp"</span>]
-    }
-  }
-}</code></pre>
+          <strong>Enter your API key</strong>
+          <p>Your key is only used locally to build the connection URL. It is <strong>never stored or sent to any third party</strong>.</p>
+          <div style="display:flex;gap:10px;align-items:center;margin:10px 0;">
+            <input type="password" id="claude-mcp-key" placeholder="Paste your FanBasis API key..."
+              style="flex:1;padding:11px 16px;border-radius:var(--radius);border:1px solid var(--border-dark);
+              background:var(--bg-alt);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;
+              outline:none;transition:var(--transition);"
+              onfocus="this.style.borderColor='rgba(var(--accent-rgb),0.5)';this.style.boxShadow='var(--shadow-glow)'"
+              onblur="this.style.borderColor='var(--border-dark)';this.style.boxShadow='none'">
           </div>
         </div>
       </div>
       <div class="ai-step-row">
         <div class="ai-step-num">2</div>
         <div class="ai-step-content">
-          <strong>Restart Claude Desktop</strong>, then type: <em>"Make me a webmcp token"</em>
+          <strong>Copy your MCP config</strong>
+          <p>Click below to generate and copy your personalized config with your API key baked in.</p>
+          <div style="margin-top:10px;">
+            <button onclick="connectClaudeMCP()"
+              style="padding:12px 28px;border-radius:var(--radius);border:none;
+              background:linear-gradient(135deg,#CC785C,#D4A574);color:white;
+              font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;
+              box-shadow:0 2px 8px rgba(204,120,92,0.35);transition:var(--transition);"
+              onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(204,120,92,0.45)'"
+              onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 8px rgba(204,120,92,0.35)'">
+              Copy Config to Clipboard
+            </button>
+          </div>
+          <div id="claude-mcp-status" style="font-size:13px;color:var(--text-muted);margin-top:8px;"></div>
         </div>
       </div>
       <div class="ai-step-row">
         <div class="ai-step-num">3</div>
         <div class="ai-step-content">
-          <strong>Paste the token</strong> into the purple <span style="display:inline-block;width:14px;height:14px;background:#FD3363;border-radius:3px;vertical-align:middle;"></span> widget (bottom-right corner after activating above). Done!
+          <strong>Paste into Claude Desktop</strong>
+          <p>Open <strong>Claude Desktop → Settings → Developer → Edit Config</strong>, paste the config, save the file, then restart Claude Desktop.</p>
         </div>
+      </div>
+      <div class="ai-step-row">
+        <div class="ai-step-num">4</div>
+        <div class="ai-step-content">
+          <strong>Start asking questions!</strong> Try <em>"Show me all my products"</em> or <em>"List my recent transactions"</em>.
+        </div>
+      </div>
+      <div class="callout info" style="margin-top:12px;">
+        <div class="callout-title">Requires Claude Desktop</div>
+        <p>Make sure you have <a href="https://claude.ai/download" target="_blank" rel="noopener" style="color:var(--accent);">Claude Desktop</a> installed. Need help? Check the <a href="#getting-started" style="color:var(--accent);">Getting Started</a> section for API key instructions.</p>
       </div>
     </div>
   </details>
@@ -11959,6 +11978,45 @@ function copyMCPConfig(btn) {
     }
   }, null, 2);
   copyToClip(btn, config);
+}
+
+function connectClaudeMCP() {
+  var keyInput = document.getElementById('claude-mcp-key');
+  var status = document.getElementById('claude-mcp-status');
+  var apiKey = keyInput ? keyInput.value.trim() : '';
+
+  if (!apiKey) {
+    status.innerHTML = '<span style="color:var(--delete);">Please enter your API key first.</span>';
+    keyInput.focus();
+    return;
+  }
+
+  var serverUrl = 'https://hearty-flow-production.up.railway.app/mcp';
+  var config = {
+    mcpServers: {
+      fanbasis: {
+        command: 'npx',
+        args: [
+          'mcp-remote',
+          serverUrl,
+          '--header',
+          'x-api-key:' + apiKey
+        ]
+      }
+    }
+  };
+
+  var configStr = JSON.stringify(config, null, 2);
+
+  navigator.clipboard.writeText(configStr).then(function() {
+    status.innerHTML = '<span style="color:var(--post);">Config copied to clipboard!</span> Now open <strong>Claude Desktop → Settings → Developer → Edit Config</strong>, paste it in, save, and restart Claude Desktop.';
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = configStr; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    status.innerHTML = '<span style="color:var(--post);">Config copied to clipboard!</span> Now open <strong>Claude Desktop → Settings → Developer → Edit Config</strong>, paste it in, save, and restart Claude Desktop.';
+  });
 }
 </script>
 
