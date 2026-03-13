@@ -4371,6 +4371,7 @@ function googleTranslateElementInit() {
 }
 </script>
 <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 <div id="progress-bar"></div>
@@ -9263,17 +9264,17 @@ Content-Type: application/json
       <div class="ai-step-row">
         <div class="ai-step-num">2</div>
         <div class="ai-step-content">
-          <strong>Copy your MCP config</strong>
-          <p>Click below to generate and copy your personalized config with your API key baked in.</p>
+          <strong>Download your personalized extension</strong>
+          <p>Click below to generate and download a <code class="inline">.mcpb</code> extension file with your API key built in.</p>
           <div style="margin-top:10px;">
-            <button onclick="connectClaudeMCP()"
+            <button onclick="downloadClaudeExtension()"
               style="padding:12px 28px;border-radius:var(--radius);border:none;
               background:linear-gradient(135deg,#CC785C,#D4A574);color:white;
               font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;
               box-shadow:0 2px 8px rgba(204,120,92,0.35);transition:var(--transition);"
               onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(204,120,92,0.45)'"
               onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 8px rgba(204,120,92,0.35)'">
-              Copy Config to Clipboard
+              Download Extension (.mcpb)
             </button>
           </div>
           <div id="claude-mcp-status" style="font-size:13px;color:var(--text-muted);margin-top:8px;"></div>
@@ -9282,8 +9283,8 @@ Content-Type: application/json
       <div class="ai-step-row">
         <div class="ai-step-num">3</div>
         <div class="ai-step-content">
-          <strong>Paste into Claude Desktop</strong>
-          <p>Open <strong>Claude Desktop → Settings → Developer → Edit Config</strong>, paste the config, save the file, then restart Claude Desktop.</p>
+          <strong>Double-click the downloaded file</strong>
+          <p>Claude Desktop will open and show an install prompt. Click <strong>Install</strong> and you're done!</p>
         </div>
       </div>
       <div class="ai-step-row">
@@ -9294,8 +9295,22 @@ Content-Type: application/json
       </div>
       <div class="callout info" style="margin-top:12px;">
         <div class="callout-title">Requires Claude Desktop</div>
-        <p>Make sure you have <a href="https://claude.ai/download" target="_blank" rel="noopener" style="color:var(--accent);">Claude Desktop</a> installed. Need help? Check the <a href="#getting-started" style="color:var(--accent);">Getting Started</a> section for API key instructions.</p>
+        <p>Make sure you have <a href="https://claude.ai/download" target="_blank" rel="noopener" style="color:var(--accent);">Claude Desktop</a> installed before opening the extension file. <a href="https://claude.ai/download" target="_blank" style="color:var(--accent);">Download Claude Desktop here</a>.</p>
       </div>
+      <details style="margin-top:12px;border:1px solid var(--border-dark);border-radius:var(--radius);overflow:hidden;">
+        <summary style="padding:10px 14px;font-size:13px;cursor:pointer;background:var(--bg-alt);color:var(--text-muted);user-select:none;">
+          Alternative: Manual config setup
+        </summary>
+        <div style="padding:12px 14px;border-top:1px solid var(--border-dark);font-size:13px;">
+          <p>If the extension file doesn't work, you can configure manually:</p>
+          <ol style="margin:8px 0;padding-left:20px;line-height:1.8;">
+            <li>Click <button onclick="copyClaudeMCPConfig()" class="ai-copy-btn" style="font-size:12px;padding:4px 10px;">Copy Config</button> to copy your MCP config</li>
+            <li>Open <strong>Claude Desktop → Settings → Developer → Edit Config</strong></li>
+            <li>Paste the config, save, and restart Claude Desktop</li>
+          </ol>
+          <div id="claude-manual-status" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
+        </div>
+      </details>
     </div>
   </details>
 
@@ -11980,7 +11995,23 @@ function copyMCPConfig(btn) {
   copyToClip(btn, config);
 }
 
-function connectClaudeMCP() {
+function getMCPConfig(apiKey) {
+  return {
+    mcpServers: {
+      fanbasis: {
+        command: 'npx',
+        args: [
+          'mcp-remote',
+          'https://hearty-flow-production.up.railway.app/mcp',
+          '--header',
+          'x-api-key:' + apiKey
+        ]
+      }
+    }
+  };
+}
+
+async function downloadClaudeExtension() {
   var keyInput = document.getElementById('claude-mcp-key');
   var status = document.getElementById('claude-mcp-status');
   var apiKey = keyInput ? keyInput.value.trim() : '';
@@ -11991,31 +12022,82 @@ function connectClaudeMCP() {
     return;
   }
 
-  var serverUrl = 'https://hearty-flow-production.up.railway.app/mcp';
-  var config = {
-    mcpServers: {
-      fanbasis: {
-        command: 'npx',
-        args: [
-          'mcp-remote',
-          serverUrl,
-          '--header',
-          'x-api-key:' + apiKey
-        ]
-      }
-    }
-  };
+  if (typeof JSZip === 'undefined') {
+    status.innerHTML = '<span style="color:var(--delete);">Extension builder failed to load. Please try the manual setup below.</span>';
+    return;
+  }
 
-  var configStr = JSON.stringify(config, null, 2);
+  status.innerHTML = '<span style="color:var(--text-muted);">Generating extension...</span>';
+
+  try {
+    var manifest = {
+      manifest_version: "0.3",
+      name: "fanbasis-mcp",
+      description: "Connect Claude to your FanBasis account — manage products, customers, transactions, subscriptions, and more.",
+      version: "1.0.0",
+      author: {
+        name: "FanBasis",
+        url: "https://www.fanbasis.com"
+      },
+      server: {
+        type: "node",
+        entry_point: "server/index.js",
+        mcp_config: {
+          command: "npx",
+          args: [
+            "-y",
+            "mcp-remote",
+            "https://hearty-flow-production.up.railway.app/mcp",
+            "--header",
+            "x-api-key:" + apiKey
+          ]
+        }
+      }
+    };
+
+    var serverJs = '// FanBasis MCP Extension\n// This extension connects to the FanBasis remote MCP server.\n// The actual server runs at hearty-flow-production.up.railway.app\nconsole.log("FanBasis MCP extension loaded");\n';
+
+    var zip = new JSZip();
+    zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+    zip.file('server/index.js', serverJs);
+
+    var blob = await zip.generateAsync({ type: 'blob' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'fanbasis-mcp.mcpb';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    status.innerHTML = '<span style="color:var(--post);">Extension downloaded!</span> Double-click <strong>fanbasis-mcp.mcpb</strong> to install it in Claude Desktop.';
+  } catch (err) {
+    status.innerHTML = '<span style="color:var(--delete);">Failed to generate extension: ' + err.message + '. Try the manual setup below.</span>';
+  }
+}
+
+function copyClaudeMCPConfig() {
+  var keyInput = document.getElementById('claude-mcp-key');
+  var status = document.getElementById('claude-manual-status');
+  var apiKey = keyInput ? keyInput.value.trim() : '';
+
+  if (!apiKey) {
+    status.innerHTML = '<span style="color:var(--delete);">Please enter your API key in Step 1 first.</span>';
+    keyInput.focus();
+    return;
+  }
+
+  var configStr = JSON.stringify(getMCPConfig(apiKey), null, 2);
 
   navigator.clipboard.writeText(configStr).then(function() {
-    status.innerHTML = '<span style="color:var(--post);">Config copied to clipboard!</span> Now open <strong>Claude Desktop → Settings → Developer → Edit Config</strong>, paste it in, save, and restart Claude Desktop.';
+    status.innerHTML = '<span style="color:var(--post);">Config copied!</span> Paste it into Claude Desktop settings.';
   }).catch(function() {
     var ta = document.createElement('textarea');
     ta.value = configStr; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select(); document.execCommand('copy');
     document.body.removeChild(ta);
-    status.innerHTML = '<span style="color:var(--post);">Config copied to clipboard!</span> Now open <strong>Claude Desktop → Settings → Developer → Edit Config</strong>, paste it in, save, and restart Claude Desktop.';
+    status.innerHTML = '<span style="color:var(--post);">Config copied!</span> Paste it into Claude Desktop settings.';
   });
 }
 </script>
