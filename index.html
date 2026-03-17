@@ -12540,7 +12540,7 @@ function copyClaudeMCPConfig() {
     // Webhooks
     {id:'wh-list',   cat:'Webhooks', m:'GET',    path:'/public-api/webhook-subscriptions', title:'List Webhooks', desc:'Get all webhook subscriptions'},
     {id:'wh-create', cat:'Webhooks', m:'POST',   path:'/public-api/webhook-subscriptions', title:'Create Webhook', desc:'Subscribe to webhook events',
-      body:'{\n  "url": "https://example.com/webhook",\n  "events": ["checkout.completed", "subscription.created"]\n}'},
+      body:'{\n  "webhook_url": "string",\n  "event_types": [\n    "payment.succeeded"\n  ]\n}'},
     {id:'wh-delete', cat:'Webhooks', m:'DELETE', path:'/public-api/webhook-subscriptions/:webhookSubscriptionId', title:'Delete Webhook', desc:'Remove a webhook subscription',
       pp:['webhookSubscriptionId']},
     {id:'wh-test',   cat:'Webhooks', m:'POST',   path:'/public-api/webhook-subscriptions/:webhookSubscriptionId/test', title:'Test Webhook', desc:'Send a test event to your endpoint',
