@@ -34,3 +34,6 @@ Contributing
 Found a typo or want to improve the docs? PRs are welcome. Please open an issue first for any major changes.
 License
 Copyright © 2026 FanBasis. All rights reserved.
+
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/53471a2c-7839-462f-bd81-09100bbae313/deploy-status)](https://app.netlify.com/projects/fbnewapi/deploys)
