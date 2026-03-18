@@ -9159,48 +9159,8 @@ Content-Type: application/json
     .ai-step-content p{margin:4px 0 0;font-size:13.5px;color:var(--text-muted);line-height:1.55;}
   </style>
 
-  <h3 id="ai-agent-setup" class="subsection-title">Connect With One Click</h3>
-  <p>Choose your AI assistant. Clicking a button below opens it with the FanBasis API docs pre-loaded — ready to answer your questions.</p>
-
-  <div class="ai-connect-grid">
-    <!-- ChatGPT -->
-    <a class="ai-connect-card chatgpt" href="https://chatgpt.com/?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+FanBasis+API.+I+am+a+seller+on+FanBasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
-      <div class="ai-icon">
-        <svg viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="12" r="10" fill="#10A37F"/><path d="M8 12h8M12 8v8" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      <div class="ai-name">ChatGPT <span class="ai-badge ai-badge-live">Live</span></div>
-      <div class="ai-desc">Opens ChatGPT with FanBasis docs pre-loaded</div>
-      <div class="ai-action">Open in ChatGPT →</div>
-    </a>
-
-    <!-- Claude -->
-    <a class="ai-connect-card claude" href="https://claude.ai/new?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+FanBasis+API.+I+am+a+seller+on+FanBasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
-      <div class="ai-icon">
-        <svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#CC785C" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div class="ai-name">Claude <span class="ai-badge ai-badge-live">Live</span></div>
-      <div class="ai-desc">Opens Claude with FanBasis docs pre-loaded</div>
-      <div class="ai-action">Open in Claude →</div>
-    </a>
-
-    <!-- Grok -->
-    <a class="ai-connect-card grok" href="https://grok.com/?q=Read+from+https%3A%2F%2Fraw.githubusercontent.com%2Fotniel-bit%2Ffbnewapi%2Fmain%2Fapi-docs.md+so+I+can+ask+questions+about+the+FanBasis+API.+I+am+a+seller+on+FanBasis+and+want+help+understanding+my+products%2C+transactions%2C+customers%2C+subscribers%2C+and+discount+codes." target="_blank" rel="noopener">
-      <div class="ai-icon">
-        <svg viewBox="0 0 24 24" width="28" height="28"><rect width="24" height="24" rx="6" fill="#111"/><path d="M7 7l10 10M17 7L7 17" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
-      </div>
-      <div class="ai-name">Grok <span class="ai-badge ai-badge-live">Live</span></div>
-      <div class="ai-desc">Opens Grok with FanBasis docs pre-loaded</div>
-      <div class="ai-action">Open Grok →</div>
-    </a>
-  </div>
-
-  <div class="callout info" style="margin-top:12px;">
-    <div class="callout-title">ℹ How this works</div>
-    <p>Clicking a button above opens your chosen AI with a pre-filled prompt that tells it to read the FanBasis API documentation. The AI will then be ready to answer your questions about your products, transactions, customers, and more. <strong>No setup, no config files, no tokens</strong> — just click and ask.</p>
-  </div>
-
-  <!-- ── ADVANCED: MCP SERVER FOR POWER USERS ─────────────────── -->
-  <h3 class="subsection-title">Advanced: Connect via MCP (Power Users)</h3>
+  <!-- ── MCP SERVER SETUP ─────────────────── -->
+  <h3 class="subsection-title">FanBasis MCP Connector</h3>
   <p>For deeper integration, you can connect your AI directly to your FanBasis data using the <strong>Model Context Protocol (MCP)</strong>. This gives the AI real-time access to your account through 11 read-only tools.</p>
 
   <div class="callout concept" style="margin-top:12px;">
@@ -9208,29 +9168,6 @@ Content-Type: application/json
     <p><strong>One-click buttons above</strong> → AI reads the docs and answers general questions (no account data).<br>
     <strong>MCP connection below</strong> → AI connects to your live account and can query your actual products, transactions, and customers.</p>
   </div>
-
-  <!-- API Key Input -->
-  <h4 style="font-size:13.5px;font-weight:700;margin:18px 0 6px;color:var(--text);">Enter Your API Key</h4>
-  <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Your key stays in this browser tab and is <strong>never stored or sent anywhere except the FanBasis API</strong>.</p>
-
-  <div id="mcp-key-form" style="display:flex;gap:10px;align-items:center;margin:10px 0;">
-    <input type="password" id="mcp-api-key-input" placeholder="Paste your API key here..."
-      style="flex:1;padding:11px 16px;border-radius:var(--radius);border:1px solid var(--border-dark);
-      background:var(--bg-alt);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;
-      outline:none;transition:var(--transition);"
-      onfocus="this.style.borderColor='rgba(var(--accent-rgb),0.5)';this.style.boxShadow='var(--shadow-glow)'"
-      onblur="this.style.borderColor='var(--border-dark)';this.style.boxShadow='none'">
-    <button id="mcp-activate-btn" onclick="activateFanBasisMCP()"
-      style="padding:11px 24px;border-radius:var(--radius);border:none;
-      background:linear-gradient(135deg,#FD3363,#FF517A);color:white;
-      font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap;
-      box-shadow:0 2px 8px rgba(253,51,99,0.35);transition:var(--transition);"
-      onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(253,51,99,0.45)'"
-      onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 8px rgba(253,51,99,0.35)'">
-      Activate MCP Agent
-    </button>
-  </div>
-  <div id="mcp-status" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;"></div>
 
   <div class="callout info" style="margin-bottom:16px;">
     <div class="callout-title">ℹ Where to find your API key</div>
