@@ -115,16 +115,6 @@ Documentation for connecting AI assistants (Claude, ChatGPT, Grok) to the FanBas
 
 ---
 
-## Tech Stack
-
-- **Single HTML file** — The entire documentation site is a self-contained `index.html` (~614 KB)
-- **No build step** — Zero dependencies, no bundler, no framework. Just HTML + embedded CSS + embedded JS.
-- **Hosting** — [Netlify](https://www.netlify.com) with automatic deploys from GitHub
-- **Fonts** — [Inter](https://fonts.google.com/specimen/Inter) (UI) + [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) (code)
-- **Translation** — Google Translate widget integration
-
----
-
 ## Project Structure
 
 ```
