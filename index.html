@@ -10144,11 +10144,18 @@ function copyCode(btn) {
     // We watch for section changes via MutationObserver on .main as fallback
     var mainEl = document.querySelector('.main');
     if (mainEl) {
+      var _sectionChangeTimer = null;
       var sectionObserver = new MutationObserver(function() {
-        var active = mainEl.querySelector('.active-section');
-        if (active && active.id && active.id !== currentSection) {
-          afterSectionChange(active.id);
-        }
+        // Debounce to avoid cascading: rebuildTOC changes DOM classes which
+        // re-triggers this observer, creating a feedback loop
+        if (_sectionChangeTimer) return;
+        _sectionChangeTimer = setTimeout(function() {
+          _sectionChangeTimer = null;
+          var active = mainEl.querySelector('.active-section');
+          if (active && active.id && active.id !== currentSection) {
+            afterSectionChange(active.id);
+          }
+        }, 50);
       });
       sectionObserver.observe(mainEl, { attributes: true, subtree: true, attributeFilter: ['class'] });
     }
@@ -12164,11 +12171,20 @@ function copyClaudeMCPConfig() {
   }
 
   // Also hook into MutationObserver for dynamically added code blocks
+  // Scoped to .main only (not document.body) to avoid observer feedback loops
+  // that cause progressive slowdowns. Debounced to prevent rapid re-firing.
+  var _lineNumTimer = null;
   var mo = new MutationObserver(function(mutations) {
     var hasNew = mutations.some(function(m) { return m.addedNodes.length > 0; });
-    if (hasNew) setTimeout(addLineNumbers, 50);
+    if (hasNew) {
+      if (_lineNumTimer) clearTimeout(_lineNumTimer);
+      _lineNumTimer = setTimeout(addLineNumbers, 100);
+    }
   });
-  mo.observe(document.body, { childList: true, subtree: true });
+  var mainContent = document.querySelector('.main');
+  if (mainContent) {
+    mo.observe(mainContent, { childList: true, subtree: true });
+  }
 
 })();
 </script>
