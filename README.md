@@ -150,8 +150,8 @@ The site auto-deploys to Netlify on every push to `main`. No build command or co
 
 | Environment | Base URL |
 |------------|----------|
-| **Production** | `https://www.fanbasis.com/public-api` |
-| **Sandbox** | `https://qa.dev-fan-basis.com/public-api` |
+| **Production** | `https://www.fanbasis.com` |
+| **Sandbox** | `https://qa.dev-fan-basis.com` |
 
 ### Authentication
 
