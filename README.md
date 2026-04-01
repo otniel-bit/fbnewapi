@@ -115,17 +115,6 @@ Documentation for connecting AI assistants (Claude, ChatGPT, Grok) to the FanBas
 
 ---
 
-## Project Structure
-
-```
-fbnewapi/
-├── index.html      # Complete documentation site (HTML + CSS + JS)
-├── api-docs.md     # Markdown source reference for API documentation
-└── README.md       # This file
-```
-
----
-
 ## Local Development
 
 No install required. Just open the file in a browser:
