@@ -4553,8 +4553,32 @@ function googleTranslateElementInit() {
   </div>
   <!-- ── DEVELOPER RESOURCES ── -->
   <div class="sidebar-section">
-    <div class="sidebar-section-title">Developer Resources</div>
+    <div class="sidebar-section-title">SDK · Getting Started</div>
     <a href="#sdk-overview">SDK Overview</a>
+    <a href="#sdk-how-it-works">How it works</a>
+    <a href="#sdk-quick-start-js">Quick Start — Hosted JS</a>
+    <a href="#sdk-quick-start-react">Quick Start — React</a>
+    <a href="#sdk-session-secret">Session Secret</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">SDK · Configuration</div>
+    <a href="#sdk-config">Configuration Reference</a>
+    <a href="#sdk-theme">Theme & Styling</a>
+    <a href="#sdk-redirects">Redirect Settings</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">SDK · Behavior & Integration</div>
+    <a href="#sdk-events">Events Reference</a>
+    <a href="#sdk-addons">Addons & Order Bumps</a>
+    <a href="#sdk-programmatic">Programmatic Submission</a>
+    <a href="#sdk-platforms">Platform Guides</a>
+    <a href="#sdk-examples">Examples</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">SDK · Reference</div>
+    <a href="#sdk-types">Types & Interfaces</a>
+    <a href="#sdk-troubleshooting">Troubleshooting</a>
+    <a href="#sdk-migration">Migration Guide</a>
   </div>
   <!-- ── TOOLS ── -->
   <div class="sidebar-section">
@@ -8931,17 +8955,1182 @@ Content-Type: application/json
      DEVELOPER RESOURCES SECTIONS
      ═══════════════════════════════════════════════════════ -->
 
-<!-- SDK OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════════════
+     SDK DOCUMENTATION (merged from standalone SDK doc)
+     ═══════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════ -->
+<!-- SDK OVERVIEW
+     ═══════════════════════════════════════════ -->
 <section id="sdk-overview">
   <div class="section-head">
     <span class="section-num">DEVELOPER RESOURCES</span>
     <h1>SDK Overview</h1>
   </div>
+<p>Drop a secure, hosted payment form into any website or app. Full theming, event hooks, and a clean React SDK.</p>
+<div class="callout info"><div class="callout-title">ℹ Two ways to integrate</div>
+<ul style="margin:0;padding-left:20px;">
+<li><strong>Hosted JavaScript</strong> — One &lt;script&gt; tag. Works on GHL, WordPress, Squarespace, Wix, Webflow, plain HTML. — <code class="inline">&lt;script src="cdn.embedded.fanbasis.io/embed/index.js"&gt;</code></li>
+<li><strong>React & Next.js</strong> — Native components, hooks, and TypeScript types. Built on the same core engine. — <code class="inline">npm install @fanbasis/checkout-react</code></li>
+</ul></div>
+<p>Use the sidebar to navigate the full SDK documentation, including configuration options, event hooks, programmatic submission, platform-specific guides, and troubleshooting.</p>
+</section>
 
-  <div class="callout info" style="margin-top:12px;">
-    <div class="callout-title">ℹ SDK Info Coming Soon</div>
-    <p>Full SDK documentation is currently being prepared. Check back soon for complete integration guides, code examples, and language-specific references.</p>
+<!-- ═══════════════════════════════════════════ -->
+<!-- HOW IT WORKS
+     ═══════════════════════════════════════════ -->
+<section id="sdk-how-it-works">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>How it works</h1>
   </div>
+<p>The FanBasis Embedded Checkout SDK renders a secure payment form inside an iframe hosted at <code class="inline">embedded.fanbasis.io</code>. The parent page communicates with it via <code class="inline">postMessage</code>. Customers complete payment inside the iframe; the parent page handles redirect or success state via events.</p>
+<h3 class="sub-title">Integration flow</h3>
+<ol><li><strong>Set up products</strong> — Configure products in the FanBasis dashboard or via the REST API.</li><li><strong>Create a checkout session secret</strong> — Server-side API call that authenticates your checkout instance.</li><li><strong>Initialize the SDK</strong> — Load the SDK via CDN script or npm package, pass in your config.</li><li><strong>Listen for events</strong> — Handle checkout:success, checkout:error, and other lifecycle events.</li><li><strong>Verify the transaction</strong> — (Recommended) Confirm payment server-side using the transactionId from the success event.</li></ol>
+<h3 class="sub-title">Two SDK options</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>SDK</th><th>Best for</th><th>Install</th></tr></thead>
+<tbody>
+<tr><td><strong>Hosted JavaScript</strong> (CDN)</td><td>Page builders (GHL, WordPress, Squarespace, Wix, Webflow), static sites, custom HTML</td><td><code class="inline">&lt;script&gt;</code> tag — no build step</td></tr>
+<tr><td><strong>React SDK</strong></td><td>React and Next.js applications</td><td><code class="inline">npm install @fanbasis/checkout-react</code></td></tr>
+</tbody>
+</table>
+<p>Both SDKs share the same configuration shape and event system. The hosted JS SDK is by far the most common for sellers using page builders.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- QUICK START — HOSTED JS
+     ═══════════════════════════════════════════ -->
+<section id="sdk-quick-start-js">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Quick Start — Hosted JS</h1>
+  </div>
+<p>The fastest path. Include a script tag and start accepting payments in minutes.</p>
+<h3 class="sub-title">1. Include the script</h3>
+<div class="code-block"><div class="code-label plain">html</div><pre><code>&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;</code></pre></div>
+<p>This exposes the global <code class="inline">PaymentCheckout</code> object.</p>
+<h3 class="sub-title">2. Initialize checkout</h3>
+<p>There are three initialization methods. All produce the same result.</p>
+<h4>Method A · JavaScript config · Recommended</h4>
+<p>Most flexible. Works everywhere — page builders, custom HTML, any website.</p>
+<div class="code-block"><div class="code-label plain">html</div><pre><code>&lt;div id="checkout-container"&gt;&lt;/div&gt;
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+document.addEventListener('DOMContentLoaded', async function () {
+  var element = document.getElementById('checkout-container');
+
+  var config = {
+    creatorId: 'your-creator-slug',
+    productId: 'YOUR_PRODUCT_ID',
+    checkoutSessionSecret: 'your-session-secret-uuid',
+    environment: 'production',
+    redirectSettings: {
+      success_redirect_url: 'https://yoursite.com/thank-you',
+      always_redirect: true
+    },
+    theme: {
+      theme: 'light',
+      accent_color: '#007BFF',
+      show_product_info: true,
+      product_layout: 'left',
+      show_coupon_row: true
+    }
+  };
+
+  var checkout = await PaymentCheckout.create(config);
+  checkout.attachToElement(element);
+
+  // Register events BEFORE calling init()
+  checkout.on('checkout:success', function(data) {
+    window.location.href = 'https://yoursite.com/thank-you';
+  });
+
+  checkout.on('checkout:error', function(error) {
+    console.error('Payment error:', error.message);
+  });
+
+  checkout.on('form:submission_error', function(data) {
+    console.error('Submission error:', data.data.errorMessage);
+  });
+
+  checkout.init();
+});
+&lt;/script&gt;</code></pre></div>
+<h4>Method B · Data attributes</h4>
+<p>Good for simple, declarative embeds. The SDK auto-discovers elements with <code class="inline">data-creator-id</code>.</p>
+<div class="code-block"><div class="code-label plain">html</div><pre><code>&lt;div
+  id="fanbasis-checkout"
+  data-creator-id="your-creator-slug"
+  data-product-id="YOUR_PRODUCT_ID"
+  data-checkout-session-secret="your-session-secret-uuid"
+  data-environment="production"
+  data-theme="light"
+  data-accent-color="#007BFF"
+  data-show-product-info="true"
+  data-product-layout="left"
+  data-show-coupon-row="true"
+  data-success-redirect-url="https://yoursite.com/thank-you"
+  data-always-redirect="true"
+&gt;&lt;/div&gt;
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;</code></pre></div>
+<h4>Method C · Fluent builder</h4>
+<p>Chainable API for programmatic setup.</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var checkout = PaymentCheckout.builder()
+  .setCreatorId('your-creator-slug')
+  .setProductId('YOUR_PRODUCT_ID')
+  .setCheckoutSessionSecret('your-session-secret-uuid')
+  .setEnvironment('production')
+  .setTheme({ theme: 'light', accent_color: '#007BFF' })
+  .setRedirectSettings({
+    success_redirect_url: 'https://yoursite.com/thank-you',
+    always_redirect: true
+  })
+  .onSuccess(function(data) { console.log('Success:', data); })
+  .onError(function(error) { console.error('Error:', error); })
+  .build();
+
+checkout.attachToElement(document.getElementById('checkout-container'));
+checkout.init();</code></pre></div>
+<span class="badge">Production-ready</span>
+<h3 class="sub-title">3. The battle-tested template</h3>
+<p class="lede">This is what real integrations ship. Includes error handling, redirect settings, a dismissible error banner, and proper iframe styling. <strong>Use this as your starting point for any new embed.</strong></p>
+<div class="code-block"><div class="code-label plain">html · production-template.html</div><pre><code>
+&lt;style&gt;
+  #fanbasis-wrapper {
+    width: 98%;
+    max-width: 1100px;
+    margin: 0 auto;
+    min-height: 1100px;
+  }
+  #checkout-container {
+    width: 98%;
+    height: 1100px;
+  }
+  #checkout-container iframe {
+    width: 98% !important;
+    height: 1100px !important;
+    border-radius: 20px;
+  }
+  .fb-error-banner {
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .fb-error-banner p { color: #991b1b; margin: 0; font-size: 15px; }
+  .fb-error-close {
+    background: none; border: none; color: #991b1b;
+    font-size: 20px; cursor: pointer; padding: 0 0 0 16px;
+  }
+&lt;/style&gt;
+
+&lt;div id="fanbasis-wrapper"&gt;
+  &lt;div id="error-banner-slot"&gt;&lt;/div&gt;
+  &lt;div id="checkout-container"&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+document.addEventListener('DOMContentLoaded', async function () {
+  var element = document.getElementById('checkout-container');
+
+  var config = {
+    creatorId: 'REPLACE_CREATOR_SLUG',
+    productId: 'REPLACE_PRODUCT_ID',
+    checkoutSessionSecret: 'REPLACE_SESSION_SECRET',
+    environment: 'production',
+    redirectSettings: {
+      success_redirect_url: 'REPLACE_SUCCESS_URL',
+      always_redirect: true
+    },
+    theme: {
+      theme: 'light',
+      accent_color: '#007BFF',
+      show_product_info: true,
+      product_layout: 'left',
+      show_coupon_row: true
+    }
+  };
+
+  var checkout = await PaymentCheckout.create(config);
+  checkout.attachToElement(element);
+
+  // Success — redirect as fallback (redirectSettings handles it first)
+  checkout.on('checkout:success', function(data) {
+    window.location.href = 'REPLACE_SUCCESS_URL';
+  });
+
+  // Payment error — dismissible banner above form
+  checkout.on('checkout:error', function(error) {
+    var msg = (error &amp;&amp; error.message)
+      ? error.message
+      : 'Something went wrong with your payment. Please try again.';
+    var slot = document.getElementById('error-banner-slot');
+    slot.innerHTML =
+      '&lt;div class="fb-error-banner"&gt;' +
+      '&lt;p&gt;⚠ ' + msg + '&lt;/p&gt;' +
+      '&lt;button class="fb-error-close" onclick="this.parentElement.remove()"&gt;×&lt;/button&gt;' +
+      '&lt;/div&gt;';
+  });
+
+  // Form submission error — dismissible banner above form
+  checkout.on('form:submission_error', function(data) {
+    var msg = (data &amp;&amp; data.data &amp;&amp; data.data.errorMessage)
+      ? data.data.errorMessage
+      : 'Payment failed. Please check your details and try again.';
+    var slot = document.getElementById('error-banner-slot');
+    slot.innerHTML =
+      '&lt;div class="fb-error-banner"&gt;' +
+      '&lt;p&gt;⚠ ' + msg + '&lt;/p&gt;' +
+      '&lt;button class="fb-error-close" onclick="this.parentElement.remove()"&gt;×&lt;/button&gt;' +
+      '&lt;/div&gt;';
+  });
+
+  checkout.init();
+});
+&lt;/script&gt;</code></pre></div>
+<p style="margin-top:14px;"><strong>To use:</strong> Replace the 4 <code class="inline">REPLACE_*</code> values:</p>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Placeholder</th><th>Where to find it</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">REPLACE_CREATOR_SLUG</code></td><td>Creator's URL slug from FanBasis dashboard</td></tr>
+<tr><td><code class="inline">REPLACE_PRODUCT_ID</code></td><td>Product ID from the FanBasis dashboard</td></tr>
+<tr><td><code class="inline">REPLACE_SESSION_SECRET</code></td><td>Generated via the checkout session secret API (see below)</td></tr>
+<tr><td><code class="inline">REPLACE_SUCCESS_URL</code></td><td>Your post-purchase thank-you page URL</td></tr>
+</tbody>
+</table>
+<p><strong>Adjust dimensions:</strong> Change <code class="inline">max-width</code>, <code class="inline">height</code>, and iframe dimensions to fit the target page. Common values: 1100px, 1200px, 1180px.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- QUICK START — REACT
+     ═══════════════════════════════════════════ -->
+<section id="sdk-quick-start-react">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Quick Start — React</h1>
+  </div>
+<h3 class="sub-title">Installation</h3>
+<div class="code-block"><div class="code-label plain">npm · bash</div><pre><code>npm install @fanbasis/checkout-react</code></pre></div>
+<div class="code-block"><div class="code-label plain">yarn · bash</div><pre><code>yarn add @fanbasis/checkout-react</code></pre></div>
+<div class="code-block"><div class="code-label plain">pnpm · bash</div><pre><code>pnpm add @fanbasis/checkout-react</code></pre></div>
+<p>The React SDK internally depends on <code class="inline">@fanbasis/checkout-core</code>.</p>
+<h3 class="sub-title">Basic integration</h3>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { CheckoutProvider, AutoCheckout } from '@fanbasis/checkout-react';
+
+function App() {
+  const config = {
+    creatorId: 'your-creator-slug',
+    productId: 'YOUR_PRODUCT_ID',
+    checkoutSessionSecret: 'your-session-secret',
+    environment: 'production',
+    redirectSettings: {
+      success_redirect_url: 'https://yoursite.com/thank-you',
+      always_redirect: true
+    },
+    theme: {
+      theme: 'light',
+      accent_color: '#007BFF',
+      show_product_info: true,
+      product_layout: 'left',
+      show_coupon_row: false
+    }
+  };
+
+  return (
+    &lt;CheckoutProvider
+      config={config}
+      onSuccess={(data) =&gt; console.log('Success:', data)}
+      onError={(error) =&gt; console.error('Error:', error)}
+    &gt;
+      &lt;AutoCheckout autoOpen={true} /&gt;
+    &lt;/CheckoutProvider&gt;
+  );
+}</code></pre></div>
+<h3 class="sub-title">useCheckout hook</h3>
+<p>Access checkout state and methods from any component inside <code class="inline">CheckoutProvider</code>:</p>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { useCheckout } from '@fanbasis/checkout-react';
+
+function CheckoutStatus() {
+  const {
+    checkout,        // CheckoutCore instance — raw SDK access
+    state,           // { isOpen, isLoading, isInitialized, error }
+    open, close,     // open / close the checkout
+    isLoaded,
+    isSubmitting,
+    isComplete,
+    error,
+    isFormReady,
+    submitForm,
+    updateConfig,
+    addAddon, removeAddon, toggleAddon,
+  } = useCheckout();
+}</code></pre></div>
+<p>For lower-level access (<code class="inline">init</code>, <code class="inline">destroy</code>, <code class="inline">attachToElement</code>), use the <code class="inline">checkout</code> instance returned by the hook.</p>
+<h3 class="sub-title">Components</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Component</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">CheckoutProvider</code></td><td>Wraps checkout components and provides context. Pass <code class="inline">config</code> + event callbacks (<code class="inline">onSuccess</code>, <code class="inline">onError</code>, <code class="inline">onLoaded</code>, <code class="inline">onClosed</code>, <code class="inline">onFormReady</code>, <code class="inline">onFormSubmitting</code>, <code class="inline">onFormSubmissionError</code>, <code class="inline">onAddonsChanged</code>).</td></tr>
+<tr><td><code class="inline">AutoCheckout</code></td><td>Self-contained checkout. Props: <code class="inline">autoOpen</code>, <code class="inline">onSuccess</code>, <code class="inline">onError</code>, <code class="inline">loadingComponent</code>, <code class="inline">errorComponent</code>.</td></tr>
+<tr><td><code class="inline">Checkout</code></td><td>Lower-level component for more control. Accepts <code class="inline">width</code>, <code class="inline">height</code>, <code class="inline">style</code>.</td></tr>
+<tr><td><code class="inline">ProgrammaticCheckout</code></td><td>For custom form submission flows.</td></tr>
+<tr><td><code class="inline">SubmitButton</code></td><td>Customizable submit button.</td></tr>
+<tr><td><code class="inline">CheckoutAddons</code></td><td>Addon selection with render props.</td></tr>
+</tbody>
+</table>
+<h3 class="sub-title">Next.js (App Router)</h3>
+<div class="code-block"><div class="code-label plain">jsx · app/checkout/page.js</div><pre><code>'use client'; // Required for Next.js App Router
+
+import { CheckoutProvider, AutoCheckout } from '@fanbasis/checkout-react';
+import { useRouter } from 'next/navigation';
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  return (
+    &lt;CheckoutProvider
+      config={{ /* ... */ }}
+      onSuccess={() =&gt; router.push('/thank-you')}
+    &gt;
+      &lt;AutoCheckout /&gt;
+    &lt;/CheckoutProvider&gt;
+  );
+}</code></pre></div>
+<h3 class="sub-title">Checkout (render props)</h3>
+<p>Lower-level component with a render-props API for full control over the checkout UI and lifecycle.</p>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { Checkout } from '@fanbasis/checkout-react';
+
+function CustomCheckout() {
+  return (
+    &lt;Checkout&gt;
+      {({ isOpen, isLoading, open, close }) =&gt; (
+        &lt;div&gt;
+          &lt;button onClick={open} disabled={isLoading}&gt;
+            {isLoading ? 'Loading...' : 'Open Checkout'}
+          &lt;/button&gt;
+          {isOpen &amp;&amp; (
+            &lt;div&gt;
+              &lt;p&gt;Checkout is open&lt;/p&gt;
+              &lt;button onClick={close}&gt;Close&lt;/button&gt;
+            &lt;/div&gt;
+          )}
+        &lt;/div&gt;
+      )}
+    &lt;/Checkout&gt;
+  );
+}</code></pre></div>
+<h3 class="sub-title">SubmitButton</h3>
+<p>A customizable submit button that connects to the checkout form automatically.</p>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { SubmitButton } from '@fanbasis/checkout-react';
+
+function CustomSubmitButton() {
+  return (
+    &lt;SubmitButton
+      className="custom-submit-btn"
+      disabled={false}
+      onClick={() =&gt; console.log('Submit clicked')}
+    &gt;
+      Complete Purchase
+    &lt;/SubmitButton&gt;
+  );
+}</code></pre></div>
+<h3 class="sub-title">Event handling with hooks</h3>
+<p>Use <code class="inline">useEffect</code> with the raw <code class="inline">checkout</code> instance for fine-grained event control. Always return a cleanup function to unsubscribe.</p>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { useCheckout } from '@fanbasis/checkout-react';
+import { useEffect } from 'react';
+
+function CheckoutEvents() {
+  const { checkout } = useCheckout();
+
+  useEffect(() =&gt; {
+    if (!checkout) return;
+
+    const handleSuccess = (data) =&gt; {
+      console.log('Payment successful:', data);
+    };
+
+    const handleError = (error) =&gt; {
+      console.error('Payment failed:', error);
+    };
+
+    checkout.on('checkout:success', handleSuccess);
+    checkout.on('checkout:error', handleError);
+
+    // Cleanup — always unsubscribe
+    return () =&gt; {
+      checkout.off('checkout:success', handleSuccess);
+      checkout.off('checkout:error', handleError);
+    };
+  }, [checkout]);
+
+  return &lt;div&gt;Checkout events are being monitored&lt;/div&gt;;
+}</code></pre></div>
+<h3 class="sub-title">State management</h3>
+<p>The <code class="inline">useCheckout</code> hook exposes a reactive <code class="inline">state</code> object managed via React Context. Use it to build custom checkout UIs.</p>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { useCheckout } from '@fanbasis/checkout-react';
+
+function CheckoutState() {
+  const { state } = useCheckout();
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Open: {state.isOpen ? 'Yes' : 'No'}&lt;/p&gt;
+      &lt;p&gt;Loading: {state.isLoading ? 'Yes' : 'No'}&lt;/p&gt;
+      &lt;p&gt;Initialized: {state.isInitialized ? 'Yes' : 'No'}&lt;/p&gt;
+      {state.error &amp;&amp; &lt;p&gt;Error: {state.error.message}&lt;/p&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+<h3 class="sub-title">Multiple checkout instances</h3>
+<p>Each <code class="inline">CheckoutProvider</code> manages its own isolated checkout instance. Nest multiple providers for multi-product pages.</p>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { CheckoutProvider, AutoCheckout } from '@fanbasis/checkout-react';
+
+function MultiProductPage() {
+  const product1 = {
+    creatorId: 'creator_123',
+    productId: 'product_1',
+    checkoutSessionSecret: 'secret_1',
+    environment: 'production'
+  };
+
+  const product2 = {
+    creatorId: 'creator_123',
+    productId: 'product_2',
+    checkoutSessionSecret: 'secret_2',
+    environment: 'production'
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;CheckoutProvider config={product1}&gt;
+        &lt;AutoCheckout autoOpen={false} /&gt;
+      &lt;/CheckoutProvider&gt;
+
+      &lt;CheckoutProvider config={product2}&gt;
+        &lt;AutoCheckout autoOpen={false} /&gt;
+      &lt;/CheckoutProvider&gt;
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+<h3 class="sub-title">Testing</h3>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { render } from '@testing-library/react';
+import { CheckoutProvider, AutoCheckout } from '@fanbasis/checkout-react';
+
+const mockConfig = {
+  creatorId: 'test_creator',
+  productId: 'test_product',
+  checkoutSessionSecret: 'test_secret',
+  environment: 'sandbox'
+};
+
+test('renders checkout component', () =&gt; {
+  render(
+    &lt;CheckoutProvider config={mockConfig}&gt;
+      &lt;AutoCheckout autoOpen={false} /&gt;
+    &lt;/CheckoutProvider&gt;
+  );
+});</code></pre></div>
+<h3 class="sub-title">Package details</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Detail</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Peer dependencies</td><td>React, React DOM</td></tr>
+<tr><td>Internal dependency</td><td><code class="inline">@fanbasis/checkout-core</code></td></tr>
+<tr><td>TypeScript</td><td>Full type definitions included</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SESSION SECRET
+     ═══════════════════════════════════════════ -->
+<section id="sdk-session-secret">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Session Secret</h1>
+  </div>
+<p>The checkout session secret is a required credential that authenticates your checkout instance with FanBasis.</p>
+<div class="callout warning"><p><strong>Never expose your API key in frontend code.</strong> Generate the secret server-side and pass only the secret to the browser.</p></div>
+<h3 class="sub-title">Key facts</h3>
+<ul>
+<li><strong>Required</strong> for every SDK initialization.</li>
+<li><strong>Tied to a creator</strong>, not a product — one secret works across all products for that creator.</li>
+<li><strong>Reusable</strong> — secrets don't expire after a single use.</li>
+<li><strong>Environment-specific</strong> — use sandbox API key for sandbox, production API key for production.</li>
+<li>For static sites / page builders, generate once and hardcode. For dynamic apps, generate per page load from your server.</li>
+</ul>
+<h3 class="sub-title">API endpoint</h3>
+<div class="code-block"><div class="code-label plain">http</div><pre><code>POST https://www.fanbasis.com/public-api/checkout-sessions/embedded
+
+Headers:
+  x-api-key: &lt;your-api-key&gt;
+  Content-Type: application/json
+
+Body:
+  { "creatorId": "your-creator-slug" }</code></pre></div>
+<div class="callout info"><p>The <code class="inline">creatorId</code> is required in the request body. Omitting it will cause the request to fail.</p></div>
+<h3 class="sub-title">Examples</h3>
+<div class="code-block"><div class="code-label plain">cURL · bash</div><pre><code>curl --location --request POST \
+  'https://www.fanbasis.com/public-api/checkout-sessions/embedded' \
+  --header 'x-api-key: YOUR_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"creatorId": "your-creator-slug"}'</code></pre></div>
+<div class="code-block"><div class="code-label plain">Node.js · javascript</div><pre><code>const express = require('express');
+const app = express();
+
+app.post('/api/create-checkout-session', async (req, res) =&gt; {
+  try {
+    const response = await fetch(
+      'https://www.fanbasis.com/public-api/checkout-sessions/embedded',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.FANBASIS_API_KEY
+        },
+        body: JSON.stringify({ creatorId: 'your-creator-slug' })
+      }
+    );
+    const data = await response.json();
+    res.json({ checkoutSessionSecret: data.data.checkout_session_secret });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create session secret' });
+  }
+});</code></pre></div>
+<div class="code-block"><div class="code-label plain">Response · json</div><pre><code>{
+  "status": "success",
+  "message": "Embedded checkout session created successfully",
+  "data": {
+    "id": 2,
+    "checkout_session_secret": "84efcbc9-c8c9-49cf-8c7b-8b6b18939984",
+    "created_at": "2025-11-13T16:39:51.000000Z"
+  }
+}</code></pre></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- CONFIGURATION REFERENCE
+     ═══════════════════════════════════════════ -->
+<section id="sdk-config">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Configuration Reference</h1>
+  </div>
+<h3 class="sub-title">Required fields</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutConfig {
+  creatorId: string;              // Your creator's URL slug
+  productId: string;              // Product ID from the dashboard
+  checkoutSessionSecret: string;  // Session secret from the API
+}</code></pre></div>
+<div class="callout warning"><div class="callout-title">⚠ Environment values</div><p>The SDK only accepts <code class="inline">'sandbox'</code> and <code class="inline">'production'</code> as values for the optional <code class="inline">environment</code> field. Do <strong>NOT</strong> use <code class="inline">'qa'</code> — it will cause a "creator does not exist" error.</p></div>
+<h3 class="sub-title">Optional fields</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutConfig {
+  // ... required fields above
+
+  environment?: 'production' | 'sandbox';  // Default: 'production'
+  theme?: CustomizationParams;             // Styling and layout
+  containerOptions?: {
+    width?: string;
+    height?: string;
+  };
+  redirectSettings?: RedirectSettings;
+  couponCode?: string;
+  affiliateCode?: string;
+  showSubmitButton?: boolean;              // Default: true
+  bumpProductIds?: string[];              // See Addons section — do not use
+}</code></pre></div>
+<div class="callout warning"><div class="callout-title">⚠ About bumpProductIds</div><p>This config option exists but should NOT be used. See <a href="#sdk-addons">Addons &amp; order bumps</a> for why and what to do instead.</p></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- THEME & STYLING
+     ═══════════════════════════════════════════ -->
+<section id="sdk-theme">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Theme & Styling</h1>
+  </div>
+<h3 class="sub-title">Basic theme options</h3>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
+  theme: 'light',              // 'light' or 'dark'
+  accent_color: '#007BFF',
+  show_product_info: true,
+  product_layout: 'left',
+  show_coupon_row: false,
+  billing_form_placement: 'default'  // 'default' | 'above_payment' | 'below_payment'
+}</code></pre></div>
+<h3 class="sub-title">Color properties</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Property</th><th>What it colors</th><th>Default (light)</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">accent_color</code></td><td>Buttons, links, focus states</td><td><code class="inline">#007BFF</code></td></tr>
+<tr><td><code class="inline">background_color</code></td><td>Main form background</td><td><code class="inline">#FFFFFF</code></td></tr>
+<tr><td><code class="inline">label_color</code></td><td>Input labels</td><td><code class="inline">#333333</code></td></tr>
+<tr><td><code class="inline">input_background_color</code></td><td>Inside input fields</td><td><code class="inline">#F5F5F5</code></td></tr>
+<tr><td><code class="inline">heading_color</code></td><td>Section headings</td><td><code class="inline">#111111</code></td></tr>
+<tr><td><code class="inline">secondary_color</code></td><td>Helper text, subtotals</td><td><code class="inline">#666666</code></td></tr>
+<tr><td><code class="inline">product_text_color</code></td><td>Product name, price, description</td><td><code class="inline">#333333</code></td></tr>
+<tr><td><code class="inline">border_color</code></td><td>Input borders, dividers</td><td><code class="inline">#E0E0E0</code></td></tr>
+<tr><td><code class="inline">surface_color</code></td><td>Card / section backgrounds</td><td><code class="inline">#FAFAFA</code></td></tr>
+</tbody>
+</table>
+<h3 class="sub-title">Product layout options</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Value</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">'left'</code></td><td>Product info on the left, form on the right</td></tr>
+<tr><td><code class="inline">'right'</code></td><td>Product info on the right, form on the left</td></tr>
+<tr><td><code class="inline">'above'</code></td><td>Product info above the form (stacked)</td></tr>
+<tr><td><code class="inline">'below'</code></td><td>Product info below the form</td></tr>
+<tr><td><code class="inline">'none'</code></td><td>Hide product info entirely</td></tr>
+</tbody>
+</table>
+<div class="callout warning"><div class="callout-title">⚠ Known bug</div><p><code class="inline">product_layout: 'above'</code> may render products <em>below</em> the form when the container width is narrow (under ~600px). Workarounds: use <code class="inline">'left'</code> or <code class="inline">'right'</code>, ensure the container is wider than 600px, or use <code class="inline">'none'</code> and display product info yourself in the parent page.</p></div>
+<h3 class="sub-title">Container &amp; iframe styling</h3>
+<p>Set iframe dimensions via config or via CSS (preferred for page builders):</p>
+<div class="code-block"><div class="code-label plain">css</div><pre><code>#checkout-container {
+  width: 98%;
+  height: 1100px;
+}
+#checkout-container iframe {
+  width: 98% !important;
+  height: 1100px !important;
+  border-radius: 20px;
+}</code></pre></div>
+<ul>
+<li>CSS on the parent page does <strong>not</strong> penetrate the iframe boundary.</li>
+<li><code class="inline">border-radius</code> works when applied to the iframe element itself.</li>
+<li><code class="inline">!important</code> is often needed to override SDK-applied inline styles.</li>
+<li>Custom fonts from the parent page don't affect the iframe — it loads its own.</li>
+</ul>
+<h3 class="sub-title">Dark theme example</h3>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
+  theme: 'dark',
+  accent_color: '#ff6b6b',
+  background_color: '#1a1a1a',
+  label_color: '#ffffff',
+  input_background_color: '#2d2d2d',
+  product_text_color: '#e0e0e0',
+  heading_color: '#ffffff',
+  secondary_color: '#9ca3af',
+  border_color: '#374151',
+  surface_color: '#2d2d2d',
+  show_product_info: true,
+  product_layout: 'above',
+  show_coupon_row: false
+}</code></pre></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- REDIRECT SETTINGS
+     ═══════════════════════════════════════════ -->
+<section id="sdk-redirects">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Redirect Settings</h1>
+  </div>
+<div class="callout warning"><p><strong>This is critical.</strong> Without redirect settings, the checkout will get stuck on "processing" after a successful payment.</p></div>
+<h3 class="sub-title">Configuration</h3>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>redirectSettings: {
+  success_redirect_url: 'https://yoursite.com/thank-you',
+  failure_redirect_url: 'https://yoursite.com/checkout-failed', // optional
+  always_redirect: true  // ALWAYS set this to true
+}</code></pre></div>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">success_redirect_url</code></td><td>string</td><td>URL to redirect to after successful payment</td></tr>
+<tr><td><code class="inline">failure_redirect_url</code></td><td>string</td><td>URL to redirect to after failed payment (optional)</td></tr>
+<tr><td><code class="inline">always_redirect</code></td><td>boolean</td><td><strong>Always set to <code class="inline">true</code></strong> for reliable redirects</td></tr>
+</tbody>
+</table>
+<h3 class="sub-title">Best practice</h3>
+<p>Always configure <strong>both</strong> <code class="inline">redirectSettings</code> and a <code class="inline">checkout:success</code> event handler as a fallback:</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>// In config
+redirectSettings: {
+  success_redirect_url: 'https://yoursite.com/thank-you',
+  always_redirect: true
+}
+
+// As event handler (fallback if redirect mechanism fails)
+checkout.on('checkout:success', function(data) {
+  window.location.href = 'https://yoursite.com/thank-you';
+});</code></pre></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- EVENTS REFERENCE
+     ═══════════════════════════════════════════ -->
+<section id="sdk-events">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Events Reference</h1>
+  </div>
+<p>The SDK uses a colon-separated event naming convention. <strong>Event names are case-sensitive.</strong></p>
+<h3 class="sub-title">All events</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Event</th><th>Data</th><th>When it fires</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">checkout:success</code></td><td><code class="inline">{ transactionId, amount, currency, customerEmail }</code></td><td>Payment completed successfully</td></tr>
+<tr><td><code class="inline">checkout:error</code></td><td><code class="inline">{ message, code }</code></td><td>Payment processing error</td></tr>
+<tr><td><code class="inline">checkout:opened</code></td><td>—</td><td>Checkout iframe opened/visible</td></tr>
+<tr><td><code class="inline">checkout:loaded</code></td><td>—</td><td>Checkout fully rendered and ready</td></tr>
+<tr><td><code class="inline">checkout:closed</code></td><td>—</td><td>Checkout iframe closed/removed</td></tr>
+<tr><td><code class="inline">form:ready</code></td><td>—</td><td>Form is interactive, can accept input</td></tr>
+<tr><td><code class="inline">form:submitting</code></td><td>—</td><td>Form submission in progress</td></tr>
+<tr><td><code class="inline">form:submission_error</code></td><td><code class="inline">{ data: { errorMessage } }</code></td><td>Form submission failed</td></tr>
+<tr><td><code class="inline">addons:changed</code></td><td><code class="inline">{ addons, total }</code></td><td>Addon selection changed</td></tr>
+</tbody>
+</table>
+<div class="callout warning"><div class="callout-title">⚠ Critical</div><p>Register all event handlers <strong>BEFORE</strong> calling <code class="inline">checkout.init()</code>. Handlers registered after <code class="inline">init()</code> may never fire.</p></div>
+<h3 class="sub-title">Registration order</h3>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var checkout = await PaymentCheckout.create(config);
+checkout.attachToElement(element);
+
+// ✅ Register events HERE — between attachToElement() and init()
+checkout.on('checkout:success', handler);
+checkout.on('checkout:error', handler);
+checkout.on('form:submission_error', handler);
+
+checkout.init();</code></pre></div>
+<h3 class="sub-title">Error codes</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">PAYMENT_FAILED</code></td><td>Payment processor declined the transaction</td></tr>
+<tr><td><code class="inline">CARD_DECLINED</code></td><td>Card was declined by the issuing bank</td></tr>
+<tr><td><code class="inline">INSUFFICIENT_FUNDS</code></td><td>Card has insufficient funds</td></tr>
+<tr><td><code class="inline">EXPIRED_CARD</code></td><td>Card is expired</td></tr>
+<tr><td><code class="inline">INVALID_CARD</code></td><td>Card number is invalid</td></tr>
+<tr><td><code class="inline">PROCESSING_ERROR</code></td><td>Generic processing error</td></tr>
+<tr><td><code class="inline">NETWORK_ERROR</code></td><td>Network connectivity issue</td></tr>
+<tr><td><code class="inline">SESSION_EXPIRED</code></td><td>Checkout session has expired</td></tr>
+<tr><td><code class="inline">CONFIGURATION_ERROR</code></td><td>Invalid checkout configuration</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- ADDONS & ORDER BUMPS
+     ═══════════════════════════════════════════ -->
+<section id="sdk-addons">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Addons & Order Bumps</h1>
+  </div>
+<p>FanBasis checkout supports addons (order bumps / upsells) that customers can toggle on/off during checkout.</p>
+<div class="callout warning"><p><strong>Critical: Do NOT use <code class="inline">bumpProductIds</code>.</strong> Dashboard-configured order bumps load as SELECTED BY DEFAULT inside the iframe. Including <code class="inline">bumpProductIds</code> causes all bumps to appear pre-selected with their prices added to the total before the customer has opted in.</p></div>
+<h3 class="sub-title">What didn't work</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Approach</th><th>Why it failed</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">bumpProductIds</code> + checkboxes starting unchecked</td><td>Iframe loads bumps as selected; first <code class="inline">toggleAddon()</code> deselects instead of selecting</td></tr>
+<tr><td><code class="inline">bumpProductIds</code> + checkboxes starting checked</td><td>Correct toggle behavior, but bumps are pre-selected by default (unwanted)</td></tr>
+<tr><td>Deselect all bumps on <code class="inline">form:ready</code></td><td>Fires before iframe has bump data; toggles are ignored</td></tr>
+<tr><td>Deselect on first <code class="inline">addons:changed</code></td><td>Works but causes visible flash (bumps appear then disappear)</td></tr>
+<tr><td>Hide iframe → deselect → reveal</td><td>Timing unreliable; multiple events fire unpredictably</td></tr>
+</tbody>
+</table>
+<h3 class="sub-title">The correct pattern</h3>
+<p><strong>Omit <code class="inline">bumpProductIds</code> from config entirely.</strong> Use explicit <code class="inline">addAddon()</code> / <code class="inline">removeAddon()</code> calls from a parent-page UI (custom checkboxes outside the iframe).</p>
+<div class="callout tip"><div class="callout-title">✓ Prerequisite</div><p>Bump products <strong>must</strong> be associated with the main product in the FanBasis dashboard first. Without the dashboard association, <code class="inline">addAddon()</code> / <code class="inline">removeAddon()</code> have no effect.</p></div>
+<div class="code-block"><div class="code-label plain">javascript · correct addon pattern</div><pre><code>// Config — NO bumpProductIds
+var config = {
+  creatorId: 'your-creator-slug',
+  productId: 'your-main-product-id',
+  checkoutSessionSecret: 'your-session-secret',
+  environment: 'production',
+  // bumpProductIds: DO NOT INCLUDE THIS
+  redirectSettings: { success_redirect_url: '/thank-you', always_redirect: true }
+};
+
+var checkout = await PaymentCheckout.create(config);
+checkout.attachToElement(element);
+
+// Parent-page checkbox handler — use addAddon/removeAddon, NOT toggleAddon
+checkbox.addEventListener('change', function () {
+  if (this.checked) {
+    checkout.addAddon('bump-product-id');
+  } else {
+    checkout.removeAddon('bump-product-id');
+  }
+});
+
+// Sync total and state from SDK
+checkout.on('addons:changed', function (data) {
+  if (typeof data.total === 'number') {
+    totalDisplay.textContent = '$' + data.total.toFixed(2);
+  }
+  // Handle both payload shapes defensively
+  var addonList = data.addons || data.selectedAddons || [];
+});
+
+checkout.init();</code></pre></div>
+<h3 class="sub-title">Addon API methods</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Method</th><th>Use</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">addAddon(productId)</code></td><td>Explicitly add a bump</td><td><strong>Preferred</strong> — deterministic</td></tr>
+<tr><td><code class="inline">removeAddon(productId)</code></td><td>Explicitly remove a bump</td><td><strong>Preferred</strong> — deterministic</td></tr>
+<tr><td><code class="inline">toggleAddon(productId)</code></td><td>Flip current state</td><td>Avoid for initial state — unreliable</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PROGRAMMATIC SUBMISSION
+     ═══════════════════════════════════════════ -->
+<section id="sdk-programmatic">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Programmatic Submission</h1>
+  </div>
+<p>Hide the default submit button and trigger form submission from your own button or custom validation logic.</p>
+<div class="code-block"><div class="code-label plain">React · jsx</div><pre><code>function CustomSubmitButton() {
+  const { submitForm, isFormReady, isSubmitting } = useCheckout();
+  return (
+    &lt;button
+      onClick={() =&gt; submitForm()}
+      disabled={!isFormReady || isSubmitting}
+    &gt;
+      {isSubmitting ? 'Processing...' : 'Complete Purchase'}
+    &lt;/button&gt;
+  );
+}
+
+function App() {
+  return (
+    &lt;CheckoutProvider
+      config={{ ...config, showSubmitButton: false }}
+      onSuccess={(data) =&gt; window.location.href = '/thank-you'}
+    &gt;
+      &lt;ProgrammaticCheckout /&gt;
+      &lt;CustomSubmitButton /&gt;
+    &lt;/CheckoutProvider&gt;
+  );
+}</code></pre></div>
+<div class="code-block"><div class="code-label plain">Vanilla JS · javascript</div><pre><code>var config = {
+  creatorId: 'your-creator-slug',
+  productId: 'YOUR_PRODUCT_ID',
+  checkoutSessionSecret: 'your-session-secret',
+  environment: 'production',
+  showSubmitButton: false
+};
+
+var checkout = await PaymentCheckout.create(config);
+checkout.attachToElement(document.getElementById('checkout-container'));
+
+checkout.on('form:ready', function() {
+  document.getElementById('custom-pay-btn').disabled = false;
+});
+
+document.getElementById('custom-pay-btn').addEventListener('click', function() {
+  if (checkout.isFormReady()) {
+    checkout.submitForm();
+  }
+});
+
+checkout.on('checkout:success', function(data) {
+  window.location.href = '/thank-you';
+});
+
+checkout.init();</code></pre></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PLATFORM GUIDES
+     ═══════════════════════════════════════════ -->
+<section id="sdk-platforms">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Platform Guides</h1>
+  </div>
+<h3 class="sub-title">GoHighLevel (GHL)</h3>
+<p>Use the <strong>Custom HTML/Javascript</strong> element in the GHL page builder.</p>
+<ul>
+<li><strong>Two-column layout squeeze</strong> — GHL's two-column rows constrain the container to ~573px. <strong>Fix:</strong> Use a full-width row, or set <code class="inline">max-width: 1100px; margin: 0 auto;</code> on the wrapper.</li>
+<li><strong>Iframe border-radius</strong> — GHL defaults override your styles. Add <code class="inline">!important</code>.</li>
+<li><strong>Test in the GHL preview tab</strong>, not just the editor.</li>
+</ul>
+<h3 class="sub-title">WordPress</h3>
+<p>Use a <strong>Custom HTML</strong> block, shortcode, or Elementor HTML widget.</p>
+<ul>
+<li>Some themes/plugins interfere with the SDK script. Test in incognito.</li>
+<li>If using Elementor, place the code in an <strong>HTML widget</strong>, not a text widget.</li>
+<li>Aggressive caching may keep stale session secrets — beware if generating dynamically.</li>
+</ul>
+<h3 class="sub-title">Squarespace</h3>
+<p>Use the <strong>Code Block</strong> element (Business plan and above).</p>
+<ul>
+<li>Squarespace strips <code class="inline">&lt;script&gt;</code> tags in some block types. Use a Code Block specifically.</li>
+<li>Code injection (Settings → Advanced) works for site-wide scripts.</li>
+</ul>
+<h3 class="sub-title">Wix</h3>
+<p>Use the <strong>Custom HTML</strong> element (Wix Editor) or <strong>Embed Code</strong> (Wix Studio).</p>
+<ul>
+<li>Wix sandboxes custom HTML in their own iframe, creating nested iframes — checkout still works.</li>
+<li>Adjust container height generously — Wix's container may not auto-expand.</li>
+</ul>
+<h3 class="sub-title">Webflow</h3>
+<p>Use the <strong>Embed</strong> component in Webflow Designer.</p>
+<ul>
+<li>Place the embed in a full-width section for best results.</li>
+<li>Always test on the published URL — designer preview can differ.</li>
+</ul>
+<h3 class="sub-title">Shopify</h3>
+<p>Use a <strong>Custom Liquid</strong> section or edit theme code directly.</p>
+<ul>
+<li>Add the CDN script to <code class="inline">theme.liquid</code> or the specific template.</li>
+<li>Shopify's CSP may block inline scripts — use the <code class="inline">&lt;script src="..."&gt;</code> approach.</li>
+</ul>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- EXAMPLES
+     ═══════════════════════════════════════════ -->
+<section id="sdk-examples">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Examples</h1>
+  </div>
+<h3 class="sub-title">Custom checkout button (modal overlay)</h3>
+<div class="code-block"><div class="code-label plain">html</div><pre><code>&lt;button id="buy-now-btn" onclick="openCheckout()"&gt;Buy Now — $49&lt;/button&gt;
+
+&lt;div id="checkout-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999;"&gt;
+  &lt;div style="max-width:600px; margin:50px auto; background:white; border-radius:16px; padding:20px;"&gt;
+    &lt;button onclick="closeCheckout()"&gt;×&lt;/button&gt;
+    &lt;div id="checkout-container"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+var checkout;
+async function openCheckout() {
+  document.getElementById('checkout-overlay').style.display = 'block';
+  if (!checkout) {
+    checkout = await PaymentCheckout.create({ /* config */ });
+    checkout.attachToElement(document.getElementById('checkout-container'));
+    checkout.on('checkout:success', () =&gt; window.location.href = '/thank-you');
+    checkout.init();
+  }
+}
+&lt;/script&gt;</code></pre></div>
+<h3 class="sub-title">Multiple products on one page</h3>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var products = [
+  { id: 'PROD_A', container: 'checkout-a' },
+  { id: 'PROD_B', container: 'checkout-b' },
+  { id: 'PROD_C', container: 'checkout-c' }
+];
+
+products.forEach(async function(product) {
+  var checkout = await PaymentCheckout.create({
+    creatorId: 'your-creator-slug',
+    productId: product.id,
+    checkoutSessionSecret: 'your-session-secret',
+    environment: 'production',
+    redirectSettings: {
+      success_redirect_url: '/thank-you?product=' + product.id,
+      always_redirect: true
+    }
+  });
+  checkout.attachToElement(document.getElementById(product.container));
+  checkout.init();
+});</code></pre></div>
+<h3 class="sub-title">Subscription plans (React)</h3>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>function SubscriptionPlans() {
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const plans = [
+    { id: 'basic', name: 'Basic', price: '$9.99/mo' },
+    { id: 'pro', name: 'Pro', price: '$19.99/mo' },
+    { id: 'enterprise', name: 'Enterprise', price: '$49.99/mo' }
+  ];
+  return (
+    &lt;div&gt;
+      {plans.map(plan =&gt; (
+        &lt;button key={plan.id} onClick={() =&gt; setSelectedPlan(plan)}&gt;
+          {plan.name} — {plan.price}
+        &lt;/button&gt;
+      ))}
+      {selectedPlan &amp;&amp; (
+        &lt;CheckoutProvider config={{ /* ... */, productId: `subscription_${selectedPlan.id}` }}&gt;
+          &lt;AutoCheckout autoOpen={true} /&gt;
+        &lt;/CheckoutProvider&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TYPES & INTERFACES
+     ═══════════════════════════════════════════ -->
+<section id="sdk-types">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Types & Interfaces</h1>
+  </div>
+<h3 class="sub-title">TypeScript interfaces</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutConfig {
+  // Required
+  creatorId: string;
+  productId: string;
+  checkoutSessionSecret: string;
+
+  // Optional
+  environment?: 'production' | 'sandbox';
+  redirectSettings?: RedirectSettings;
+  theme?: CustomizationParams;
+  containerOptions?: ContainerOptions;
+  showSubmitButton?: boolean;
+  couponCode?: string;
+  affiliateCode?: string;
+  bumpProductIds?: string[];
+}
+
+interface CustomizationParams {
+  theme?: 'light' | 'dark';
+  accent_color?: string;
+  background_color?: string;
+  label_color?: string;
+  input_background_color?: string;
+  heading_color?: string;
+  secondary_color?: string;
+  product_text_color?: string;
+  border_color?: string;
+  surface_color?: string;
+  show_product_info?: boolean;
+  product_layout?: 'left' | 'right' | 'above' | 'below' | 'none';
+  show_coupon_row?: boolean;
+  billing_display_fields?: string[];
+  billing_form_placement?: 'default' | 'above_payment' | 'below_payment';
+}
+
+interface RedirectSettings {
+  success_redirect_url?: string;
+  failure_redirect_url?: string;
+  always_redirect?: boolean;
+}
+
+interface ContainerOptions {
+  width?: string;
+  height?: string;
+}</code></pre></div>
+<h3 class="sub-title">Browser compatibility</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Browser</th><th>Minimum version</th></tr></thead>
+<tbody>
+<tr><td>Chrome</td><td>80+</td></tr>
+<tr><td>Firefox</td><td>78+</td></tr>
+<tr><td>Safari</td><td>13+</td></tr>
+<tr><td>Edge</td><td>80+</td></tr>
+<tr><td>Mobile Safari (iOS)</td><td>13+</td></tr>
+<tr><td>Chrome for Android</td><td>80+</td></tr>
+</tbody>
+</table>
+<p><strong>Requirements:</strong> JavaScript enabled, third-party cookies allowed (for iframe communication), <code class="inline">postMessage</code> API support.</p>
+<h3 class="sub-title">Security</h3>
+<p>The checkout iframe uses these sandbox attributes:</p>
+<div class="code-block"><div class="code-label plain">html</div><pre><code>allow-scripts
+allow-same-origin
+allow-forms
+allow-popups
+allow-top-navigation-by-user-activation</code></pre></div>
+<p>All payment data (card numbers, CVV) stays within the iframe and is <strong>never exposed to the parent page</strong>. The parent page only receives event data via <code class="inline">postMessage</code>.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TROUBLESHOOTING
+     ═══════════════════════════════════════════ -->
+<section id="sdk-troubleshooting">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Troubleshooting</h1>
+  </div>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Critical</span>Checkout stuck on "processing" after successful payment</h4>
+<p><strong>This is the #1 support issue.</strong></p>
+<p><strong>Symptoms:</strong> After clicking "Purchase," the checkout shows a spinning state indefinitely. The transaction succeeds (visible on the dashboard), but the user sees no confirmation.</p>
+<p><strong>Root cause:</strong> No <code class="inline">redirectSettings</code> configured (or <code class="inline">always_redirect</code> is missing/falsy), AND no <code class="inline">checkout:success</code> event handler.</p>
+<p><strong>Fix:</strong> Always configure both <code class="inline">redirectSettings</code> and a <code class="inline">checkout:success</code> handler as a fallback.</p>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Critical</span>Events not firing</h4>
+<p><strong>Symptoms:</strong> <code class="inline">checkout:success</code>, <code class="inline">checkout:error</code>, or other events never fire even though the checkout completes or errors.</p>
+<ul>
+<li>Event listeners registered AFTER <code class="inline">checkout.init()</code> — they must be registered before <code class="inline">init()</code>.</li>
+<li>Event name typo — names are case-sensitive and colon-separated. It's <code class="inline">checkout:success</code>, not <code class="inline">checkout:Success</code> or <code class="inline">checkoutSuccess</code>.</li>
+<li>Multiple checkout instances — handlers only fire on the instance they're registered on.</li>
+</ul>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Warning</span>product_layout: 'above' renders products below</h4>
+<p><strong>Symptoms:</strong> Setting <code class="inline">product_layout: 'above'</code> places product info below the form instead of above.</p>
+<p><strong>Root cause:</strong> Bug in the embedded checkout frontend. Happens primarily when the container is narrower than 600px.</p>
+<p><strong>Workarounds:</strong> Use <code class="inline">'left'</code> or <code class="inline">'right'</code> instead, ensure container width &gt; 600px, or use <code class="inline">'none'</code> and render product info in the parent page.</p>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Warning</span>GHL two-column layout squeezes checkout</h4>
+<p><strong>Symptoms:</strong> In GoHighLevel, placing the checkout in a two-column row results in a ~573px container with cramped layout.</p>
+<p><strong>Fix:</strong> Use a full-width row, or set explicit width with centering on <code class="inline">#fanbasis-wrapper</code>.</p>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Warning</span>Iframe styles not applying</h4>
+<p><strong>What works:</strong></p>
+<ul>
+<li><code class="inline">border-radius</code> on the iframe element itself</li>
+<li>Width/height on the iframe with <code class="inline">!important</code></li>
+</ul>
+<p><strong>What doesn't:</strong> Styling elements <em>inside</em> the iframe from the parent page; custom fonts from the parent (iframe loads its own).</p>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Warning</span>Addons load pre-selected</h4>
+<p><strong>Root cause:</strong> <code class="inline">bumpProductIds</code> is included in config. Dashboard bumps default to ON inside the iframe.</p>
+<p><strong>Fix:</strong> Remove <code class="inline">bumpProductIds</code>. Use <code class="inline">addAddon()</code> / <code class="inline">removeAddon()</code> from parent-page UI. See <a href="#sdk-addons">Addons &amp; order bumps</a>.</p>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Warning</span>"Creator does not exist" error</h4>
+<ul>
+<li>Wrong <code class="inline">environment</code> — using <code class="inline">'qa'</code> instead of <code class="inline">'sandbox'</code>.</li>
+<li>Wrong <code class="inline">creatorId</code> — slug doesn't match the creator in FanBasis.</li>
+<li>Mismatched environment — production secret with <code class="inline">environment: 'sandbox'</code>, or vice versa.</li>
+</ul>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Warning</span>PaymentCheckout is undefined</h4>
+<ul>
+<li>The CDN script hasn't finished loading. Wrap your code in <code class="inline">DOMContentLoaded</code>.</li>
+<li>The script tag is placed after your JS code. Move the CDN <code class="inline">&lt;script&gt;</code> tag before your init code.</li>
+<li>Network issue loading the CDN script. Check console for failed requests.</li>
+</ul>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Minor</span>Checkout loads but looks wrong / too small</h4>
+<p><strong>Fix:</strong> The container needs explicit width and height. For page builders, use CSS with <code class="inline">!important</code>:</p>
+<div class="code-block"><div class="code-label plain">css</div><pre><code>#checkout-container { width: 98%; height: 1100px; }
+#checkout-container iframe { width: 98% !important; height: 1100px !important; }</code></pre></div>
+<h4 class="sub-title"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Minor</span>Invalid layout value</h4>
+<p>The <code class="inline">product_layout</code> config only accepts <code class="inline">'left'</code>, <code class="inline">'right'</code>, <code class="inline">'above'</code>, <code class="inline">'below'</code>, or <code class="inline">'none'</code>. Anything else silently falls back to the default.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MIGRATION GUIDE
+     ═══════════════════════════════════════════ -->
+<section id="sdk-migration">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Migration Guide</h1>
+  </div>
+<h3 class="sub-title">v0.0.x → v0.1.x</h3>
+<p><strong>Breaking changes:</strong></p>
+<ul>
+<li><code class="inline">PaymentCheckout.create()</code> is now async (returns a Promise) — add <code class="inline">await</code></li>
+<li><code class="inline">checkout.mount()</code> renamed to <code class="inline">checkout.attachToElement()</code></li>
+<li>Event names changed from camelCase to colon-separated: <code class="inline">checkoutSuccess</code> → <code class="inline">checkout:success</code></li>
+<li><code class="inline">redirectUrl</code> split into <code class="inline">redirectSettings</code> object</li>
+<li><code class="inline">init()</code> is now required as a separate step after attaching</li>
+</ul>
+<div class="code-block"><div class="code-label plain">Before · v0.0.x · javascript</div><pre><code>var checkout = PaymentCheckout.create(config);
+checkout.mount('#container');
+checkout.on('checkoutSuccess', handler);</code></pre></div>
+<div class="code-block"><div class="code-label plain">After · v0.1.x · javascript</div><pre><code>var checkout = await PaymentCheckout.create(config);
+checkout.attachToElement(document.getElementById('container'));
+checkout.on('checkout:success', handler);
+checkout.init();</code></pre></div>
+<h3 class="sub-title">Deprecations</h3>
+<table class="data-table" style="margin-bottom:24px;">
+<thead><tr><th>Deprecated</th><th>Replacement</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">checkout.mount()</code></td><td><code class="inline">checkout.attachToElement()</code></td></tr>
+<tr><td><code class="inline">redirectUrl</code></td><td><code class="inline">redirectSettings</code> object</td></tr>
+</tbody>
+</table>
 </section>
 
 
@@ -10010,6 +11199,21 @@ function copyCode(btn) {
   "common-workflows": "faq-support",
   "changelog": "developer-resources",
   "sdk-overview": "developer-resources",
+  "sdk-how-it-works": "developer-resources",
+  "sdk-quick-start-js": "developer-resources",
+  "sdk-quick-start-react": "developer-resources",
+  "sdk-session-secret": "developer-resources",
+  "sdk-config": "developer-resources",
+  "sdk-theme": "developer-resources",
+  "sdk-redirects": "developer-resources",
+  "sdk-events": "developer-resources",
+  "sdk-addons": "developer-resources",
+  "sdk-programmatic": "developer-resources",
+  "sdk-platforms": "developer-resources",
+  "sdk-examples": "developer-resources",
+  "sdk-types": "developer-resources",
+  "sdk-troubleshooting": "developer-resources",
+  "sdk-migration": "developer-resources",
   "api-playground": "tools",
   "ai-agent": "tools",
 };
@@ -10036,6 +11240,21 @@ function copyCode(btn) {
   "common-workflows",
   "changelog",
   "sdk-overview",
+  "sdk-how-it-works",
+  "sdk-quick-start-js",
+  "sdk-quick-start-react",
+  "sdk-session-secret",
+  "sdk-config",
+  "sdk-theme",
+  "sdk-redirects",
+  "sdk-events",
+  "sdk-addons",
+  "sdk-programmatic",
+  "sdk-platforms",
+  "sdk-examples",
+  "sdk-types",
+  "sdk-troubleshooting",
+  "sdk-migration",
   "api-playground",
   "ai-agent",
 ];
@@ -10062,6 +11281,21 @@ function copyCode(btn) {
   "common-workflows": "Common Workflows",
   "changelog": "Changelog",
   "sdk-overview": "SDK Overview",
+  "sdk-how-it-works": "How it works",
+  "sdk-quick-start-js": "Quick Start — Hosted JS",
+  "sdk-quick-start-react": "Quick Start — React",
+  "sdk-session-secret": "Session Secret",
+  "sdk-config": "Configuration Reference",
+  "sdk-theme": "Theme & Styling",
+  "sdk-redirects": "Redirect Settings",
+  "sdk-events": "Events Reference",
+  "sdk-addons": "Addons & Order Bumps",
+  "sdk-programmatic": "Programmatic Submission",
+  "sdk-platforms": "Platform Guides",
+  "sdk-examples": "Examples",
+  "sdk-types": "Types & Interfaces",
+  "sdk-troubleshooting": "Troubleshooting",
+  "sdk-migration": "Migration Guide",
   "api-playground": "API Playground",
   "ai-agent": "Connect an AI Agent",
 };
@@ -10144,18 +11378,11 @@ function copyCode(btn) {
     // We watch for section changes via MutationObserver on .main as fallback
     var mainEl = document.querySelector('.main');
     if (mainEl) {
-      var _sectionChangeTimer = null;
       var sectionObserver = new MutationObserver(function() {
-        // Debounce to avoid cascading: rebuildTOC changes DOM classes which
-        // re-triggers this observer, creating a feedback loop
-        if (_sectionChangeTimer) return;
-        _sectionChangeTimer = setTimeout(function() {
-          _sectionChangeTimer = null;
-          var active = mainEl.querySelector('.active-section');
-          if (active && active.id && active.id !== currentSection) {
-            afterSectionChange(active.id);
-          }
-        }, 50);
+        var active = mainEl.querySelector('.active-section');
+        if (active && active.id && active.id !== currentSection) {
+          afterSectionChange(active.id);
+        }
       });
       sectionObserver.observe(mainEl, { attributes: true, subtree: true, attributeFilter: ['class'] });
     }
@@ -12171,20 +13398,11 @@ function copyClaudeMCPConfig() {
   }
 
   // Also hook into MutationObserver for dynamically added code blocks
-  // Scoped to .main only (not document.body) to avoid observer feedback loops
-  // that cause progressive slowdowns. Debounced to prevent rapid re-firing.
-  var _lineNumTimer = null;
   var mo = new MutationObserver(function(mutations) {
     var hasNew = mutations.some(function(m) { return m.addedNodes.length > 0; });
-    if (hasNew) {
-      if (_lineNumTimer) clearTimeout(_lineNumTimer);
-      _lineNumTimer = setTimeout(addLineNumbers, 100);
-    }
+    if (hasNew) setTimeout(addLineNumbers, 50);
   });
-  var mainContent = document.querySelector('.main');
-  if (mainContent) {
-    mo.observe(mainContent, { childList: true, subtree: true });
-  }
+  mo.observe(document.body, { childList: true, subtree: true });
 
 })();
 </script>
