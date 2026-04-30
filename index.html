@@ -4493,6 +4493,12 @@ function googleTranslateElementInit() {
     <a href="#extend-subscription" class="sub">Extend a Subscription</a>
   </div>
   <div class="sidebar-section">
+    <a href="#subscription-upgrades">Subscription Upgrades</a>
+    <a href="#subscription-upgrade-list" class="sub">List Available Upgrades</a>
+    <a href="#subscription-upgrade-preview" class="sub">Preview Upgrade</a>
+    <a href="#subscription-upgrade-process" class="sub">Process Upgrade</a>
+  </div>
+  <div class="sidebar-section">
     <a href="#discount-codes">Discount Codes</a>
     <a href="#list-discounts" class="sub">List Codes</a>
     <a href="#create-discount" class="sub">Create a Code</a>
@@ -4565,6 +4571,7 @@ function googleTranslateElementInit() {
     <a href="#sdk-config">Configuration Reference</a>
     <a href="#sdk-theme">Theme & Styling</a>
     <a href="#sdk-redirects">Redirect Settings</a>
+    <a href="#sdk-prefill">Prefill & Field Control</a>
   </div>
   <div class="sidebar-section">
     <div class="sidebar-section-title">SDK · Behavior & Integration</div>
@@ -6846,29 +6853,58 @@ end</code></pre>
     <div class="callout-title">✦ When would I use this?</div>
     <p>You're launching a new coaching package priced at $199 one-time. You call this endpoint, get a payment link, and paste it into your newsletter. Anyone who clicks and pays gets a transaction recorded automatically.</p>
   </div>
+
+  <h3 class="subsection-title">Body Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>product.title</code></td><td>string</td><td>Yes</td><td>Product name shown at checkout. Max 255 characters.</td></tr>
+      <tr><td><code>product.description</code></td><td>string</td><td>No</td><td>Short description shown under the product name.</td></tr>
+      <tr><td><code>amount_cents</code></td><td>integer</td><td>Yes</td><td>Price in cents (e.g., <code>2999</code> = $29.99). Must be greater than 0.</td></tr>
+      <tr><td><code>type</code></td><td>string</td><td>Yes</td><td>One of: <code>subscription</code>, <code>onetime_reusable</code>, <code>onetime_non_reusable</code>. See the type guide below.</td></tr>
+      <tr><td><code>application_fee</code></td><td>number</td><td>No</td><td>Optional platform/affiliate fee.</td></tr>
+      <tr><td><code>metadata</code></td><td>object</td><td>No</td><td>Arbitrary key/value pairs persisted on the session and echoed in webhooks.</td></tr>
+      <tr><td><code>expiration_date</code></td><td>string (date)</td><td>No</td><td>ISO date (<code>YYYY-MM-DD</code>) when this checkout session stops accepting payments.</td></tr>
+      <tr><td><code>success_url</code></td><td>uri</td><td>No</td><td>Where to redirect the buyer after successful payment.</td></tr>
+      <tr><td><code>webhook_url</code></td><td>uri</td><td>No</td><td>Override webhook URL for events from this session (otherwise uses your account-level webhook subscriptions).</td></tr>
+      <tr><td><code>subscription.frequency_days</code></td><td>integer</td><td>If <code>type</code> = subscription</td><td>Billing cycle length in days (e.g., <code>30</code> for monthly, <code>365</code> for yearly).</td></tr>
+      <tr><td><code>subscription.auto_expire_after_x_periods</code></td><td>integer</td><td>No</td><td>Auto-cancel after N billing cycles. Omit for indefinite.</td></tr>
+      <tr><td><code>subscription.free_trial_days</code></td><td>integer</td><td>No</td><td>Free trial length before first charge.</td></tr>
+      <tr><td><code>subscription.initial_fee</code></td><td>number</td><td>No</td><td>One-time fee charged at sign-up in addition to the recurring price.</td></tr>
+      <tr><td><code>subscription.initial_fee_days</code></td><td>integer</td><td>No</td><td>Days before the recurring billing kicks in after the initial fee.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title">Choosing a <code>type</code></h3>
+  <table class="data-table">
+    <thead><tr><th>Type</th><th>Use when</th><th>Behavior</th></tr></thead>
+    <tbody>
+      <tr><td><code>subscription</code></td><td>Recurring product (membership, SaaS, content access)</td><td>Charges <code>amount_cents</code> every <code>frequency_days</code>. Buyer can be renewed automatically until canceled.</td></tr>
+      <tr><td><code>onetime_reusable</code></td><td>Single-purchase product where you want one shareable link that many buyers can use (digital download, course, ebook)</td><td>Single charge of <code>amount_cents</code>. The same payment link works for unlimited buyers — share publicly.</td></tr>
+      <tr><td><code>onetime_non_reusable</code></td><td>Single-buyer transaction (consultation booking, custom invoice, one-off service)</td><td>Single charge of <code>amount_cents</code>. The link is consumed after the first successful payment and won't accept further buyers.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:32px;">Example 1 — Subscription</h3>
+  <p>Recurring monthly membership with a 7-day free trial.</p>
   <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
-  <div class="code-label req-body">Request Body</div>
+  <div class="code-label req-body">Request Body · subscription</div>
   <pre><code>{
   "product": {
-    "title": "Premium Membership",
-    "description": "Access to all premium features"
+    "title": "Pro Monthly Membership",
+    "description": "Full access including private Discord + weekly calls"
   },
   "amount_cents": 2999,
-  "application_fee": 0,
   "type": "subscription",
-  "metadata": {
-    "internal_ref": "plan_premium_monthly"
-  },
-  "expiration_date": "2025-12-31",
   "subscription": {
     "frequency_days": 30,
-    "auto_expire_after_x_periods": null,
     "free_trial_days": 7,
+    "auto_expire_after_x_periods": null,
     "initial_fee": 0,
     "initial_fee_days": 0
   },
-  "success_url": "https://yoursite.com/success",
-  "webhook_url": "https://yoursite.com/webhooks/fanbasis"
+  "metadata": { "plan": "pro_monthly" },
+  "success_url": "https://yoursite.com/welcome"
 }</code></pre>
 </div>
   <div class="code-block">
@@ -6883,14 +6919,79 @@ end</code></pre>
     },
     "amount_cents": 2999,
     "type": "subscription",
-    "subscription": {
-      "frequency_days": 30,
-      "free_trial_days": 7
-    },
+    "subscription": { "frequency_days": 30, "free_trial_days": 7 },
     "success_url": "https://yoursite.com/welcome",
-    "metadata": { "plan": "pro" }
+    "metadata": { "plan": "pro_monthly" }
   }'</code></pre>
   </div>
+
+  <h3 class="subsection-title" style="margin-top:32px;">Example 2 — One-time payment (reusable link)</h3>
+  <p>A single $199 coaching package — one link, unlimited buyers.</p>
+  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
+  <div class="code-label req-body">Request Body · onetime_reusable</div>
+  <pre><code>{
+  "product": {
+    "title": "1-Hour Strategy Session",
+    "description": "60-minute call to map out your launch plan"
+  },
+  "amount_cents": 19900,
+  "type": "onetime_reusable",
+  "metadata": { "campaign": "launch-week-2026" },
+  "success_url": "https://yoursite.com/booking-confirmed"
+}</code></pre>
+</div>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X POST https://www.fanbasis.com/public-api/checkout-sessions \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product": {
+      "title": "1-Hour Strategy Session",
+      "description": "60-minute call to map out your launch plan"
+    },
+    "amount_cents": 19900,
+    "type": "onetime_reusable",
+    "success_url": "https://yoursite.com/booking-confirmed",
+    "metadata": { "campaign": "launch-week-2026" }
+  }'</code></pre>
+  </div>
+
+  <h3 class="subsection-title" style="margin-top:32px;">Example 3 — One-time payment (single-buyer link)</h3>
+  <p>A custom invoice for a specific client — link expires after the first successful payment.</p>
+  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
+  <div class="code-label req-body">Request Body · onetime_non_reusable</div>
+  <pre><code>{
+  "product": {
+    "title": "Custom Logo Design — Acme Corp",
+    "description": "Full brand identity package"
+  },
+  "amount_cents": 250000,
+  "type": "onetime_non_reusable",
+  "expiration_date": "2026-06-30",
+  "metadata": { "client_id": "acme-corp", "invoice": "INV-2026-0042" },
+  "success_url": "https://yoursite.com/clients/thank-you"
+}</code></pre>
+</div>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X POST https://www.fanbasis.com/public-api/checkout-sessions \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product": {
+      "title": "Custom Logo Design — Acme Corp",
+      "description": "Full brand identity package"
+    },
+    "amount_cents": 250000,
+    "type": "onetime_non_reusable",
+    "expiration_date": "2026-06-30",
+    "metadata": { "client_id": "acme-corp", "invoice": "INV-2026-0042" }
+  }'</code></pre>
+  </div>
+
+  <h3 class="subsection-title" style="margin-top:32px;">Response</h3>
+  <p>Same response shape regardless of <code>type</code>:</p>
   <div class="code-block" style="margin-top:8px;">
     <div class="code-label response">Response</div>
     <pre><code>{
@@ -7027,14 +7128,24 @@ end</code></pre>
     <span class="method post">POST</span>
     <span class="endpoint-url">/public-api/checkout-sessions/embedded</span>
   </div>
-  <p>Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Requires an existing FanBasis <code>product_id</code>. Returns a <code>checkout_session_secret</code> you use to construct the embedded checkout URL.</p>
+  <p>Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Returns a <code>checkout_session_secret</code> you use to construct the embedded checkout URL.</p>
   <div class="callout tip" style="margin-top:8px;margin-bottom:8px;">
     <div class="callout-title">✓ Reusable session secret</div>
-    <p>The <code>checkout_session_secret</code> is scoped to your creator account, not to a single product. You can reuse the same secret and swap the <code>product_id</code> in the URL — you do not need to create a new embedded session for every product.</p>
+    <p>The <code>checkout_session_secret</code> is scoped to your creator account. You can reuse the same secret and swap the <code>product_id</code> in the URL — you don't need to create a new embedded session for every product.</p>
   </div>
+  <h3 class="subsection-title">Body Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>creator_id</code></td><td>string</td><td>Yes</td><td>Your creator slug (e.g., <code>your-creator-slug</code>).</td></tr>
+      <tr><td><code>product_id</code></td><td>string</td><td>Yes</td><td>The product to embed checkout for. The returned secret is reusable across all your products.</td></tr>
+      <tr><td><code>metadata</code></td><td>object</td><td>No</td><td>Arbitrary JSON object stored on the session and echoed back in webhook events for the resulting transaction.</td></tr>
+    </tbody>
+  </table>
   <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
   <div class="code-label req-body">Request Body</div>
   <pre><code>{
+  "creator_id": "your-creator-slug",
   "product_id": "NLxj6",
   "metadata": {
     "user_id": "usr_abc123",
@@ -7047,15 +7158,24 @@ end</code></pre>
     <pre><code>curl -X POST https://www.fanbasis.com/public-api/checkout-sessions/embedded \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "product_id": "NLxj6", "metadata": { "source": "in-app" } }'</code></pre>
+  -d '{
+    "creator_id": "your-creator-slug",
+    "product_id": "NLxj6",
+    "metadata": { "source": "in-app" }
+  }'</code></pre>
   </div>
   <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-embedded">
     <div class="code-label response">Response</div>
     <pre><code>{
   "status": "success",
+  "message": "Embedded checkout session created successfully",
   "data": {
+    "id": 3204,
     "checkout_session_secret": "550e8400-e29b-41d4-a716-446655440000",
-    "created_at": "2025-01-15T10:00:00Z"
+    "your_handle": "your-creator-slug",
+    "metadata": { "user_id": "usr_abc123", "source": "in-app" },
+    "allowed_payment_methods": null,
+    "created_at": "2026-04-30T22:34:36.000000Z"
   }
 }</code></pre>
   </div>
@@ -7465,6 +7585,279 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   "data": { "subscription_id": "sub_1", "new_completion_date": "2025-04-15T00:00:00Z" }
 }</code></pre>
   </div>
+
+</section>
+
+<!-- ═══════════════════════ SUBSCRIPTION UPGRADES (PRORATION) ═══════════════════════ -->
+<section id="subscription-upgrades">
+  <div class="section-head">
+    <h1>Subscription Upgrades</h1>
+  </div>
+
+  <p>Move an active subscriber to a higher tier with automatic proration. The API calculates the credit owed for the unused portion of the current cycle, applies it against the new tier's price, and either charges the difference immediately or rolls the upgrade into the next billing cycle.</p>
+
+  <div class="callout warning" style="margin-top:16px;">
+    <div class="callout-title">⚠ Different base URL & auth scheme</div>
+    <p>The Subscription Upgrade endpoints live on the <strong>Seller v1 API</strong> (<code class="inline">/api/seller/v1/...</code>) — separate from the rest of the Public API on this page. They use <strong>Bearer token</strong> authentication, not the <code class="inline">x-api-key</code> header.</p>
+    <p style="margin-top:8px;"><strong>Base URL:</strong> <code class="inline">https://fanbasis.com/api/seller/v1</code><br>
+    <strong>Auth header:</strong> <code class="inline">Authorization: Bearer &lt;token&gt;</code></p>
+  </div>
+
+  <h3 class="sub-title" style="margin-top:28px;">How proration works</h3>
+  <p>The customer only pays for what they'll actually use at the new tier. The math:</p>
+  <ol>
+    <li><strong>Price difference</strong> = <code class="inline">target_tier_price − current_tier_price</code> — the extra cost per full cycle at the new tier.</li>
+    <li><strong>Proration ratio</strong> = <code class="inline">days_remaining ÷ total_cycle_days</code> — the unused portion of the current cycle.</li>
+    <li><strong>New proration credit</strong> = <code class="inline">price_difference × proration_ratio</code> — discount applied because the customer hasn't used those days yet.</li>
+    <li><strong>Amount due</strong> = <code class="inline">price_difference − new_proration_credit + existing_credit</code> — only charges the customer for the portion of the cycle they've already used at the old rate.</li>
+  </ol>
+  <div class="callout info" style="margin-top:12px;">
+    <div class="callout-title">ℹ Worked example</div>
+    <p>Subscriber on Basic ($90/30-day cycle) wants to upgrade to Premium ($150/30-day cycle). One day into the cycle, 29 days remaining.</p>
+    <p style="margin-top:6px;font-family:var(--font-mono);font-size:12.5px;line-height:1.7;">
+      price_difference  = 150 − 90 = $60<br>
+      proration_ratio   = 29 ÷ 30 = 0.9667<br>
+      new_credit        = 60 × 0.9667 = $58<br>
+      amount_due        = 60 − 58 = <strong>$2</strong>
+    </p>
+    <p style="margin-top:6px;">The customer pays $2 today for the upgrade — covering only the 1 day they've already used at the lower tier.</p>
+  </div>
+  <p>The seller can preview this math before charging using the <a href="#subscription-upgrade-preview">preview endpoint</a>, then execute via the <a href="#subscription-upgrade-process">process endpoint</a>.</p>
+
+  <h3 class="sub-title" style="margin-top:28px;">Endpoint summary</h3>
+  <table class="data-table">
+    <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><span class="method get">GET</span></td><td><code class="inline">/subscriptions/:id/upgrades</code></td><td>List available upgrade tiers</td></tr>
+      <tr><td><span class="method get">GET</span></td><td><code class="inline">/subscriptions/:id/upgrade/preview</code></td><td>Preview proration calculation</td></tr>
+      <tr><td><span class="method post">POST</span></td><td><code class="inline">/subscriptions/:id/upgrade</code></td><td>Execute the upgrade</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ─────────── List Available Upgrades ─────────── -->
+  <h2 id="subscription-upgrade-list" class="endpoint-title">List Available Upgrades</h2>
+  <div class="endpoint-badge" style="margin-top:36px;" id="su-list">
+    <span class="method get">GET</span>
+    <span class="endpoint-url">/api/seller/v1/subscriptions/:subscription_id/upgrades</span>
+  </div>
+  <p>Returns the upgrade tiers available for an active subscription, plus a quick proration calculation for each one. Use this to render an "upgrade your plan" UI without making a separate preview call per tier.</p>
+
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>subscription_id</code></td><td>integer</td><td>Yes</td><td>The subscription's numeric ID.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl "https://fanbasis.com/api/seller/v1/subscriptions/2934/upgrades" \
+  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
+  </div>
+
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="su-list">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "data": {
+    "subscription_id": 2934,
+    "subscription_status": "active",
+    "current_tier": {
+      "id": 113772,
+      "title": "Basic Tier",
+      "price": 90.00,
+      "payment_frequency": 30
+    },
+    "proration_credit": 0,
+    "available_upgrades": [
+      {
+        "service": { "id": 113790, "title": "Premium Tier", "price": 150.00 },
+        "calculation": {
+          "price_difference": 60,
+          "days_remaining": 29,
+          "amount_due": 2
+        }
+      }
+    ]
+  }
+}</code></pre>
+  </div>
+
+  <h3 class="subsection-title">Response Fields</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>subscription_id</code></td><td>integer</td><td>The subscription being evaluated.</td></tr>
+      <tr><td><code>subscription_status</code></td><td>string</td><td>Must be <code class="inline">active</code> for upgrades to be available.</td></tr>
+      <tr><td><code>current_tier</code></td><td>object</td><td>The tier the subscriber is currently on. Includes <code class="inline">id</code>, <code class="inline">title</code>, <code class="inline">price</code>, <code class="inline">payment_frequency</code> (cycle length in days).</td></tr>
+      <tr><td><code>proration_credit</code></td><td>number</td><td>Any existing unspent credit on the subscription.</td></tr>
+      <tr><td><code>available_upgrades</code></td><td>array</td><td>List of tiers the subscriber can upgrade to. Each item includes a <code class="inline">service</code> object and a <code class="inline">calculation</code> with <code class="inline">price_difference</code>, <code class="inline">days_remaining</code>, and <code class="inline">amount_due</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ─────────── Preview Upgrade ─────────── -->
+  <h2 id="subscription-upgrade-preview" class="endpoint-title">Preview Upgrade</h2>
+  <div class="endpoint-badge" style="margin-top:36px;" id="su-preview">
+    <span class="method get">GET</span>
+    <span class="endpoint-url">/api/seller/v1/subscriptions/:subscription_id/upgrade/preview</span>
+  </div>
+  <p>Returns the full proration calculation for a specific target tier — the price difference, the credit math, and the amount that would be charged. Use this to show the customer exactly what they'll pay before they confirm.</p>
+
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>subscription_id</code></td><td>integer</td><td>Yes</td><td>The subscription's numeric ID.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title">Query Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>target_service_id</code></td><td>integer</td><td>Yes</td><td>The service/tier ID the subscriber is upgrading to.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl "https://fanbasis.com/api/seller/v1/subscriptions/2934/upgrade/preview?target_service_id=113790" \
+  -H "Authorization: Bearer YOUR_TOKEN"</code></pre>
+  </div>
+
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="su-preview">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "data": {
+    "current_service": { "id": 113772, "title": "Basic Tier", "price": 90 },
+    "target_service": { "id": 113790, "title": "Premium Tier", "price": 150 },
+    "price_difference": 60,
+    "days_remaining": 29,
+    "total_cycle_days": 30,
+    "proration_ratio": 0.9667,
+    "new_proration_credit": 58,
+    "existing_credit": 0,
+    "total_credit": 58,
+    "amount_due": 2
+  }
+}</code></pre>
+  </div>
+
+  <h3 class="subsection-title">Response Fields</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>current_service</code></td><td>object</td><td>The current tier (id, title, price).</td></tr>
+      <tr><td><code>target_service</code></td><td>object</td><td>The tier being upgraded to (id, title, price).</td></tr>
+      <tr><td><code>price_difference</code></td><td>number</td><td><code class="inline">target_price − current_price</code>.</td></tr>
+      <tr><td><code>days_remaining</code></td><td>integer</td><td>Days left in the current billing cycle.</td></tr>
+      <tr><td><code>total_cycle_days</code></td><td>integer</td><td>Total length of the billing cycle in days.</td></tr>
+      <tr><td><code>proration_ratio</code></td><td>number</td><td><code class="inline">days_remaining ÷ total_cycle_days</code>.</td></tr>
+      <tr><td><code>new_proration_credit</code></td><td>number</td><td>Credit generated from the unused portion of the current cycle.</td></tr>
+      <tr><td><code>existing_credit</code></td><td>number</td><td>Any unspent credit already on the subscription.</td></tr>
+      <tr><td><code>total_credit</code></td><td>number</td><td><code class="inline">new_proration_credit + existing_credit</code>.</td></tr>
+      <tr><td><code>amount_due</code></td><td>number</td><td>Final amount the customer will be charged on upgrade.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ─────────── Process Upgrade ─────────── -->
+  <h2 id="subscription-upgrade-process" class="endpoint-title">Process Upgrade</h2>
+  <div class="endpoint-badge" style="margin-top:36px;" id="su-process">
+    <span class="method post">POST</span>
+    <span class="endpoint-url">/api/seller/v1/subscriptions/:subscription_id/upgrade</span>
+  </div>
+  <p>Executes the upgrade. Cancels the current subscription tier (status → <code class="inline">upgraded</code>), creates a new active subscription on the target tier, and charges <code class="inline">amount_due</code> if <code class="inline">billing_mode</code> is set to <code class="inline">immediate</code>.</p>
+
+  <div class="callout tip" style="margin-top:12px;">
+    <div class="callout-title">✓ Two billing modes</div>
+    <p><strong><code class="inline">immediate</code></strong> — charges the prorated <code class="inline">amount_due</code> right now and activates the new tier immediately. Requires a saved payment method on file.</p>
+    <p style="margin-top:8px;"><strong><code class="inline">next_cycle</code></strong> — defers the upgrade to the next billing date. No immediate charge; the new tier price applies starting from the next renewal.</p>
+  </div>
+
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>subscription_id</code></td><td>integer</td><td>Yes</td><td>The subscription's numeric ID.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block" style="margin-top:8px;">
+    <div class="code-label req-body">Request Body</div>
+    <pre><code>{
+  "target_service_id": 113790,
+  "billing_mode": "next_cycle"
+}</code></pre>
+  </div>
+
+  <h3 class="subsection-title">Body Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>target_service_id</code></td><td>integer</td><td>Yes</td><td>The tier to upgrade to.</td></tr>
+      <tr><td><code>billing_mode</code></td><td>string</td><td>Yes</td><td><code class="inline">immediate</code> or <code class="inline">next_cycle</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X POST "https://fanbasis.com/api/seller/v1/subscriptions/2934/upgrade" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_service_id": 113790,
+    "billing_mode": "next_cycle"
+  }'</code></pre>
+  </div>
+
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="su-process">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "data": {
+    "upgrade_id": "UUID-here",
+    "base_subscription": {
+      "subscription_id": 2934,
+      "subscription_status": "upgraded",
+      "current_tier": { "id": 113772, "title": "Basic Tier", "price": 90 }
+    },
+    "new_subscription": {
+      "subscription_id": 2938,
+      "subscription_status": "active",
+      "current_tier": { "id": 113790, "title": "Premium Tier", "price": 150 }
+    },
+    "calculation": {
+      "price_difference": 60,
+      "amount_due": 2
+    }
+  }
+}</code></pre>
+  </div>
+
+  <h3 class="subsection-title">Response Fields</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>upgrade_id</code></td><td>string (UUID)</td><td>Unique identifier for this upgrade event. Use it for idempotency or audit trails.</td></tr>
+      <tr><td><code>base_subscription</code></td><td>object</td><td>The original subscription, now with status <code class="inline">upgraded</code>.</td></tr>
+      <tr><td><code>new_subscription</code></td><td>object</td><td>The newly created active subscription on the target tier.</td></tr>
+      <tr><td><code>calculation</code></td><td>object</td><td>Final proration math: <code class="inline">price_difference</code> and <code class="inline">amount_due</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:32px;">Validation Rules &amp; Error Responses</h3>
+  <table class="data-table">
+    <thead><tr><th>Rule</th><th>Status</th><th>Error Message</th></tr></thead>
+    <tbody>
+      <tr><td>Subscription is not active</td><td><code class="inline">422</code></td><td>"Subscription is not active"</td></tr>
+      <tr><td>Same tier upgrade attempted</td><td><code class="inline">400</code></td><td>"Upgrade not allowed to this tier"</td></tr>
+      <tr><td>Proration not enabled on target tier</td><td><code class="inline">422</code></td><td>"Proration is not enabled for this service"</td></tr>
+      <tr><td>Downgrade attempt (target price &lt; current price)</td><td><code class="inline">422</code></td><td>"Downgrade not allowed"</td></tr>
+      <tr><td><code class="inline">billing_mode: 'immediate'</code> with no saved payment method</td><td><code class="inline">422</code></td><td>"Payment method required"</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:28px;">Webhook Events</h3>
+  <p>A successful upgrade fires standard subscription webhooks: <code class="inline">subscription.canceled</code> on the base subscription (with <code class="inline">cancellation_reason: "upgraded"</code>) and <code class="inline">subscription.created</code> on the new tier. If <code class="inline">billing_mode: 'immediate'</code>, an additional <code class="inline">payment.succeeded</code> fires for the prorated charge.</p>
 
 </section>
 
@@ -8886,6 +9279,27 @@ Content-Type: application/json
   <div style="margin-top:28px;">
 
     <div class="changelog-entry">
+      <div class="changelog-date">April 2026</div>
+      <div class="changelog-title">Subscription Upgrades API (Proration)</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Three new Seller v1 API endpoints for moving active subscribers between tiers with automatic proration. Preview the math, list available upgrades, then execute with <code class="inline">immediate</code> or <code class="inline">next_cycle</code> billing modes. See <a href="#subscription-upgrades">Subscription Upgrades</a>.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">April 2026</div>
+      <div class="changelog-title">SDK 0.4.0 — Prefill, Field Control & Validation Events</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Major update to <code class="inline">@fanbasis/checkout-core@0.4.0</code> and <code class="inline">@fanbasis/checkout-react@0.3.0</code>. Native <a href="#sdk-prefill">prefill</a> for email/name/phone/address; per-field <code class="inline">hide</code>/<code class="inline">disable</code> control via the new <code class="inline">fields</code> config; top-level <code class="inline">collectPhone</code> and <code class="inline">metadata</code> options; new <code class="inline">form:validation</code> and <code class="inline">field:value</code> events; setter/getter methods on the checkout instance.</div>
+    </div>
+
+    <div class="changelog-entry">
+      <div class="changelog-date">April 2026</div>
+      <div class="changelog-title">SDK Documentation Audit</div>
+      <span class="changelog-tag improved">Improved</span>
+      <div class="changelog-desc">Full audit of the SDK reference against the current 0.4.0 source. Corrected event payload shapes (<code class="inline">checkout:success</code>, <code class="inline">addons:changed</code>, <code class="inline">form:submission_error</code>), <code class="inline">CheckoutState</code> shape, and the <code class="inline">PaymentErrorCode</code> enum. Migration Guide now lists stale patterns to avoid (<code class="inline">await create()</code>, <code class="inline">'qa'</code>, <code class="inline">customerEmail</code>).</div>
+    </div>
+
+    <div class="changelog-entry">
       <div class="changelog-date">February 2026</div>
       <div class="changelog-title">AI Agent MCP Integration</div>
       <span class="changelog-tag new">New</span>
@@ -8972,7 +9386,8 @@ Content-Type: application/json
 <li><strong>Hosted JavaScript</strong> — One &lt;script&gt; tag. Works on GHL, WordPress, Squarespace, Wix, Webflow, plain HTML. — <code class="inline">&lt;script src="cdn.embedded.fanbasis.io/embed/index.js"&gt;</code></li>
 <li><strong>React & Next.js</strong> — Native components, hooks, and TypeScript types. Built on the same core engine. — <code class="inline">npm install @fanbasis/checkout-react</code></li>
 </ul></div>
-<p>Use the sidebar to navigate the full SDK documentation, including configuration options, event hooks, programmatic submission, platform-specific guides, and troubleshooting.</p>
+<div class="callout info"><div class="callout-title">ℹ Documented versions</div><p>This documentation reflects <code class="inline">@fanbasis/checkout-core@0.4.0</code> and <code class="inline">@fanbasis/checkout-react@0.3.0</code>. Highlights of the 0.4.0 release: native field <strong>prefill</strong>, per-field <strong>hide/disable</strong> control, top-level <code class="inline">metadata</code> and <code class="inline">collectPhone</code> options, and new <code class="inline">form:validation</code> / <code class="inline">field:value</code> events. See <a href="#sdk-migration">Migration Guide</a> for details.</p></div>
+<p>Use the sidebar to navigate the full SDK documentation, including configuration options, event hooks, prefill &amp; field control, programmatic submission, platform-specific guides, and troubleshooting.</p>
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -8987,7 +9402,7 @@ Content-Type: application/json
 <h3 class="sub-title">Integration flow</h3>
 <ol><li><strong>Set up products</strong> — Configure products in the FanBasis dashboard or via the REST API.</li><li><strong>Create a checkout session secret</strong> — Server-side API call that authenticates your checkout instance.</li><li><strong>Initialize the SDK</strong> — Load the SDK via CDN script or npm package, pass in your config.</li><li><strong>Listen for events</strong> — Handle checkout:success, checkout:error, and other lifecycle events.</li><li><strong>Verify the transaction</strong> — (Recommended) Confirm payment server-side using the transactionId from the success event.</li></ol>
 <h3 class="sub-title">Two SDK options</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>SDK</th><th>Best for</th><th>Install</th></tr></thead>
 <tbody>
 <tr><td><strong>Hosted JavaScript</strong> (CDN)</td><td>Page builders (GHL, WordPress, Squarespace, Wix, Webflow), static sites, custom HTML</td><td><code class="inline">&lt;script&gt;</code> tag — no build step</td></tr>
@@ -9037,7 +9452,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   };
 
-  var checkout = await PaymentCheckout.create(config);
+  var checkout = PaymentCheckout.create(config);
   checkout.attachToElement(element);
 
   // Register events BEFORE calling init()
@@ -9057,7 +9472,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 });
 &lt;/script&gt;</code></pre></div>
 <h4>Method B · Data attributes</h4>
-<p>Good for simple, declarative embeds. The SDK auto-discovers elements with <code class="inline">data-creator-id</code>.</p>
+<p>Good for simple, declarative embeds. Set config via <code class="inline">data-*</code> attributes and initialize the element with <code class="inline">PaymentCheckout.fromElement()</code>. The SDK reads the attributes, builds the config, attaches the iframe, and runs <code class="inline">init()</code> for you.</p>
 <div class="code-block"><div class="code-label plain">html</div><pre><code>&lt;div
   id="fanbasis-checkout"
   data-creator-id="your-creator-slug"
@@ -9072,25 +9487,47 @@ document.addEventListener('DOMContentLoaded', async function () {
   data-success-redirect-url="https://yoursite.com/thank-you"
   data-always-redirect="true"
 &gt;&lt;/div&gt;
-&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;</code></pre></div>
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('fanbasis-checkout');
+    PaymentCheckout.fromElement(el);
+  });
+&lt;/script&gt;</code></pre></div>
+<p>Required attributes: <code class="inline">data-creator-id</code>, <code class="inline">data-product-id</code>, <code class="inline">data-checkout-session-secret</code>. Missing any of these throws an error. Need to react to events? Get the instance back from <code class="inline">fromElement</code> and register handlers before it auto-initializes — or use Method A or Method C instead.</p>
+
 <h4>Method C · Fluent builder</h4>
-<p>Chainable API for programmatic setup.</p>
-<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var checkout = PaymentCheckout.builder()
-  .setCreatorId('your-creator-slug')
-  .setProductId('YOUR_PRODUCT_ID')
-  .setCheckoutSessionSecret('your-session-secret-uuid')
-  .setEnvironment('production')
-  .setTheme({ theme: 'light', accent_color: '#007BFF' })
-  .setRedirectSettings({
+<p>Chainable API for programmatic setup. Call <code class="inline">PaymentCheckout.create()</code> with no arguments to get a builder, then chain configuration methods and finish with <code class="inline">.build()</code>.</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var checkout = PaymentCheckout.create()
+  .creatorId('your-creator-slug')
+  .productId('YOUR_PRODUCT_ID')
+  .checkoutSessionSecret('your-session-secret-uuid')
+  .environment('production')
+  .theme({
+    theme: 'light',
+    show_product_info: true,
+    product_layout: 'left',
+    show_coupon_row: true,
+    accent_color: '#007BFF'
+  })
+  .redirectSettings({
     success_redirect_url: 'https://yoursite.com/thank-you',
     always_redirect: true
   })
-  .onSuccess(function(data) { console.log('Success:', data); })
-  .onError(function(error) { console.error('Error:', error); })
   .build();
 
 checkout.attachToElement(document.getElementById('checkout-container'));
+
+checkout.on('checkout:success', function (data) {
+  window.location.href = 'https://yoursite.com/thank-you';
+});
+checkout.on('checkout:error', function (err) {
+  console.error('Payment error:', err.message);
+});
+
 checkout.init();</code></pre></div>
+<p>Builder methods (no <code class="inline">set</code> prefix): <code class="inline">creatorId</code>, <code class="inline">productId</code>, <code class="inline">checkoutSessionSecret</code>, <code class="inline">environment</code>, <code class="inline">theme</code>, <code class="inline">redirectSettings</code>, <code class="inline">containerOptions</code>, <code class="inline">couponCode</code>, <code class="inline">affiliateCode</code>, <code class="inline">bumpProductIds</code>, <code class="inline">overrideBaseUrl</code>, <code class="inline">showSubmitButton</code>. Finalize with <code class="inline">.build()</code>, which returns a <code class="inline">PaymentCheckout</code> instance.</p>
 <span class="badge">Production-ready</span>
 <h3 class="sub-title">3. The battle-tested template</h3>
 <p class="lede">This is what real integrations ship. Includes error handling, redirect settings, a dismissible error banner, and proper iframe styling. <strong>Use this as your starting point for any new embed.</strong></p>
@@ -9156,7 +9593,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   };
 
-  var checkout = await PaymentCheckout.create(config);
+  var checkout = PaymentCheckout.create(config);
   checkout.attachToElement(element);
 
   // Success — redirect as fallback (redirectSettings handles it first)
@@ -9194,7 +9631,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 });
 &lt;/script&gt;</code></pre></div>
 <p style="margin-top:14px;"><strong>To use:</strong> Replace the 4 <code class="inline">REPLACE_*</code> values:</p>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Placeholder</th><th>Where to find it</th></tr></thead>
 <tbody>
 <tr><td><code class="inline">REPLACE_CREATOR_SLUG</code></td><td>Creator's URL slug from FanBasis dashboard</td></tr>
@@ -9242,45 +9679,74 @@ function App() {
   };
 
   return (
-    &lt;CheckoutProvider
-      config={config}
-      onSuccess={(data) =&gt; console.log('Success:', data)}
-      onError={(error) =&gt; console.error('Error:', error)}
-    &gt;
-      &lt;AutoCheckout autoOpen={true} /&gt;
+    &lt;CheckoutProvider config={config}&gt;
+      &lt;AutoCheckout
+        autoInit
+        onSuccess={(data) =&gt; console.log('Success:', data)}
+        onError={(error) =&gt; console.error('Error:', error)}
+      /&gt;
     &lt;/CheckoutProvider&gt;
   );
 }</code></pre></div>
+<div class="callout warning"><p><strong>Heads-up:</strong> <code class="inline">CheckoutProvider</code> takes only <code class="inline">config</code> and <code class="inline">children</code>. Lifecycle callbacks like <code class="inline">onSuccess</code>, <code class="inline">onError</code>, <code class="inline">onLoad</code>, etc. live on <code class="inline">AutoCheckout</code> and <code class="inline">SubmitButton</code>, not on the provider. The prop is <code class="inline">autoInit</code> (not <code class="inline">autoOpen</code>).</p></div>
 <h3 class="sub-title">useCheckout hook</h3>
 <p>Access checkout state and methods from any component inside <code class="inline">CheckoutProvider</code>:</p>
 <div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { useCheckout } from '@fanbasis/checkout-react';
 
 function CheckoutStatus() {
   const {
-    checkout,        // CheckoutCore instance — raw SDK access
-    state,           // { isOpen, isLoading, isInitialized, error }
-    open, close,     // open / close the checkout
-    isLoaded,
-    isSubmitting,
-    isComplete,
-    error,
-    isFormReady,
-    submitForm,
-    updateConfig,
-    addAddon, removeAddon, toggleAddon,
+    // State (unwrapped from CheckoutState)
+    isOpen,            // boolean — checkout iframe is open/visible
+    isLoading,         // boolean — initial load in progress
+    isInitialized,     // boolean — init() completed
+    error,             // PaymentError | null
+
+    // Lifecycle
+    init,              // (element?) => Promise&lt;void&gt;
+    destroy,           // () => void
+    attachToElement,   // (element) => void
+
+    // Config
+    updateConfig,      // (Partial&lt;CheckoutConfig&gt;) => void
+
+    // Events
+    on,                // (event, listener) => void
+    off,               // (event, listener) => void
+
+    // Form
+    submitForm,        // (options?) => void
+    isFormReady,       // () => boolean
+
+    // Direct access to underlying instance
+    getCheckout,       // () => PaymentCheckout | null
+
+    // Field setters/getters
+    setEmail, getEmail,
+    setFirstName, getFirstName,
+    setLastName,  getLastName,
+    setPhone,     getPhone,
+    setAddress,   getAddress,
   } = useCheckout();
 }</code></pre></div>
-<p>For lower-level access (<code class="inline">init</code>, <code class="inline">destroy</code>, <code class="inline">attachToElement</code>), use the <code class="inline">checkout</code> instance returned by the hook.</p>
+<p>For lower-level access (subscribing to events directly, etc.), <code class="inline">useCheckoutContext()</code> exposes the same surface plus the raw <code class="inline">state</code> object.</p>
 <h3 class="sub-title">Components</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Component</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td><code class="inline">CheckoutProvider</code></td><td>Wraps checkout components and provides context. Pass <code class="inline">config</code> + event callbacks (<code class="inline">onSuccess</code>, <code class="inline">onError</code>, <code class="inline">onLoaded</code>, <code class="inline">onClosed</code>, <code class="inline">onFormReady</code>, <code class="inline">onFormSubmitting</code>, <code class="inline">onFormSubmissionError</code>, <code class="inline">onAddonsChanged</code>).</td></tr>
-<tr><td><code class="inline">AutoCheckout</code></td><td>Self-contained checkout. Props: <code class="inline">autoOpen</code>, <code class="inline">onSuccess</code>, <code class="inline">onError</code>, <code class="inline">loadingComponent</code>, <code class="inline">errorComponent</code>.</td></tr>
-<tr><td><code class="inline">Checkout</code></td><td>Lower-level component for more control. Accepts <code class="inline">width</code>, <code class="inline">height</code>, <code class="inline">style</code>.</td></tr>
-<tr><td><code class="inline">ProgrammaticCheckout</code></td><td>For custom form submission flows.</td></tr>
-<tr><td><code class="inline">SubmitButton</code></td><td>Customizable submit button.</td></tr>
-<tr><td><code class="inline">CheckoutAddons</code></td><td>Addon selection with render props.</td></tr>
+<tr><td><code class="inline">CheckoutProvider</code></td><td>Root provider. Takes only <code class="inline">config: CheckoutConfig</code> + <code class="inline">children</code>. Wrap your other checkout components in this. Event callbacks live on <code class="inline">AutoCheckout</code> / <code class="inline">SubmitButton</code>, not on the provider.</td></tr>
+<tr><td><code class="inline">AutoCheckout</code></td><td>Self-contained checkout. Props: <code class="inline">autoInit</code>, <code class="inline">className</code>, <code class="inline">style</code>, <code class="inline">showLoadingState</code>, <code class="inline">loadingComponent</code>, <code class="inline">errorComponent</code>, <code class="inline">onInit</code>, <code class="inline">onLoad</code>, <code class="inline">onSuccess</code>, <code class="inline">onError</code>, <code class="inline">onDestroy</code>.</td></tr>
+<tr><td><code class="inline">Checkout</code></td><td>Render-prop component. Children receive the full <code class="inline">useCheckout()</code> shape.</td></tr>
+<tr><td><code class="inline">CheckoutButton</code></td><td>Tiny prebuilt button that calls <code class="inline">submitForm()</code> on click.</td></tr>
+<tr><td><code class="inline">SubmitButton</code></td><td>Render-prop submit button with lifecycle props: <code class="inline">onFormReady</code>, <code class="inline">onFormSubmitting</code>, <code class="inline">onFormSubmissionError</code>, <code class="inline">onPaymentSuccess</code>, <code class="inline">onPaymentError</code>. Children receive <code class="inline">{ submit, isSubmitting, error }</code>.</td></tr>
+<tr><td><code class="inline">CheckoutAddons</code></td><td>Render-prop addon UI. Children receive <code class="inline">{ addons, selectedAddons, addAddon, removeAddon, toggleAddon }</code>.</td></tr>
+</tbody>
+</table>
+<h3 class="sub-title">Hooks</h3>
+<table class="data-table">
+<thead><tr><th>Hook</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">useCheckout()</code></td><td>Flat object combining <code class="inline">CheckoutState</code> fields and methods (see code block above)</td></tr>
+<tr><td><code class="inline">useCheckoutContext()</code></td><td>Lower-level — returns <code class="inline">{ state, getCheckout, init, destroy, on, off, ... }</code> with <code class="inline">state</code> as a nested object</td></tr>
 </tbody>
 </table>
 <h3 class="sub-title">Next.js (App Router)</h3>
@@ -9292,11 +9758,11 @@ import { useRouter } from 'next/navigation';
 export default function CheckoutPage() {
   const router = useRouter();
   return (
-    &lt;CheckoutProvider
-      config={{ /* ... */ }}
-      onSuccess={() =&gt; router.push('/thank-you')}
-    &gt;
-      &lt;AutoCheckout /&gt;
+    &lt;CheckoutProvider config={{ /* ... */ }}&gt;
+      &lt;AutoCheckout
+        autoInit
+        onSuccess={() =&gt; router.push('/thank-you')}
+      /&gt;
     &lt;/CheckoutProvider&gt;
   );
 }</code></pre></div>
@@ -9407,11 +9873,11 @@ function MultiProductPage() {
   return (
     &lt;div&gt;
       &lt;CheckoutProvider config={product1}&gt;
-        &lt;AutoCheckout autoOpen={false} /&gt;
+        &lt;AutoCheckout /&gt;
       &lt;/CheckoutProvider&gt;
 
       &lt;CheckoutProvider config={product2}&gt;
-        &lt;AutoCheckout autoOpen={false} /&gt;
+        &lt;AutoCheckout /&gt;
       &lt;/CheckoutProvider&gt;
     &lt;/div&gt;
   );
@@ -9430,12 +9896,12 @@ const mockConfig = {
 test('renders checkout component', () =&gt; {
   render(
     &lt;CheckoutProvider config={mockConfig}&gt;
-      &lt;AutoCheckout autoOpen={false} /&gt;
+      &lt;AutoCheckout /&gt;
     &lt;/CheckoutProvider&gt;
   );
 });</code></pre></div>
 <h3 class="sub-title">Package details</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Detail</th><th>Value</th></tr></thead>
 <tbody>
 <tr><td>Peer dependencies</td><td>React, React DOM</td></tr>
@@ -9471,14 +9937,38 @@ Headers:
   Content-Type: application/json
 
 Body:
-  { "creatorId": "your-creator-slug" }</code></pre></div>
-<div class="callout info"><p>The <code class="inline">creatorId</code> is required in the request body. Omitting it will cause the request to fail.</p></div>
+  {
+    "creator_id": "&lt;your-creator-slug&gt;",   // required
+    "product_id": "&lt;product-id&gt;",          // required
+    "metadata":   { ... }                  // optional, stored on the session
+  }</code></pre></div>
+<div class="callout info"><div class="callout-title">ℹ Body parameters</div><ul style="margin:6px 0 0;padding-left:20px;">
+<li><code class="inline">creator_id</code> <strong>(required)</strong> — your creator slug.</li>
+<li><code class="inline">product_id</code> <strong>(required)</strong> — the product to embed checkout for. The returned secret is reusable across all your products under this creator.</li>
+<li><code class="inline">metadata</code> <em>(optional)</em> — arbitrary JSON object stored on the session and echoed back in webhook events for the resulting transaction.</li>
+</ul></div>
 <h3 class="sub-title">Examples</h3>
 <div class="code-block"><div class="code-label plain">cURL · bash</div><pre><code>curl --location --request POST \
   'https://www.fanbasis.com/public-api/checkout-sessions/embedded' \
   --header 'x-api-key: YOUR_API_KEY' \
   --header 'Content-Type: application/json' \
-  --data-raw '{"creatorId": "your-creator-slug"}'</code></pre></div>
+  --data-raw '{
+    "creator_id": "your-creator-slug",
+    "product_id": "NLxj6"
+  }'</code></pre></div>
+<div class="code-block"><div class="code-label plain">cURL · with metadata</div><pre><code>curl --location --request POST \
+  'https://www.fanbasis.com/public-api/checkout-sessions/embedded' \
+  --header 'x-api-key: YOUR_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "creator_id": "your-creator-slug",
+    "product_id": "NLxj6",
+    "metadata": {
+      "user_id": "usr_abc123",
+      "source": "in-app",
+      "campaign": "summer-launch"
+    }
+  }'</code></pre></div>
 <div class="code-block"><div class="code-label plain">Node.js · javascript</div><pre><code>const express = require('express');
 const app = express();
 
@@ -9492,11 +9982,18 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
           'Content-Type': 'application/json',
           'x-api-key': process.env.FANBASIS_API_KEY
         },
-        body: JSON.stringify({ creatorId: 'your-creator-slug' })
+        body: JSON.stringify({
+          creator_id: 'your-creator-slug',
+          product_id: 'NLxj6',
+          metadata: {                  // optional
+            user_id: req.user.id,
+            source: 'in-app'
+          }
+        })
       }
     );
-    const data = await response.json();
-    res.json({ checkoutSessionSecret: data.data.checkout_session_secret });
+    const json = await response.json();
+    res.json({ checkoutSessionSecret: json.data.checkout_session_secret });
   } catch (error) {
     res.status(500).json({ error: 'Failed to create session secret' });
   }
@@ -9505,11 +10002,15 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
   "status": "success",
   "message": "Embedded checkout session created successfully",
   "data": {
-    "id": 2,
+    "id": 3204,
     "checkout_session_secret": "84efcbc9-c8c9-49cf-8c7b-8b6b18939984",
-    "created_at": "2025-11-13T16:39:51.000000Z"
+    "your_handle": "your-creator-slug",
+    "metadata": { "user_id": "usr_abc123", "source": "in-app" },
+    "allowed_payment_methods": null,
+    "created_at": "2026-04-30T22:34:36.000000Z"
   }
 }</code></pre></div>
+<p>The <code class="inline">your_handle</code> field is the creator slug to use as <code class="inline">creatorId</code> in the SDK config — handy if you're not sure which slug is associated with your API key. The <code class="inline">checkout_session_secret</code> is what you pass as <code class="inline">checkoutSessionSecret</code>. <code class="inline">metadata</code> is echoed back from the request and persisted on resulting transactions.</p>
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -9525,25 +10026,42 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
   creatorId: string;              // Your creator's URL slug
   productId: string;              // Product ID from the dashboard
   checkoutSessionSecret: string;  // Session secret from the API
+  environment: 'sandbox' | 'production';
 }</code></pre></div>
-<div class="callout warning"><div class="callout-title">⚠ Environment values</div><p>The SDK only accepts <code class="inline">'sandbox'</code> and <code class="inline">'production'</code> as values for the optional <code class="inline">environment</code> field. Do <strong>NOT</strong> use <code class="inline">'qa'</code> — it will cause a "creator does not exist" error.</p></div>
+<div class="callout warning"><div class="callout-title">⚠ Environment values</div><p>The SDK only accepts <code class="inline">'sandbox'</code> and <code class="inline">'production'</code>. Do <strong>NOT</strong> use <code class="inline">'qa'</code> — it will cause a "creator does not exist" error.</p></div>
 <h3 class="sub-title">Optional fields</h3>
 <div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutConfig {
   // ... required fields above
 
-  environment?: 'production' | 'sandbox';  // Default: 'production'
-  theme?: CustomizationParams;             // Styling and layout
-  containerOptions?: {
-    width?: string;
-    height?: string;
-  };
+  // Behavior
+  bumpProductIds?: string[];               // additional bumps — see Addons section
+  couponCode?: string;                     // pre-apply a coupon at checkout
+  affiliateCode?: string;                  // attribute the sale to an affiliate
+  metadata?: Record&lt;string, string&gt;;       // pass-through metadata stored on the txn
+  collectPhone?: boolean;                  // show phone field with country code selector
+  showAllAddons?: boolean;                 // show all available addons
+  showSubmitButton?: boolean;              // default: true. Set false for custom submit button.
+
+  // Lifecycle / rendering
   redirectSettings?: RedirectSettings;
-  couponCode?: string;
-  affiliateCode?: string;
-  showSubmitButton?: boolean;              // Default: true
-  bumpProductIds?: string[];              // See Addons section — do not use
+  containerOptions?: { width?: string; height?: string };
+  theme?: CustomizationParams;             // Styling, layout, prefill, fields
+  overrideBaseUrl?: string;                // override embedded checkout host (rarely needed)
 }</code></pre></div>
-<div class="callout warning"><div class="callout-title">⚠ About bumpProductIds</div><p>This config option exists but should NOT be used. See <a href="#sdk-addons">Addons &amp; order bumps</a> for why and what to do instead.</p></div>
+<div class="callout warning"><div class="callout-title">⚠ About bumpProductIds</div><p>This config option exists but should NOT be used for dashboard-configured bumps. See <a href="#sdk-addons">Addons &amp; order bumps</a> for why and what to do instead.</p></div>
+<h3 class="sub-title">Defaults &amp; helper utilities</h3>
+<p>The core SDK exports a few utilities for working with config objects:</p>
+<table class="data-table">
+<thead><tr><th>Export</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">DEFAULT_CONFIG</code></td><td>Partial default config object</td></tr>
+<tr><td><code class="inline">createMinimalConfig(creatorId, productId, secret, environment?)</code></td><td>Build a minimal valid config quickly</td></tr>
+<tr><td><code class="inline">validateConfig(config)</code></td><td>Returns <code class="inline">{ isValid, errors: string[] }</code> — fail fast in dev</td></tr>
+<tr><td><code class="inline">mergeConfig(partial)</code></td><td>Merge a partial config with sensible defaults</td></tr>
+<tr><td><code class="inline">isConfigComplete(config)</code></td><td>Type guard — is this <code class="inline">Partial&lt;CheckoutConfig&gt;</code> actually complete?</td></tr>
+<tr><td><code class="inline">getConfigSummary(config)</code></td><td>Debug helper — serialized summary</td></tr>
+</tbody>
+</table>
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -9554,20 +10072,45 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
     <span class="section-num">DEVELOPER RESOURCES</span>
     <h1>Theme & Styling</h1>
   </div>
-<h3 class="sub-title">Basic theme options</h3>
+<div class="callout warning"><div class="callout-title">⚠ No theme presets beyond light/dark</div><p>The <code class="inline">theme</code> field accepts only <code class="inline">'light'</code> or <code class="inline">'dark'</code>. Values like <code class="inline">'green'</code>, <code class="inline">'mint'</code>, <code class="inline">'emerald'</code>, or any custom name fall back silently. For a branded look, use <code class="inline">'light'</code> as the base and override individual color slots — see the green theme example below.</p></div>
+<h3 class="sub-title">Theme schema (required + optional)</h3>
 <div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
-  theme: 'light',              // 'light' or 'dark'
-  accent_color: '#007BFF',
+  // ─── REQUIRED when theme is provided ───
+  theme: 'light',                 // 'light' | 'dark' (no other presets)
   show_product_info: true,
-  product_layout: 'left',
-  show_coupon_row: false,
-  billing_form_placement: 'default'  // 'default' | 'above_payment' | 'below_payment'
+  product_layout: 'left',         // 'left' | 'right' | 'above' | 'below' | 'none'
+  show_coupon_row: true,
+  accent_color: '#007BFF',        // primary button/accent color (hex)
+
+  // ─── OPTIONAL color overrides (all hex) ───
+  background_color: '#FFFFFF',
+  surface_color: '#FAFAFA',
+  border_color: '#E0E0E0',
+  input_background_color: '#F5F5F5',
+  label_color: '#333333',
+  heading_color: '#111111',
+  product_text_color: '#333333',
+  secondary_color: '#666666',
+
+  // ─── OPTIONAL content & layout ───
+  product_image: 'https://...',         // override product image URL
+  coupon_row_disclaimer: 'Discount applied at checkout',
+  show_headings: true,
+  show_powered_by: true,                // toggle "Powered by FanBasis" footer
+  billing_form_placement: 'default',    // 'default' | 'above_payment' | 'below_payment'
+
+  // ─── OPTIONAL field control (see Prefill & Field Control section) ───
+  prefill: { /* ... */ },
+  fields:  { /* ... */ },
+
+  // ─── DEPRECATED — use `fields` instead ───
+  billing_display_fields: ['name', 'email']
 }</code></pre></div>
 <h3 class="sub-title">Color properties</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Property</th><th>What it colors</th><th>Default (light)</th></tr></thead>
 <tbody>
-<tr><td><code class="inline">accent_color</code></td><td>Buttons, links, focus states</td><td><code class="inline">#007BFF</code></td></tr>
+<tr><td><code class="inline">accent_color</code></td><td>Buttons, links, focus states</td><td>— (required)</td></tr>
 <tr><td><code class="inline">background_color</code></td><td>Main form background</td><td><code class="inline">#FFFFFF</code></td></tr>
 <tr><td><code class="inline">label_color</code></td><td>Input labels</td><td><code class="inline">#333333</code></td></tr>
 <tr><td><code class="inline">input_background_color</code></td><td>Inside input fields</td><td><code class="inline">#F5F5F5</code></td></tr>
@@ -9579,7 +10122,7 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
 </tbody>
 </table>
 <h3 class="sub-title">Product layout options</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Value</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td><code class="inline">'left'</code></td><td>Product info on the left, form on the right</td></tr>
@@ -9607,9 +10150,29 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
 <li><code class="inline">!important</code> is often needed to override SDK-applied inline styles.</li>
 <li>Custom fonts from the parent page don't affect the iframe — it loads its own.</li>
 </ul>
+<h3 class="sub-title">Branded theme example — emerald / mint</h3>
+<p>Achieve a fully branded look by setting <code class="inline">theme: 'light'</code> and overriding the color slots. The example below mirrors the green look on <code class="inline">demo.embedded.fanbasis.io</code>:</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
+  theme: 'light',                  // base
+  show_product_info: true,
+  product_layout: 'left',
+  show_coupon_row: true,
+  accent_color: '#10b981',         // emerald-500 (Pay button)
+  background_color: '#f0fdf4',     // green-50
+  surface_color: '#ecfdf5',        // emerald-50
+  border_color: '#a7f3d0',         // emerald-200
+  input_background_color: '#ecfdf5',
+  heading_color: '#065f46',        // emerald-800
+  label_color: '#065f46',
+  secondary_color: '#047857',      // emerald-700
+  product_text_color: '#064e3b'    // emerald-900
+}</code></pre></div>
 <h3 class="sub-title">Dark theme example</h3>
 <div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
   theme: 'dark',
+  show_product_info: true,
+  product_layout: 'above',
+  show_coupon_row: false,
   accent_color: '#ff6b6b',
   background_color: '#1a1a1a',
   label_color: '#ffffff',
@@ -9618,10 +10181,7 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
   heading_color: '#ffffff',
   secondary_color: '#9ca3af',
   border_color: '#374151',
-  surface_color: '#2d2d2d',
-  show_product_info: true,
-  product_layout: 'above',
-  show_coupon_row: false
+  surface_color: '#2d2d2d'
 }</code></pre></div>
 </section>
 
@@ -9640,7 +10200,7 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
   failure_redirect_url: 'https://yoursite.com/checkout-failed', // optional
   always_redirect: true  // ALWAYS set this to true
 }</code></pre></div>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
 <tr><td><code class="inline">success_redirect_url</code></td><td>string</td><td>URL to redirect to after successful payment</td></tr>
@@ -9663,6 +10223,177 @@ checkout.on('checkout:success', function(data) {
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
+<!-- PREFILL & FIELD CONTROL
+     ═══════════════════════════════════════════ -->
+<section id="sdk-prefill">
+  <div class="section-head">
+    <span class="section-num">DEVELOPER RESOURCES</span>
+    <h1>Prefill & Field Control</h1>
+  </div>
+<p>Pre-populate form fields and control their visibility/disabled state. Replaces the older "no native prefill" workaround pattern with a first-class API.</p>
+
+<h3 class="sub-title">Two ways to prefill</h3>
+<p><strong>Declarative</strong> — set initial values via the <code class="inline">prefill</code> object inside <code class="inline">theme</code>. Values render the moment the form is interactive — no need to wait for <code class="inline">form:ready</code>.</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>const checkout = PaymentCheckout.create({
+  creatorId: 'creator-handle',
+  productId: 'NLxj6',
+  checkoutSessionSecret: '&lt;uuid&gt;',
+  environment: 'production',
+  theme: {
+    theme: 'light',
+    show_product_info: true,
+    product_layout: 'left',
+    show_coupon_row: true,
+    accent_color: '#007BFF',
+    prefill: {
+      email: 'jane@example.com',
+      first_name: 'Jane',
+      last_name: 'Smith',
+      phone: '+15551234567',
+      address: {
+        country: 'US',
+        line1: '123 Main St',
+        line2: 'Apt 4B',
+        city: 'Austin',
+        state: 'TX',
+        postal_code: '78701'
+      }
+    }
+  }
+});</code></pre></div>
+
+<p><strong>Imperative</strong> — set values after init via methods on the checkout instance. Useful when values become available after the iframe is mounted (e.g. logged-in user data fetched async).</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>checkout.on('form:ready', async () =&gt; {
+  await checkout.setEmail('jane@example.com');
+  await checkout.setFirstName('Jane');
+  await checkout.setLastName('Smith');
+  await checkout.setPhone('+15551234567');
+  await checkout.setAddress({
+    country: 'US',
+    line1: '123 Main St',
+    city: 'Austin',
+    state: 'TX',
+    postal_code: '78701'
+  });
+});
+
+checkout.init();</code></pre></div>
+<p>All setters return Promises. They reject with <code class="inline">IFRAME_NOT_READY</code> if called before <code class="inline">form:ready</code>, or <code class="inline">FIELD_VALIDATION_ERROR</code> if the value fails validation.</p>
+
+<h3 class="sub-title">Reading current values</h3>
+<p>Symmetric getters return the current value (or <code class="inline">null</code> if unset):</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>const email     = await checkout.getEmail();
+const firstName = await checkout.getFirstName();
+const lastName  = await checkout.getLastName();
+const phone     = await checkout.getPhone();
+const address   = await checkout.getAddress();</code></pre></div>
+
+<h3 class="sub-title">PrefillConfig type</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface PrefillConfig {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;          // E.164 format: '+15551234567'
+  address?: PrefillAddress;
+}
+
+interface PrefillAddress {
+  country?: string;        // ISO 3166-1 alpha-2 ('US', 'GB')
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;          // 2-letter state/province code where applicable
+  postal_code?: string;
+}</code></pre></div>
+
+<h3 class="sub-title">Field visibility — the <code class="inline">fields</code> config</h3>
+<p>Hide or disable individual fields without removing them from validation logic. Replaces the deprecated <code class="inline">billing_display_fields</code> array.</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
+  // ... required theme fields ...
+  fields: {
+    email:      { disable: true },               // shown but locked (already known)
+    first_name: { hide: true },                  // hidden entirely
+    last_name:  { hide: true },
+    phone:      { hide: false, disable: false }, // explicit defaults
+    address:    { hide: true }                   // skip address collection
+  }
+}</code></pre></div>
+
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface FieldsConfig {
+  email?:      FieldControl;
+  first_name?: FieldControl;
+  last_name?:  FieldControl;
+  phone?:      FieldControl;
+  address?:    FieldControl;
+}
+
+interface FieldControl {
+  hide?: boolean;       // remove from form entirely
+  disable?: boolean;    // show but make read-only
+}</code></pre></div>
+
+<h3 class="sub-title">When to hide vs disable</h3>
+<table class="data-table">
+<thead><tr><th>Goal</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>User shouldn't change the value (e.g., logged-in email)</td><td><code class="inline">disable: true</code> + prefill</td></tr>
+<tr><td>You don't need this data at all (e.g., digital product)</td><td><code class="inline">hide: true</code></td></tr>
+<tr><td>Collect normally but pre-fill from a prior step</td><td>Just prefill, no field control needed</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub-title">Common patterns</h3>
+<p><strong>Logged-in user — email locked, name editable:</strong></p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
+  theme: 'light',
+  show_product_info: true,
+  product_layout: 'left',
+  show_coupon_row: true,
+  accent_color: '#007BFF',
+  prefill: { email: currentUser.email },
+  fields: { email: { disable: true } }
+}</code></pre></div>
+
+<p><strong>Digital product — skip address entirely:</strong></p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>theme: {
+  theme: 'light',
+  show_product_info: true,
+  product_layout: 'left',
+  show_coupon_row: true,
+  accent_color: '#007BFF',
+  fields: { address: { hide: true } }
+}</code></pre></div>
+
+<h3 class="sub-title">Phone number special case</h3>
+<p><code class="inline">collectPhone: true</code> at the top-level config is what enables the phone field with the country code selector. Setting <code class="inline">phone</code> in <code class="inline">prefill</code> or via <code class="inline">setPhone()</code> only works if <code class="inline">collectPhone</code> is true OR the field is otherwise visible per dashboard config.</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>const checkout = PaymentCheckout.create({
+  // ... required config ...
+  collectPhone: true,
+  theme: {
+    // ... required theme fields ...
+    prefill: { phone: '+15551234567' }
+  }
+});</code></pre></div>
+
+<h3 class="sub-title">Listening to field changes</h3>
+<p>The <code class="inline">field:value</code> event fires whenever a field's value changes — whether from a setter call, prefill, or user typing.</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>checkout.on('field:value', function (data) {
+  // data: { field: string, value: string | PrefillAddress | null }
+  console.log(data.field + ' changed to', data.value);
+});</code></pre></div>
+
+<h3 class="sub-title">Setter error handling</h3>
+<table class="data-table">
+<thead><tr><th>Error code</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">IFRAME_NOT_READY</code></td><td>Called before <code class="inline">form:ready</code> event</td><td>Wait for <code class="inline">form:ready</code> or check <code class="inline">isFormReady()</code></td></tr>
+<tr><td><code class="inline">FIELD_NOT_SETTABLE</code></td><td>Field is hidden via <code class="inline">fields.{name}.hide: true</code></td><td>Don't try to set hidden fields</td></tr>
+<tr><td><code class="inline">FIELD_VALIDATION_ERROR</code></td><td>Value failed validation (bad email, invalid phone)</td><td>Validate values before passing to setter</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
 <!-- EVENTS REFERENCE
      ═══════════════════════════════════════════ -->
 <section id="sdk-events">
@@ -9672,23 +10403,25 @@ checkout.on('checkout:success', function(data) {
   </div>
 <p>The SDK uses a colon-separated event naming convention. <strong>Event names are case-sensitive.</strong></p>
 <h3 class="sub-title">All events</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Event</th><th>Data</th><th>When it fires</th></tr></thead>
 <tbody>
-<tr><td><code class="inline">checkout:success</code></td><td><code class="inline">{ transactionId, amount, currency, customerEmail }</code></td><td>Payment completed successfully</td></tr>
-<tr><td><code class="inline">checkout:error</code></td><td><code class="inline">{ message, code }</code></td><td>Payment processing error</td></tr>
 <tr><td><code class="inline">checkout:opened</code></td><td>—</td><td>Checkout iframe opened/visible</td></tr>
 <tr><td><code class="inline">checkout:loaded</code></td><td>—</td><td>Checkout fully rendered and ready</td></tr>
 <tr><td><code class="inline">checkout:closed</code></td><td>—</td><td>Checkout iframe closed/removed</td></tr>
-<tr><td><code class="inline">form:ready</code></td><td>—</td><td>Form is interactive, can accept input</td></tr>
-<tr><td><code class="inline">form:submitting</code></td><td>—</td><td>Form submission in progress</td></tr>
-<tr><td><code class="inline">form:submission_error</code></td><td><code class="inline">{ data: { errorMessage } }</code></td><td>Form submission failed</td></tr>
-<tr><td><code class="inline">addons:changed</code></td><td><code class="inline">{ addons, total }</code></td><td>Addon selection changed</td></tr>
+<tr><td><code class="inline">checkout:success</code></td><td><code class="inline">{ transactionId, amount, currency, customer, metadata }</code></td><td>Payment completed successfully</td></tr>
+<tr><td><code class="inline">checkout:error</code></td><td><code class="inline">PaymentError</code> instance with <code class="inline">.code</code>, <code class="inline">.message</code>, <code class="inline">.details</code></td><td>Integration-level error (config, iframe state)</td></tr>
+<tr><td><code class="inline">form:ready</code></td><td><code class="inline">{ timestamp }</code></td><td>Form is interactive, can accept input</td></tr>
+<tr><td><code class="inline">form:submitting</code></td><td><code class="inline">{ paymentMethod, timestamp, timestamp_iso? }</code></td><td>Form submission in progress</td></tr>
+<tr><td><code class="inline">form:submission_error</code></td><td><code class="inline">{ type, timestamp, data: { errorCode, errorMessage, retryable } }</code></td><td>Gateway declined or errored the payment</td></tr>
+<tr><td><code class="inline">form:validation</code></td><td><code class="inline">{ isValid, fields: Record&lt;string, { valid, error }&gt; }</code></td><td>Per-field validation status updated</td></tr>
+<tr><td><code class="inline">addons:changed</code></td><td><code class="inline">{ selectedAddons: string[], addons: Addon[] }</code></td><td>Addon selection changed</td></tr>
+<tr><td><code class="inline">field:value</code></td><td><code class="inline">{ field, value }</code></td><td>Field value changed (setter or user input)</td></tr>
 </tbody>
 </table>
 <div class="callout warning"><div class="callout-title">⚠ Critical</div><p>Register all event handlers <strong>BEFORE</strong> calling <code class="inline">checkout.init()</code>. Handlers registered after <code class="inline">init()</code> may never fire.</p></div>
 <h3 class="sub-title">Registration order</h3>
-<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var checkout = await PaymentCheckout.create(config);
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var checkout = PaymentCheckout.create(config);   // synchronous — no await
 checkout.attachToElement(element);
 
 // ✅ Register events HERE — between attachToElement() and init()
@@ -9696,22 +10429,66 @@ checkout.on('checkout:success', handler);
 checkout.on('checkout:error', handler);
 checkout.on('form:submission_error', handler);
 
-checkout.init();</code></pre></div>
-<h3 class="sub-title">Error codes</h3>
-<table class="data-table" style="margin-bottom:24px;">
+checkout.init();   // returns a Promise that resolves when iframe is ready</code></pre></div>
+
+<h3 class="sub-title">checkout:success payload</h3>
+<p>The <code class="inline">customer</code> field is an object containing buyer information; <code class="inline">metadata</code> is whatever you passed in <code class="inline">CheckoutConfig.metadata</code>. Buyer email lives at <code class="inline">data.customer?.email</code>, not at the top level.</p>
+<div class="code-block"><div class="code-label plain">javascript</div><pre><code>checkout.on('checkout:success', function (data) {
+  // data.transactionId, data.amount, data.currency
+  // data.customer  → buyer info (email, name, etc.)
+  // data.metadata  → whatever you passed in config.metadata
+  var buyerEmail = data.customer && data.customer.email;
+  console.log('Paid:', data.transactionId, buyerEmail);
+});</code></pre></div>
+
+<h3 class="sub-title">Two error categories</h3>
+<p>The SDK surfaces two distinct kinds of errors. Don't conflate them.</p>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(99,102,241,0.15);color:#4F46E5;vertical-align:middle;">SDK</span>Integration errors — <code class="inline">checkout:error</code></h4>
+<p>Emitted when something is wrong with how the SDK is configured or being called. These are <strong>integration bugs</strong> — surface them in dev tooling, not to end users. The payload is a <code class="inline">PaymentError</code> instance with a <code class="inline">code</code> field from the <code class="inline">PaymentErrorCode</code> enum.</p>
+<table class="data-table">
 <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td><code class="inline">PAYMENT_FAILED</code></td><td>Payment processor declined the transaction</td></tr>
-<tr><td><code class="inline">CARD_DECLINED</code></td><td>Card was declined by the issuing bank</td></tr>
-<tr><td><code class="inline">INSUFFICIENT_FUNDS</code></td><td>Card has insufficient funds</td></tr>
-<tr><td><code class="inline">EXPIRED_CARD</code></td><td>Card is expired</td></tr>
-<tr><td><code class="inline">INVALID_CARD</code></td><td>Card number is invalid</td></tr>
-<tr><td><code class="inline">PROCESSING_ERROR</code></td><td>Generic processing error</td></tr>
-<tr><td><code class="inline">NETWORK_ERROR</code></td><td>Network connectivity issue</td></tr>
-<tr><td><code class="inline">SESSION_EXPIRED</code></td><td>Checkout session has expired</td></tr>
-<tr><td><code class="inline">CONFIGURATION_ERROR</code></td><td>Invalid checkout configuration</td></tr>
+<tr><td><code class="inline">INVALID_CONFIG</code></td><td>Config object failed validation</td></tr>
+<tr><td><code class="inline">CREATOR_ID_REQUIRED</code></td><td><code class="inline">creatorId</code> missing</td></tr>
+<tr><td><code class="inline">PRODUCT_ID_REQUIRED</code></td><td><code class="inline">productId</code> missing</td></tr>
+<tr><td><code class="inline">CHECKOUT_SESSION_SECRET_REQUIRED</code></td><td><code class="inline">checkoutSessionSecret</code> missing</td></tr>
+<tr><td><code class="inline">FIELD_VALIDATION_ERROR</code></td><td>A <code class="inline">setEmail/setPhone/etc.</code> call rejected a value</td></tr>
+<tr><td><code class="inline">FIELD_NOT_SETTABLE</code></td><td>Tried to set a field that's hidden or in an invalid state</td></tr>
+<tr><td><code class="inline">IFRAME_NOT_READY</code></td><td>Called a method before the iframe was ready (e.g. <code class="inline">setEmail</code> before <code class="inline">form:ready</code>)</td></tr>
+<tr><td><code class="inline">UNKNOWN_ERROR</code></td><td>Catch-all</td></tr>
 </tbody>
 </table>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(34,197,94,0.15);color:#16A34A;vertical-align:middle;">Gateway</span>Payment gateway errors — <code class="inline">form:submission_error</code></h4>
+<p>Emitted when the payment processor declines or errors a transaction. The <code class="inline">errorMessage</code> string is already buyer-friendly — surface it directly. Use <code class="inline">errorCode</code> for analytics and retry logic; <code class="inline">retryable: true</code> means it's worth letting the user try again with the same card.</p>
+<table class="data-table">
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code class="inline">card_declined</code></td><td>Card declined by the issuing bank</td></tr>
+<tr><td><code class="inline">insufficient_funds</code></td><td>Insufficient funds on the card</td></tr>
+<tr><td><code class="inline">expired_card</code></td><td>Card is expired</td></tr>
+<tr><td><code class="inline">invalid_card</code></td><td>Card number is invalid</td></tr>
+<tr><td><code class="inline">incorrect_cvc</code></td><td>CVC doesn't match</td></tr>
+<tr><td><code class="inline">processing_error</code></td><td>Generic processor error</td></tr>
+<tr><td><code class="inline">network_error</code></td><td>Network connectivity issue</td></tr>
+<tr><td><code class="inline">session_expired</code></td><td>Checkout session has expired</td></tr>
+<tr><td><code class="inline">authentication_required</code></td><td>3DS challenge required and failed</td></tr>
+<tr><td><code class="inline">do_not_honor</code></td><td>Issuing bank refused without specific reason</td></tr>
+</tbody>
+</table>
+<div class="code-block"><div class="code-label plain">javascript · handling both error categories</div><pre><code>// Integration error — log it, fix the bug
+checkout.on('checkout:error', function (err) {
+  console.error('[SDK]', err.code, err.message);
+});
+
+// Gateway error — show errorMessage to the buyer
+checkout.on('form:submission_error', function (data) {
+  showErrorBanner(data.data.errorMessage);    // already user-friendly
+  if (data.data.retryable) {
+    enableRetryButton();
+  }
+});</code></pre></div>
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -9725,7 +10502,7 @@ checkout.init();</code></pre></div>
 <p>FanBasis checkout supports addons (order bumps / upsells) that customers can toggle on/off during checkout.</p>
 <div class="callout warning"><p><strong>Critical: Do NOT use <code class="inline">bumpProductIds</code>.</strong> Dashboard-configured order bumps load as SELECTED BY DEFAULT inside the iframe. Including <code class="inline">bumpProductIds</code> causes all bumps to appear pre-selected with their prices added to the total before the customer has opted in.</p></div>
 <h3 class="sub-title">What didn't work</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Approach</th><th>Why it failed</th></tr></thead>
 <tbody>
 <tr><td><code class="inline">bumpProductIds</code> + checkboxes starting unchecked</td><td>Iframe loads bumps as selected; first <code class="inline">toggleAddon()</code> deselects instead of selecting</td></tr>
@@ -9748,7 +10525,7 @@ var config = {
   redirectSettings: { success_redirect_url: '/thank-you', always_redirect: true }
 };
 
-var checkout = await PaymentCheckout.create(config);
+var checkout = PaymentCheckout.create(config);
 checkout.attachToElement(element);
 
 // Parent-page checkbox handler — use addAddon/removeAddon, NOT toggleAddon
@@ -9760,18 +10537,40 @@ checkbox.addEventListener('change', function () {
   }
 });
 
-// Sync total and state from SDK
+// Sync UI from the addons:changed event
 checkout.on('addons:changed', function (data) {
-  if (typeof data.total === 'number') {
-    totalDisplay.textContent = '$' + data.total.toFixed(2);
-  }
-  // Handle both payload shapes defensively
-  var addonList = data.addons || data.selectedAddons || [];
+  // data: { selectedAddons: string[], addons: Addon[] }
+  // (no `total` field — compute it yourself from selectedAddons + addon prices)
+  data.addons.forEach(function (addon) {
+    var checkbox = document.querySelector('[data-addon-id="' + addon.id + '"]');
+    if (checkbox) {
+      checkbox.checked = data.selectedAddons.indexOf(addon.id) !== -1;
+    }
+  });
 });
 
 checkout.init();</code></pre></div>
+<h3 class="sub-title">Addon shape</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface Addon {
+  id: string;
+  title: string;             // NOT `name`
+  price: number;             // in cents
+  description: string;
+  subscription_details?: {
+    starting_on: string;
+    payment_frequency: string;
+    free_trial_days: number;
+    recurring_subtotal: number;
+  };
+}
+
+interface AddonsChangedData {
+  selectedAddons: string[];   // currently selected addon IDs
+  addons: Addon[];            // all available addons (full objects)
+}</code></pre></div>
+<p>Older docs and tutorials may reference <code class="inline">addon.name</code>, <code class="inline">addon.selected</code>, or <code class="inline">data.total</code> — those are wrong. Use the shape above. Determine selection state from <code class="inline">selectedAddons.includes(addon.id)</code>.</p>
 <h3 class="sub-title">Addon API methods</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Method</th><th>Use</th><th>Notes</th></tr></thead>
 <tbody>
 <tr><td><code class="inline">addAddon(productId)</code></td><td>Explicitly add a bump</td><td><strong>Preferred</strong> — deterministic</td></tr>
@@ -9790,26 +10589,21 @@ checkout.init();</code></pre></div>
     <h1>Programmatic Submission</h1>
   </div>
 <p>Hide the default submit button and trigger form submission from your own button or custom validation logic.</p>
-<div class="code-block"><div class="code-label plain">React · jsx</div><pre><code>function CustomSubmitButton() {
-  const { submitForm, isFormReady, isSubmitting } = useCheckout();
-  return (
-    &lt;button
-      onClick={() =&gt; submitForm()}
-      disabled={!isFormReady || isSubmitting}
-    &gt;
-      {isSubmitting ? 'Processing...' : 'Complete Purchase'}
-    &lt;/button&gt;
-  );
-}
+<div class="code-block"><div class="code-label plain">React · jsx</div><pre><code>import {
+  CheckoutProvider, AutoCheckout, SubmitButton
+} from '@fanbasis/checkout-react';
 
 function App() {
   return (
-    &lt;CheckoutProvider
-      config={{ ...config, showSubmitButton: false }}
-      onSuccess={(data) =&gt; window.location.href = '/thank-you'}
-    &gt;
-      &lt;ProgrammaticCheckout /&gt;
-      &lt;CustomSubmitButton /&gt;
+    &lt;CheckoutProvider config={{ ...config, showSubmitButton: false }}&gt;
+      &lt;AutoCheckout autoInit /&gt;
+      &lt;SubmitButton onPaymentSuccess={() =&gt; (window.location.href = '/thank-you')}&gt;
+        {({ submit, isSubmitting }) =&gt; (
+          &lt;button onClick={submit} disabled={isSubmitting}&gt;
+            {isSubmitting ? 'Processing…' : 'Complete Purchase'}
+          &lt;/button&gt;
+        )}
+      &lt;/SubmitButton&gt;
     &lt;/CheckoutProvider&gt;
   );
 }</code></pre></div>
@@ -9821,7 +10615,7 @@ function App() {
   showSubmitButton: false
 };
 
-var checkout = await PaymentCheckout.create(config);
+var checkout = PaymentCheckout.create(config);
 checkout.attachToElement(document.getElementById('checkout-container'));
 
 checkout.on('form:ready', function() {
@@ -9912,7 +10706,7 @@ var checkout;
 async function openCheckout() {
   document.getElementById('checkout-overlay').style.display = 'block';
   if (!checkout) {
-    checkout = await PaymentCheckout.create({ /* config */ });
+    checkout = PaymentCheckout.create({ /* config */ });
     checkout.attachToElement(document.getElementById('checkout-container'));
     checkout.on('checkout:success', () =&gt; window.location.href = '/thank-you');
     checkout.init();
@@ -9927,7 +10721,7 @@ async function openCheckout() {
 ];
 
 products.forEach(async function(product) {
-  var checkout = await PaymentCheckout.create({
+  var checkout = PaymentCheckout.create({
     creatorId: 'your-creator-slug',
     productId: product.id,
     checkoutSessionSecret: 'your-session-secret',
@@ -9957,7 +10751,7 @@ products.forEach(async function(product) {
       ))}
       {selectedPlan &amp;&amp; (
         &lt;CheckoutProvider config={{ /* ... */, productId: `subscription_${selectedPlan.id}` }}&gt;
-          &lt;AutoCheckout autoOpen={true} /&gt;
+          &lt;AutoCheckout autoInit /&gt;
         &lt;/CheckoutProvider&gt;
       )}
     &lt;/div&gt;
@@ -9973,54 +10767,272 @@ products.forEach(async function(product) {
     <span class="section-num">DEVELOPER RESOURCES</span>
     <h1>Types & Interfaces</h1>
   </div>
-<h3 class="sub-title">TypeScript interfaces</h3>
+<p>Complete TypeScript interfaces from <code class="inline">@fanbasis/checkout-core@0.4.0</code> and <code class="inline">@fanbasis/checkout-react@0.3.0</code>.</p>
+
+<h3 class="sub-title">CheckoutConfig</h3>
 <div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutConfig {
   // Required
   creatorId: string;
   productId: string;
   checkoutSessionSecret: string;
+  environment: 'sandbox' | 'production';
 
   // Optional
-  environment?: 'production' | 'sandbox';
-  redirectSettings?: RedirectSettings;
-  theme?: CustomizationParams;
-  containerOptions?: ContainerOptions;
-  showSubmitButton?: boolean;
+  bumpProductIds?: string[];
   couponCode?: string;
   affiliateCode?: string;
-  bumpProductIds?: string[];
-}
+  metadata?: Record&lt;string, string&gt;;
+  collectPhone?: boolean;
+  showAllAddons?: boolean;
+  showSubmitButton?: boolean;          // default: true
+  redirectSettings?: RedirectSettings;
+  theme?: CustomizationParams;
+  containerOptions?: { width?: string; height?: string };
+  overrideBaseUrl?: string;
+}</code></pre></div>
 
-interface CustomizationParams {
-  theme?: 'light' | 'dark';
-  accent_color?: string;
+<h3 class="sub-title">CustomizationParams</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CustomizationParams {
+  // REQUIRED when theme is provided
+  theme: 'light' | 'dark';
+  show_product_info: boolean;
+  product_layout: 'left' | 'right' | 'above' | 'below' | 'none';
+  show_coupon_row: boolean;
+  accent_color: string;
+
+  // Optional color overrides (hex)
   background_color?: string;
   label_color?: string;
   input_background_color?: string;
+  product_text_color?: string;
   heading_color?: string;
   secondary_color?: string;
-  product_text_color?: string;
   border_color?: string;
   surface_color?: string;
-  show_product_info?: boolean;
-  product_layout?: 'left' | 'right' | 'above' | 'below' | 'none';
-  show_coupon_row?: boolean;
-  billing_display_fields?: string[];
+
+  // Optional content & layout
+  product_image?: string;
+  coupon_row_disclaimer?: string;
+  show_headings?: boolean;
+  show_powered_by?: boolean;
   billing_form_placement?: 'default' | 'above_payment' | 'below_payment';
+
+  // Optional field control (0.4.0+)
+  prefill?: PrefillConfig;
+  fields?: FieldsConfig;
+
+  /** @deprecated Use `fields` for per-field visibility instead */
+  billing_display_fields?: string[];
+}</code></pre></div>
+
+<h3 class="sub-title">PrefillConfig & FieldsConfig</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface PrefillConfig {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  address?: PrefillAddress;
 }
 
-interface RedirectSettings {
+interface PrefillAddress {
+  country?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+}
+
+interface FieldsConfig {
+  email?:      FieldControl;
+  first_name?: FieldControl;
+  last_name?:  FieldControl;
+  phone?:      FieldControl;
+  address?:    FieldControl;
+}
+
+interface FieldControl {
+  hide?: boolean;
+  disable?: boolean;
+}</code></pre></div>
+
+<h3 class="sub-title">RedirectSettings & CheckoutState</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface RedirectSettings {
   success_redirect_url?: string;
   failure_redirect_url?: string;
   always_redirect?: boolean;
 }
 
-interface ContainerOptions {
-  width?: string;
-  height?: string;
+interface CheckoutState {
+  isOpen: boolean;
+  isLoading: boolean;
+  isInitialized: boolean;
+  error: PaymentError | null;
 }</code></pre></div>
+
+<h3 class="sub-title">Event data types</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutSuccessData {
+  transactionId: string;
+  amount: number;
+  currency: string;
+  customer: any;        // buyer info — shape varies by processor
+  metadata: any;        // whatever you passed in CheckoutConfig.metadata
+}
+
+interface FormReadyData {
+  timestamp: number;
+}
+
+interface FormSubmittingData {
+  paymentMethod: string;
+  timestamp: number;
+  timestamp_iso?: string;
+}
+
+interface FormSubmissionErrorData {
+  type: 'FORM_SUBMISSION_ERROR';
+  timestamp: number;
+  data: {
+    errorCode: string;        // gateway error code, e.g. 'card_declined'
+    errorMessage: string;     // user-friendly message
+    retryable: boolean;
+  };
+}
+
+interface FormValidationData {
+  isValid: boolean;
+  fields: Record&lt;string, { valid: boolean; error: string | null }&gt;;
+}
+
+interface AddonsChangedData {
+  selectedAddons: string[];
+  addons: Addon[];
+}
+
+interface Addon {
+  id: string;
+  title: string;
+  price: number;
+  description: string;
+  subscription_details?: {
+    starting_on: string;
+    payment_frequency: string;
+    free_trial_days: number;
+    recurring_subtotal: number;
+  };
+}
+
+interface FieldValueData {
+  field: string;
+  value: string | PrefillAddress | null;
+}</code></pre></div>
+
+<h3 class="sub-title">PaymentError & PaymentErrorCode</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>class PaymentError extends Error {
+  readonly code: PaymentErrorCode;
+  readonly details?: any;
+  // .message inherited from Error
+}
+
+enum PaymentErrorCode {
+  INVALID_CONFIG                   = 'INVALID_CONFIG',
+  CREATOR_ID_REQUIRED              = 'CREATOR_ID_REQUIRED',
+  PRODUCT_ID_REQUIRED              = 'PRODUCT_ID_REQUIRED',
+  CHECKOUT_SESSION_SECRET_REQUIRED = 'CHECKOUT_SESSION_SECRET_REQUIRED',
+  FIELD_VALIDATION_ERROR           = 'FIELD_VALIDATION_ERROR',
+  FIELD_NOT_SETTABLE               = 'FIELD_NOT_SETTABLE',
+  IFRAME_NOT_READY                 = 'IFRAME_NOT_READY',
+  UNKNOWN_ERROR                    = 'UNKNOWN_ERROR'
+}</code></pre></div>
+
+<h3 class="sub-title">PaymentCheckout class API</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>class PaymentCheckout extends EventEmitter {
+  // Construction
+  constructor(config: CheckoutConfig);
+  static create(config: CheckoutConfig): PaymentCheckout;       // SYNCHRONOUS
+  static fromElement(element: HTMLElement, config: CheckoutConfig): PaymentCheckout;
+
+  // Lifecycle
+  init(): Promise&lt;void&gt;;
+  destroy(): void;
+  cleanup(): void;
+  attachToElement(element: HTMLElement): void;
+
+  // State
+  getState(): CheckoutState;
+  isFormReady(): boolean;
+
+  // Config
+  updateConfig(newConfig: Partial&lt;CheckoutConfig&gt;): void;
+  updateTheme(newTheme: CustomizationParams): void;
+
+  // Form
+  submitForm(options?: { paymentMethod?: string; forceValidation?: boolean }): void;
+
+  // Addons
+  addAddon(addonId: string): void;
+  removeAddon(addonId: string): void;
+  toggleAddon(addonId: string): void;
+
+  // Field setters/getters (Promise-returning)
+  setEmail(value: string): Promise&lt;void&gt;;
+  getEmail(): Promise&lt;string | null&gt;;
+  setFirstName(value: string): Promise&lt;void&gt;;
+  getFirstName(): Promise&lt;string | null&gt;;
+  setLastName(value: string): Promise&lt;void&gt;;
+  getLastName(): Promise&lt;string | null&gt;;
+  setPhone(value: string): Promise&lt;void&gt;;
+  getPhone(): Promise&lt;string | null&gt;;
+  setAddress(value: PrefillAddress): Promise&lt;void&gt;;
+  getAddress(): Promise&lt;PrefillAddress | null&gt;;
+
+  // EventEmitter
+  on&lt;T extends CheckoutEventName&gt;(event: T, listener: CheckoutEventListener&lt;T&gt;): this;
+  once&lt;T extends CheckoutEventName&gt;(event: T, listener: CheckoutEventListener&lt;T&gt;): this;
+  off&lt;T extends CheckoutEventName&gt;(event: T, listener: CheckoutEventListener&lt;T&gt;): this;
+  removeAllListeners(): this;
+}</code></pre></div>
+
+<h3 class="sub-title">Event map</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutEvents {
+  'checkout:opened':         () =&gt; void;
+  'checkout:closed':         () =&gt; void;
+  'checkout:loaded':         () =&gt; void;
+  'checkout:error':          (error: PaymentError) =&gt; void;
+  'checkout:success':        (data: CheckoutSuccessData) =&gt; void;
+  'form:ready':              (data: FormReadyData) =&gt; void;
+  'form:submitting':         (data: FormSubmittingData) =&gt; void;
+  'form:submission_error':   (data: FormSubmissionErrorData) =&gt; void;
+  'form:validation':         (data: FormValidationData) =&gt; void;
+  'addons:changed':          (data: AddonsChangedData) =&gt; void;
+  'field:value':             (data: FieldValueData) =&gt; void;
+}
+
+type CheckoutEventName = keyof CheckoutEvents;
+type CheckoutEventListener&lt;T extends CheckoutEventName&gt; = CheckoutEvents[T];</code></pre></div>
+
+<h3 class="sub-title">React SDK exports</h3>
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code>// Components
+export { CheckoutProvider, useCheckoutContext } from './CheckoutProvider';
+export { Checkout, CheckoutButton } from './Checkout';
+export { SubmitButton } from './SubmitButton';
+export { AutoCheckout } from './AutoCheckout';
+export { CheckoutAddons } from './CheckoutAddons';
+export { useCheckout } from './useCheckout';
+
+// Re-exported types from core
+export type {
+  CheckoutConfig, CheckoutState,
+  CheckoutEventName, CheckoutEventListener,
+  CustomizationParams, Theme, ProductLayout,
+  PaymentError, PaymentErrorCode, SubmitFormOptions,
+  FormSubmittingData, FormSubmissionErrorData, FormReadyData,
+  FormValidationData, FormValidationFieldStatus,
+  Addon, AddonsChangedData
+} from '@fanbasis/checkout-core';</code></pre></div>
+
 <h3 class="sub-title">Browser compatibility</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Browser</th><th>Minimum version</th></tr></thead>
 <tbody>
 <tr><td>Chrome</td><td>80+</td></tr>
@@ -10107,30 +11119,62 @@ allow-top-navigation-by-user-activation</code></pre></div>
     <span class="section-num">DEVELOPER RESOURCES</span>
     <h1>Migration Guide</h1>
   </div>
-<h3 class="sub-title">v0.0.x → v0.1.x</h3>
-<p><strong>Breaking changes:</strong></p>
+<p>Documenting <code class="inline">@fanbasis/checkout-core@0.4.0</code> and <code class="inline">@fanbasis/checkout-react@0.3.0</code>.</p>
+
+<h3 class="sub-title">Upgrading to 0.4.0</h3>
+<p><strong>New capabilities (no breaking changes):</strong></p>
 <ul>
-<li><code class="inline">PaymentCheckout.create()</code> is now async (returns a Promise) — add <code class="inline">await</code></li>
-<li><code class="inline">checkout.mount()</code> renamed to <code class="inline">checkout.attachToElement()</code></li>
-<li>Event names changed from camelCase to colon-separated: <code class="inline">checkoutSuccess</code> → <code class="inline">checkout:success</code></li>
-<li><code class="inline">redirectUrl</code> split into <code class="inline">redirectSettings</code> object</li>
-<li><code class="inline">init()</code> is now required as a separate step after attaching</li>
+<li><code class="inline">prefill: PrefillConfig</code> in theme config — pre-populate email, name, phone, address. See <a href="#sdk-prefill">Prefill &amp; Field Control</a>.</li>
+<li><code class="inline">fields: FieldsConfig</code> in theme config — hide/disable individual fields per-name.</li>
+<li>Field setter/getter methods on the checkout instance: <code class="inline">setEmail/getEmail</code>, <code class="inline">setFirstName/getFirstName</code>, <code class="inline">setLastName/getLastName</code>, <code class="inline">setPhone/getPhone</code>, <code class="inline">setAddress/getAddress</code>.</li>
+<li>New top-level config fields: <code class="inline">collectPhone</code>, <code class="inline">metadata</code>, <code class="inline">showAllAddons</code>, <code class="inline">overrideBaseUrl</code>.</li>
+<li>New theme params: <code class="inline">coupon_row_disclaimer</code>, <code class="inline">product_image</code>, <code class="inline">show_headings</code>, <code class="inline">show_powered_by</code>.</li>
+<li>New events: <code class="inline">form:validation</code>, <code class="inline">field:value</code>.</li>
+<li>New methods: <code class="inline">cleanup()</code>, <code class="inline">static fromElement()</code>, <code class="inline">updateTheme()</code>, <code class="inline">isFormReady()</code>.</li>
+<li>New utility exports: <code class="inline">createMinimalConfig</code>, <code class="inline">validateConfig</code>, <code class="inline">mergeConfig</code>, <code class="inline">isConfigComplete</code>, <code class="inline">getConfigSummary</code>.</li>
 </ul>
-<div class="code-block"><div class="code-label plain">Before · v0.0.x · javascript</div><pre><code>var checkout = PaymentCheckout.create(config);
-checkout.mount('#container');
-checkout.on('checkoutSuccess', handler);</code></pre></div>
-<div class="code-block"><div class="code-label plain">After · v0.1.x · javascript</div><pre><code>var checkout = await PaymentCheckout.create(config);
-checkout.attachToElement(document.getElementById('container'));
-checkout.on('checkout:success', handler);
-checkout.init();</code></pre></div>
+
 <h3 class="sub-title">Deprecations</h3>
-<table class="data-table" style="margin-bottom:24px;">
+<table class="data-table">
 <thead><tr><th>Deprecated</th><th>Replacement</th></tr></thead>
 <tbody>
-<tr><td><code class="inline">checkout.mount()</code></td><td><code class="inline">checkout.attachToElement()</code></td></tr>
-<tr><td><code class="inline">redirectUrl</code></td><td><code class="inline">redirectSettings</code> object</td></tr>
+<tr><td><code class="inline">billing_display_fields: string[]</code> (in theme)</td><td><code class="inline">fields: FieldsConfig</code> for per-field hide/disable</td></tr>
 </tbody>
 </table>
+
+<h3 class="sub-title">Important: corrections to old patterns</h3>
+<p>If you're migrating from older code samples or tutorials on the internet, watch for these stale patterns:</p>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Stale</span><code class="inline">await PaymentCheckout.create(config)</code></h4>
+<p><strong>Wrong.</strong> <code class="inline">PaymentCheckout.create()</code> is synchronous and returns the instance directly. Only <code class="inline">init()</code> returns a Promise.</p>
+<div class="code-block"><div class="code-label plain">javascript · correct</div><pre><code>const checkout = PaymentCheckout.create(config);   // synchronous
+checkout.attachToElement(element);
+checkout.on('checkout:success', handler);
+await checkout.init();                              // async</code></pre></div>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Stale</span><code class="inline">environment: 'qa'</code></h4>
+<p><strong>Wrong.</strong> The valid values are <code class="inline">'sandbox'</code> and <code class="inline">'production'</code>. <code class="inline">'qa'</code> was renamed to <code class="inline">'sandbox'</code>.</p>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Stale</span><code class="inline">data.customerEmail</code> on <code class="inline">checkout:success</code></h4>
+<p><strong>Wrong.</strong> The success payload is <code class="inline">{ transactionId, amount, currency, customer, metadata }</code>. There is no top-level <code class="inline">customerEmail</code> — buyer email lives at <code class="inline">data.customer?.email</code>.</p>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Stale</span><code class="inline">addons:changed</code> shape with <code class="inline">total</code> / <code class="inline">name</code> / <code class="inline">selected</code></h4>
+<p><strong>Wrong.</strong> The current shape is <code class="inline">{ selectedAddons: string[], addons: Addon[] }</code>, where each <code class="inline">Addon</code> has <code class="inline">{ id, title, price, description, subscription_details? }</code>. There is no <code class="inline">total</code>, no <code class="inline">name</code>, and no <code class="inline">selected</code> boolean — derive selection from <code class="inline">selectedAddons.includes(addon.id)</code>.</p>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Stale</span><code class="inline">CheckoutState</code> shape</h4>
+<p><strong>Wrong.</strong> Old docs claim <code class="inline">{ isLoaded, isSubmitting, isComplete, error }</code>. The actual shape is <code class="inline">{ isOpen, isLoading, isInitialized, error }</code>.</p>
+
+<h4 class="sub-title" style="margin-top:24px;"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;margin-right:8px;background:rgba(245,158,11,0.15);color:#D97706;vertical-align:middle;">Stale</span>Error codes <code class="inline">PAYMENT_FAILED</code>, <code class="inline">CARD_DECLINED</code> on <code class="inline">checkout:error</code></h4>
+<p><strong>Wrong category.</strong> <code class="inline">PaymentErrorCode</code> covers integration errors only (<code class="inline">INVALID_CONFIG</code>, <code class="inline">CREATOR_ID_REQUIRED</code>, etc.). Gateway/payment errors like <code class="inline">card_declined</code> come through <code class="inline">form:submission_error</code> as lowercase strings on <code class="inline">data.errorCode</code>. See <a href="#sdk-events">Events Reference</a>.</p>
+
+<h3 class="sub-title">Historical: v0.0.x → v0.1.x</h3>
+<p>Long-deprecated patterns. Skip this section unless you're maintaining very old code.</p>
+<ul>
+<li><code class="inline">checkout.mount('#container')</code> → <code class="inline">checkout.attachToElement(element)</code></li>
+<li>camelCase events (<code class="inline">checkoutSuccess</code>) → colon-separated (<code class="inline">checkout:success</code>)</li>
+<li><code class="inline">redirectUrl</code> string → <code class="inline">redirectSettings</code> object</li>
+<li><code class="inline">init()</code> required as a separate step after attaching</li>
+</ul>
 </section>
 
 
@@ -10349,7 +11393,7 @@ checkout.init();</code></pre></div>
   </style>
 
   <!-- ── MCP SERVER SETUP ─────────────────── -->
-  <h3 class="subsection-title">FanBasis MCP Connector</h3>
+  <h3 id="ai-agent-setup" class="subsection-title">FanBasis MCP Connector</h3>
   <p>Connect your AI directly to your FanBasis account using the <strong>Model Context Protocol (MCP)</strong>. This gives the AI real-time access to query your data and execute actions through 11 built-in tools.</p>
 
 
@@ -11187,6 +12231,7 @@ function copyCode(btn) {
   "checkout-sessions": "api-reference",
   "customers": "api-reference",
   "subscribers": "api-reference",
+  "subscription-upgrades": "api-reference",
   "discount-codes": "api-reference",
   "products": "api-reference",
   "transactions": "api-reference",
@@ -11206,6 +12251,7 @@ function copyCode(btn) {
   "sdk-config": "developer-resources",
   "sdk-theme": "developer-resources",
   "sdk-redirects": "developer-resources",
+  "sdk-prefill": "developer-resources",
   "sdk-events": "developer-resources",
   "sdk-addons": "developer-resources",
   "sdk-programmatic": "developer-resources",
@@ -11228,6 +12274,7 @@ function copyCode(btn) {
   "checkout-sessions",
   "customers",
   "subscribers",
+  "subscription-upgrades",
   "discount-codes",
   "products",
   "transactions",
@@ -11247,6 +12294,7 @@ function copyCode(btn) {
   "sdk-config",
   "sdk-theme",
   "sdk-redirects",
+  "sdk-prefill",
   "sdk-events",
   "sdk-addons",
   "sdk-programmatic",
@@ -11269,6 +12317,7 @@ function copyCode(btn) {
   "checkout-sessions": "Checkout Sessions",
   "customers": "Customers",
   "subscribers": "Subscribers",
+  "subscription-upgrades": "Subscription Upgrades",
   "discount-codes": "Discount Codes",
   "products": "Products",
   "transactions": "Transactions",
@@ -11288,6 +12337,7 @@ function copyCode(btn) {
   "sdk-config": "Configuration Reference",
   "sdk-theme": "Theme & Styling",
   "sdk-redirects": "Redirect Settings",
+  "sdk-prefill": "Prefill & Field Control",
   "sdk-events": "Events Reference",
   "sdk-addons": "Addons & Order Bumps",
   "sdk-programmatic": "Programmatic Submission",
@@ -13094,7 +14144,7 @@ document.addEventListener('click', function(e) {
 });
 
 // Embedded API docs markdown (~9KB) for instant clipboard copy
-var FANBASIS_API_MD = "# FanBasis API Reference\n\n> FanBasis is a payment processor for digital products. This document covers the complete REST API for managing checkout sessions, transactions, customers, subscriptions, products, discount codes, and webhooks.\n\n**Base URL:** `https://www.fanbasis.com/public-api`\n\n**Authentication:** Include your API key in the `x-api-key` header on every request.\n\n```\ncurl https://www.fanbasis.com/public-api/products \\\n  -H \"x-api-key: YOUR_API_KEY\"\n```\n\n**Pagination:** Most list endpoints support `page` and `per_page` query parameters (default: 20 per page).\n\n---\n\n## Products\n\n### List Products\n```\nGET /public-api/products\n```\nReturns all products associated with your account, including prices, payment links, and product metadata.\n\n**Response fields:** `id`, `name`, `description`, `price`, `currency`, `payment_link`, `type` (one-time, subscription, etc.), `created_at`, `updated_at`\n\n---\n\n## Customers\n\n### List / Search Customers\n```\nGET /public-api/customers?search={query}\n```\nSearch customers by name, email, or phone number. Returns customer profiles with contact information.\n\n**Query parameters:**\n- `search` \u2014 Filter by name, email, or phone\n- `page`, `per_page` \u2014 Pagination\n\n**Response fields:** `id`, `name`, `email`, `phone`, `created_at`, `metadata`\n\n### Get Customer Payment Methods\n```\nGET /public-api/customers/:customerId/payment-methods\n```\nReturns saved payment methods for a customer (card last 4 digits, brand, expiry only \u2014 no full card numbers).\n\n### Charge a Customer\n```\nPOST /public-api/customers/:customerId/charge\n```\nCharge a customer using a saved payment method.\n\n**Body parameters:** `payment_method_id`, `amount`, `currency`, `description`\n\n---\n\n## Checkout Sessions\n\n### Create Checkout Session\n```\nPOST /public-api/checkout-sessions\n```\nCreate a new checkout session. Returns a `checkout_session_id` and `payment_link` for the buyer.\n\n**Body parameters:** `product_name`, `price`, `currency`, `success_url`, `cancel_url`, `customer_email` (optional), `metadata` (optional), `type` (`one-time` or `subscription`), `interval` (for subscriptions: `monthly`, `yearly`, etc.)\n\n**Response:** `{ \"checkout_session_id\": \"NLxj6\", \"payment_link\": \"https://...\" }`\n\n### Get Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId\n```\nRetrieve details of a specific checkout session including configuration and pricing.\n\n### Delete Checkout Session\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId\n```\nDelete/archive a checkout session.\n\n### Create Embedded Checkout Session\n```\nPOST /public-api/checkout-sessions/embedded\n```\nCreate an embedded checkout session for iframe-based payment forms.\n\n---\n\n## Transactions\n\n### List All Transactions\n```\nGET /public-api/checkout-sessions/transactions?page=1&per_page=20\n```\nList all transactions across all checkout sessions. Supports pagination.\n\n**Response fields:** `id`, `checkout_session_id`, `customer_email`, `amount`, `currency`, `status`, `product_name`, `created_at`, `fees`, `net_amount`\n\n### Get Single Transaction\n```\nGET /public-api/transactions/:transactionId\n```\nGet detailed information about a specific transaction including fees, refund status, and payment method.\n\n### Get Transactions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/transactions?page=1&per_page=20\n```\nList all transactions associated with a specific checkout session.\n\n### Refund a Transaction\n```\nPOST /public-api/checkout-sessions/transactions/:transactionId/refund\n```\nIssue a full or partial refund for a transaction.\n\n**Body parameters:** `amount` (optional \u2014 omit for full refund), `reason` (optional)\n\n---\n\n## Subscriptions\n\n### List All Subscribers\n```\nGET /public-api/subscribers\n```\nList all active subscribers across all products. Returns subscription status, billing dates, and plan details.\n\n**Response fields:** `id`, `customer_email`, `customer_name`, `product_name`, `status` (active, canceled, past_due), `current_period_start`, `current_period_end`, `interval`, `amount`, `currency`\n\n### Get Subscriptions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/subscriptions?page=1\n```\nList all subscriptions associated with a specific checkout session.\n\n### Get Subscriptions for a Product\n```\nGET /public-api/checkout-sessions/:productId/subscriptions?page=1\n```\nList all subscriptions for a specific product.\n\n### Cancel a Subscription\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId\n```\nCancel a subscription immediately. The customer keeps access until the end of the current billing period.\n\n### Extend a Subscription\n```\nPOST /public-api/checkout-sessions/:checkoutSessionId/extend-subscription\n```\nPush the next billing date forward by a set number of days (e.g., for gifting extra time).\n\n**Body parameters:** `days` \u2014 Number of days to extend\n\n---\n\n## Discount Codes\n\n### List Discount Codes\n```\nGET /public-api/discount-codes\n```\nList all discount codes with usage statistics.\n\n**Response fields:** `id`, `code`, `type` (percentage, fixed), `value`, `max_uses`, `current_uses`, `active`, `expires_at`, `applicable_products`\n\n### Get Discount Code\n```\nGET /public-api/discount-codes/:discountCodeId\n```\nGet details of a specific discount code.\n\n### Create Discount Code\n```\nPOST /public-api/discount-codes\n```\nCreate a new discount code.\n\n**Body parameters:** `code`, `type` (percentage, fixed), `value`, `max_uses` (optional), `expires_at` (optional), `applicable_products` (optional array of product IDs)\n\n### Update Discount Code\n```\nPUT /public-api/discount-codes/:discountCodeId\n```\nUpdate an existing discount code.\n\n### Delete Discount Code\n```\nDELETE /public-api/discount-codes/:discountCodeId\n```\nDelete a discount code.\n\n---\n\n## Webhooks\n\n### List Webhook Subscriptions\n```\nGET /public-api/webhook-subscriptions\n```\nList all configured webhook endpoints.\n\n### Create Webhook Subscription\n```\nPOST /public-api/webhook-subscriptions\n```\nRegister a new webhook endpoint.\n\n**Body parameters:** `url`, `events` (array of event types like `checkout.completed`, `subscription.created`, `subscription.canceled`, `payment.refunded`)\n\n### Delete Webhook Subscription\n```\nDELETE /public-api/webhook-subscriptions/:webhookSubscriptionId\n```\nRemove a webhook endpoint.\n\n### Test Webhook\n```\nPOST /public-api/webhook-subscriptions/:webhookSubscriptionId/test\n```\nSend a test event to your webhook endpoint.\n\n**Body parameters:** `event` \u2014 The event type to test (e.g., `checkout.completed`)\n\n---\n\n## Common Response Patterns\n\n**Success:** Returns `200 OK` with JSON body.\n\n**Pagination:** List endpoints return `{ \"data\": [...], \"page\": 1, \"per_page\": 20, \"total\": 150 }`\n\n**Errors:** Returns appropriate HTTP status code with `{ \"error\": \"message\" }`\n- `401` \u2014 Invalid or missing API key\n- `404` \u2014 Resource not found\n- `422` \u2014 Validation error\n- `429` \u2014 Rate limited\n- `500` \u2014 Server error\n\n---\n\n## Quick Reference\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/products` | GET | List all products |\n| `/customers` | GET | Search customers |\n| `/customers/:id/payment-methods` | GET | Customer's saved cards |\n| `/customers/:id/charge` | POST | Charge a customer |\n| `/checkout-sessions` | POST | Create checkout session |\n| `/checkout-sessions/:id` | GET | Get session details |\n| `/checkout-sessions/:id` | DELETE | Delete session |\n| `/checkout-sessions/embedded` | POST | Create embedded checkout |\n| `/checkout-sessions/transactions` | GET | List all transactions |\n| `/checkout-sessions/:id/transactions` | GET | Session transactions |\n| `/checkout-sessions/:id/subscriptions` | GET | Session subscriptions |\n| `/checkout-sessions/:id/subscriptions/:subId` | DELETE | Cancel subscription |\n| `/checkout-sessions/:id/extend-subscription` | POST | Extend subscription |\n| `/checkout-sessions/transactions/:txnId/refund` | POST | Refund transaction |\n| `/transactions/:id` | GET | Get transaction detail |\n| `/subscribers` | GET | List all subscribers |\n| `/discount-codes` | GET | List discount codes |\n| `/discount-codes/:id` | GET | Get discount code |\n| `/discount-codes` | POST | Create discount code |\n| `/discount-codes/:id` | PUT | Update discount code |\n| `/discount-codes/:id` | DELETE | Delete discount code |\n| `/webhook-subscriptions` | GET | List webhooks |\n| `/webhook-subscriptions` | POST | Create webhook |\n| `/webhook-subscriptions/:id` | DELETE | Delete webhook |\n| `/webhook-subscriptions/:id/test` | POST | Test webhook |\n";
+var FANBASIS_API_MD = "# FanBasis API Reference\n\n> FanBasis is a payment processor for digital products. This document covers the complete REST API for managing checkout sessions, transactions, customers, subscriptions, products, discount codes, and webhooks.\n\n**Base URL:** `https://www.fanbasis.com/public-api`\n\n**Authentication:** Include your API key in the `x-api-key` header on every request.\n\n```\ncurl https://www.fanbasis.com/public-api/products \\\n  -H \"x-api-key: YOUR_API_KEY\"\n```\n\n**Pagination:** Most list endpoints support `page` and `per_page` query parameters (default: 20 per page).\n\n---\n\n## Products\n\n### List Products\n```\nGET /public-api/products\n```\nReturns all products associated with your account, including prices, payment links, and product metadata.\n\n**Response fields:** `id`, `name`, `description`, `price`, `currency`, `payment_link`, `type` (one-time, subscription, etc.), `created_at`, `updated_at`\n\n---\n\n## Customers\n\n### List / Search Customers\n```\nGET /public-api/customers?search={query}\n```\nSearch customers by name, email, or phone number. Returns customer profiles with contact information.\n\n**Query parameters:**\n- `search` \u2014 Filter by name, email, or phone\n- `page`, `per_page` \u2014 Pagination\n\n**Response fields:** `id`, `name`, `email`, `phone`, `created_at`, `metadata`\n\n### Get Customer Payment Methods\n```\nGET /public-api/customers/:customerId/payment-methods\n```\nReturns saved payment methods for a customer (card last 4 digits, brand, expiry only \u2014 no full card numbers).\n\n### Charge a Customer\n```\nPOST /public-api/customers/:customerId/charge\n```\nCharge a customer using a saved payment method.\n\n**Body parameters:** `payment_method_id`, `amount`, `currency`, `description`\n\n---\n\n## Checkout Sessions\n\n### Create Checkout Session\n```\nPOST /public-api/checkout-sessions\n```\nCreate a new checkout session. Returns a `checkout_session_id` and `payment_link` for the buyer.\n\n**Body parameters:**\n- `product.title` (string, required), `product.description` (string, optional)\n- `amount_cents` (integer, required) \u2014 price in cents\n- `type` (string, required) \u2014 one of `subscription`, `onetime_reusable`, `onetime_non_reusable`\n- `metadata` (object, optional), `success_url` (uri, optional), `webhook_url` (uri, optional), `expiration_date` (date, optional)\n- For subscriptions: `subscription.frequency_days` (required), `subscription.free_trial_days`, `subscription.auto_expire_after_x_periods`, `subscription.initial_fee`, `subscription.initial_fee_days` (all optional)\n\n**Type guide:**\n- `subscription` \u2014 recurring billing every `frequency_days`\n- `onetime_reusable` \u2014 single-charge link, unlimited buyers (good for digital products)\n- `onetime_non_reusable` \u2014 single-charge link, expires after first payment (good for custom invoices)\n\n**Response:** `{ \"id\": \"NLxj6\", \"checkout_session_id\": 345424, \"payment_link\": \"https://...\" }`\n\n### Get Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId\n```\nRetrieve details of a specific checkout session including configuration and pricing.\n\n### Delete Checkout Session\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId\n```\nDelete/archive a checkout session.\n\n### Create Embedded Checkout Session\n```\nPOST /public-api/checkout-sessions/embedded\n```\nCreate an embedded checkout session for iframe-based payment forms.\n\n**Body parameters:** `creator_id` (string, required) \u2014 your creator slug; `product_id` (string, required) \u2014 the product to embed; `metadata` (object, optional) \u2014 echoed in webhooks.\n\n**Response:** `{ \"id\", \"checkout_session_secret\", \"your_handle\", \"metadata\", \"allowed_payment_methods\", \"created_at\" }`\n\n---\n\n## Transactions\n\n### List All Transactions\n```\nGET /public-api/checkout-sessions/transactions?page=1&per_page=20\n```\nList all transactions across all checkout sessions. Supports pagination.\n\n**Response fields:** `id`, `checkout_session_id`, `customer_email`, `amount`, `currency`, `status`, `product_name`, `created_at`, `fees`, `net_amount`\n\n### Get Single Transaction\n```\nGET /public-api/transactions/:transactionId\n```\nGet detailed information about a specific transaction including fees, refund status, and payment method.\n\n### Get Transactions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/transactions?page=1&per_page=20\n```\nList all transactions associated with a specific checkout session.\n\n### Refund a Transaction\n```\nPOST /public-api/checkout-sessions/transactions/:transactionId/refund\n```\nIssue a full or partial refund for a transaction.\n\n**Body parameters:** `amount` (optional \u2014 omit for full refund), `reason` (optional)\n\n---\n\n## Subscriptions\n\n### List All Subscribers\n```\nGET /public-api/subscribers\n```\nList all active subscribers across all products. Returns subscription status, billing dates, and plan details.\n\n**Response fields:** `id`, `customer_email`, `customer_name`, `product_name`, `status` (active, canceled, past_due), `current_period_start`, `current_period_end`, `interval`, `amount`, `currency`\n\n### Get Subscriptions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/subscriptions?page=1\n```\nList all subscriptions associated with a specific checkout session.\n\n### Get Subscriptions for a Product\n```\nGET /public-api/checkout-sessions/:productId/subscriptions?page=1\n```\nList all subscriptions for a specific product.\n\n### Cancel a Subscription\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId\n```\nCancel a subscription immediately. The customer keeps access until the end of the current billing period.\n\n### Extend a Subscription\n```\nPOST /public-api/checkout-sessions/:checkoutSessionId/extend-subscription\n```\nPush the next billing date forward by a set number of days (e.g., for gifting extra time).\n\n**Body parameters:** `days` \u2014 Number of days to extend\n\n---\n\n## Subscription Upgrades (Seller v1 API)\n\n> **Note:** These endpoints live on the Seller v1 API (`/api/seller/v1/`) with **Bearer token** authentication \u2014 separate from the Public API above. Base URL: `https://fanbasis.com/api/seller/v1`.\n\n### List Available Upgrades\n```\nGET /api/seller/v1/subscriptions/:id/upgrades\n```\nReturns the upgrade tiers available for an active subscription with proration calculations.\n\n**Response fields:** `subscription_id`, `subscription_status`, `current_tier`, `proration_credit`, `available_upgrades` (array of `{ service, calculation }`)\n\n### Preview Upgrade\n```\nGET /api/seller/v1/subscriptions/:id/upgrade/preview?target_service_id=X\n```\nReturns the full proration math for upgrading to a specific tier.\n\n**Response fields:** `current_service`, `target_service`, `price_difference`, `days_remaining`, `total_cycle_days`, `proration_ratio`, `new_proration_credit`, `existing_credit`, `total_credit`, `amount_due`\n\n### Process Upgrade\n```\nPOST /api/seller/v1/subscriptions/:id/upgrade\n```\nExecutes the upgrade. Cancels the current tier (status \u2192 `upgraded`), creates a new active subscription on the target tier, and charges `amount_due` if `billing_mode` is `immediate`.\n\n**Body parameters:** `target_service_id` (integer), `billing_mode` (`immediate` or `next_cycle`)\n\n**Response fields:** `upgrade_id` (UUID), `base_subscription`, `new_subscription`, `calculation`\n\n**Error responses:** 422 if subscription not active / proration not enabled / downgrade attempted, 400 if same-tier upgrade\n\n---\n\n## Discount Codes\n\n### List Discount Codes\n```\nGET /public-api/discount-codes\n```\nList all discount codes with usage statistics.\n\n**Response fields:** `id`, `code`, `type` (percentage, fixed), `value`, `max_uses`, `current_uses`, `active`, `expires_at`, `applicable_products`\n\n### Get Discount Code\n```\nGET /public-api/discount-codes/:discountCodeId\n```\nGet details of a specific discount code.\n\n### Create Discount Code\n```\nPOST /public-api/discount-codes\n```\nCreate a new discount code.\n\n**Body parameters:** `code`, `type` (percentage, fixed), `value`, `max_uses` (optional), `expires_at` (optional), `applicable_products` (optional array of product IDs)\n\n### Update Discount Code\n```\nPUT /public-api/discount-codes/:discountCodeId\n```\nUpdate an existing discount code.\n\n### Delete Discount Code\n```\nDELETE /public-api/discount-codes/:discountCodeId\n```\nDelete a discount code.\n\n---\n\n## Webhooks\n\n### List Webhook Subscriptions\n```\nGET /public-api/webhook-subscriptions\n```\nList all configured webhook endpoints.\n\n### Create Webhook Subscription\n```\nPOST /public-api/webhook-subscriptions\n```\nRegister a new webhook endpoint.\n\n**Body parameters:** `url`, `events` (array of event types like `checkout.completed`, `subscription.created`, `subscription.canceled`, `payment.refunded`)\n\n### Delete Webhook Subscription\n```\nDELETE /public-api/webhook-subscriptions/:webhookSubscriptionId\n```\nRemove a webhook endpoint.\n\n### Test Webhook\n```\nPOST /public-api/webhook-subscriptions/:webhookSubscriptionId/test\n```\nSend a test event to your webhook endpoint.\n\n**Body parameters:** `event` \u2014 The event type to test (e.g., `checkout.completed`)\n\n---\n\n## Common Response Patterns\n\n**Success:** Returns `200 OK` with JSON body.\n\n**Pagination:** List endpoints return `{ \"data\": [...], \"page\": 1, \"per_page\": 20, \"total\": 150 }`\n\n**Errors:** Returns appropriate HTTP status code with `{ \"error\": \"message\" }`\n- `401` \u2014 Invalid or missing API key\n- `404` \u2014 Resource not found\n- `422` \u2014 Validation error\n- `429` \u2014 Rate limited\n- `500` \u2014 Server error\n\n---\n\n## Quick Reference\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/products` | GET | List all products |\n| `/customers` | GET | Search customers |\n| `/customers/:id/payment-methods` | GET | Customer's saved cards |\n| `/customers/:id/charge` | POST | Charge a customer |\n| `/checkout-sessions` | POST | Create checkout session |\n| `/checkout-sessions/:id` | GET | Get session details |\n| `/checkout-sessions/:id` | DELETE | Delete session |\n| `/checkout-sessions/embedded` | POST | Create embedded checkout |\n| `/checkout-sessions/transactions` | GET | List all transactions |\n| `/checkout-sessions/:id/transactions` | GET | Session transactions |\n| `/checkout-sessions/:id/subscriptions` | GET | Session subscriptions |\n| `/checkout-sessions/:id/subscriptions/:subId` | DELETE | Cancel subscription |\n| `/checkout-sessions/:id/extend-subscription` | POST | Extend subscription |\n| `/api/seller/v1/subscriptions/:id/upgrades` | GET | List available upgrades (Bearer auth) |\n| `/api/seller/v1/subscriptions/:id/upgrade/preview` | GET | Preview upgrade proration (Bearer auth) |\n| `/api/seller/v1/subscriptions/:id/upgrade` | POST | Process upgrade (Bearer auth) |\n| `/checkout-sessions/transactions/:txnId/refund` | POST | Refund transaction |\n| `/transactions/:id` | GET | Get transaction detail |\n| `/subscribers` | GET | List all subscribers |\n| `/discount-codes` | GET | List discount codes |\n| `/discount-codes/:id` | GET | Get discount code |\n| `/discount-codes` | POST | Create discount code |\n| `/discount-codes/:id` | PUT | Update discount code |\n| `/discount-codes/:id` | DELETE | Delete discount code |\n| `/webhook-subscriptions` | GET | List webhooks |\n| `/webhook-subscriptions` | POST | Create webhook |\n| `/webhook-subscriptions/:id` | DELETE | Delete webhook |\n| `/webhook-subscriptions/:id/test` | POST | Test webhook |\n";
 
 function copyPageAsMarkdown(btn) {
   navigator.clipboard.writeText(FANBASIS_API_MD).then(function() {
@@ -13694,10 +14744,14 @@ function copyClaudeMCPConfig() {
   // ── ENDPOINT REGISTRY ────────────────────────────────────
   var ENDPOINTS = [
     // Checkout Sessions
-    {id:'cs-create',  cat:'Checkout Sessions', m:'POST',   path:'/public-api/checkout-sessions', title:'Create Session', desc:'Generate a new checkout page',
-      body:'{\n  "product": {\n    "title": "string",\n    "description": "string"\n  },\n  "amount_cents": 0,\n  "application_fee": 0,\n  "type": "subscription",\n  "metadata": {},\n  "expiration_date": "2024-07-29",\n  "subscription": {\n    "frequency_days": 0,\n    "auto_expire_after_x_periods": 0,\n    "free_trial_days": 0,\n    "initial_fee": 0,\n    "initial_fee_days": 0\n  },\n  "success_url": "string",\n  "webhook_url": "string"\n}'},
+    {id:'cs-create-sub',  cat:'Checkout Sessions', m:'POST',   path:'/public-api/checkout-sessions', title:'Create Session — Subscription', desc:'Recurring billing checkout',
+      body:'{\n  "product": {\n    "title": "Pro Monthly Membership",\n    "description": "Full access + weekly calls"\n  },\n  "amount_cents": 2999,\n  "type": "subscription",\n  "subscription": {\n    "frequency_days": 30,\n    "free_trial_days": 7\n  },\n  "success_url": "https://yoursite.com/welcome",\n  "metadata": {}\n}'},
+    {id:'cs-create-otr',  cat:'Checkout Sessions', m:'POST',   path:'/public-api/checkout-sessions', title:'Create Session — One-Time (Reusable)', desc:'Single-charge link, unlimited buyers',
+      body:'{\n  "product": {\n    "title": "1-Hour Strategy Session",\n    "description": "60-minute call to map out your launch plan"\n  },\n  "amount_cents": 19900,\n  "type": "onetime_reusable",\n  "success_url": "https://yoursite.com/booking-confirmed",\n  "metadata": {}\n}'},
+    {id:'cs-create-otn',  cat:'Checkout Sessions', m:'POST',   path:'/public-api/checkout-sessions', title:'Create Session — One-Time (Single-Buyer)', desc:'Custom invoice, link expires after one payment',
+      body:'{\n  "product": {\n    "title": "Custom Logo Design",\n    "description": "Full brand identity package"\n  },\n  "amount_cents": 250000,\n  "type": "onetime_non_reusable",\n  "expiration_date": "2026-06-30",\n  "success_url": "https://yoursite.com/clients/thank-you",\n  "metadata": {}\n}'},
     {id:'cs-embed',   cat:'Checkout Sessions', m:'POST',   path:'/public-api/checkout-sessions/embedded', title:'Embedded Checkout', desc:'Create an embeddable checkout widget',
-      body:'{\n  "creator_id": "your_creator_id",\n  "product_id": "your_product_id"\n}'},
+      body:'{\n  "creator_id": "your-creator-slug",\n  "product_id": "your_product_id",\n  "metadata": {}\n}'},
     {id:'cs-get',     cat:'Checkout Sessions', m:'GET',    path:'/public-api/checkout-sessions/:checkoutSessionId', title:'Get Session', desc:'Retrieve session details',
       pp:['checkoutSessionId']},
     {id:'cs-delete',  cat:'Checkout Sessions', m:'DELETE', path:'/public-api/checkout-sessions/:checkoutSessionId', title:'Delete Session', desc:'Remove a checkout session',
@@ -13733,6 +14787,17 @@ function copyClaudeMCPConfig() {
       pp:['transactionId'], body:'{\n  "amount": 10.00\n}'},
     {id:'cs-extend',  cat:'Subscribers', m:'POST',   path:'/public-api/checkout-sessions/:checkoutSessionId/extend-subscription', title:'Extend Subscription', desc:'Add time to an active subscription',
       pp:['checkoutSessionId'], body:'{\n  "user_id": "string",\n  "duration_days": 0\n}'},
+
+    // Subscription Upgrades (Seller v1 API — Bearer auth, different host)
+    {id:'su-list', cat:'Subscription Upgrades', m:'GET', path:'/api/seller/v1/subscriptions/:subscription_id/upgrades', title:'List Available Upgrades', desc:'Get tiers a subscriber can upgrade to',
+      auth:'bearer', host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
+      pp:['subscription_id']},
+    {id:'su-preview', cat:'Subscription Upgrades', m:'GET', path:'/api/seller/v1/subscriptions/:subscription_id/upgrade/preview', title:'Preview Upgrade', desc:'See proration math before charging',
+      auth:'bearer', host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
+      pp:['subscription_id'], qp:['target_service_id']},
+    {id:'su-process', cat:'Subscription Upgrades', m:'POST', path:'/api/seller/v1/subscriptions/:subscription_id/upgrade', title:'Process Upgrade', desc:'Execute the upgrade with chosen billing mode',
+      auth:'bearer', host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
+      pp:['subscription_id'], body:'{\n  "target_service_id": 113790,\n  "billing_mode": "next_cycle"\n}'},
 
     // Discount Codes
     {id:'dc-list',   cat:'Discount Codes', m:'GET',    path:'/public-api/discount-codes', title:'List Codes', desc:'Get all discount codes',
@@ -13806,7 +14871,14 @@ function copyClaudeMCPConfig() {
   }
 
   function buildUrl(ep) {
-    var url = HOSTS[env] + ep.path;
+    // Per-endpoint host override (e.g., for Seller v1 API on a different domain)
+    var base;
+    if (ep.host) {
+      base = (typeof ep.host === 'object') ? (ep.host[env] || ep.host.production) : ep.host;
+    } else {
+      base = HOSTS[env];
+    }
+    var url = base + ep.path;
     if (ep.pp) {
       ep.pp.forEach(function(p) {
         var input = document.getElementById('pg-pp-' + p);
@@ -13892,6 +14964,17 @@ function copyClaudeMCPConfig() {
     applyMethodBadge(elMethod, ep.m);
     elUrl.textContent = buildUrl(ep);
 
+    // Auth indicator — show a hint if this endpoint uses Bearer auth
+    var existingAuthHint = document.getElementById('pgAuthHint');
+    if (existingAuthHint) existingAuthHint.remove();
+    if (ep.auth === 'bearer') {
+      var hint = document.createElement('div');
+      hint.id = 'pgAuthHint';
+      hint.style.cssText = 'margin:8px 0 0;padding:10px 12px;background:rgba(99,102,241,0.08);border-left:3px solid #6366F1;border-radius:6px;font-size:12.5px;color:var(--text);';
+      hint.innerHTML = '<strong>🔐 Bearer auth</strong> — this endpoint sends your key as <code style="background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:11.5px;">Authorization: Bearer &lt;key&gt;</code> instead of <code style="background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:11.5px;">x-api-key</code>. Paste your Seller v1 token in the API key field above.';
+      elBuilder.querySelector('.pg-builder-header').insertAdjacentElement('afterend', hint);
+    }
+
     // Path params
     var ppHtml = '';
     if (ep.pp && ep.pp.length) {
@@ -13952,8 +15035,14 @@ function copyClaudeMCPConfig() {
     var url = buildUrl(selected);
     var opts = {
       method: selected.m,
-      headers: { 'x-api-key': apiKey }
+      headers: {}
     };
+    // Auth header — Bearer for Seller v1 endpoints, x-api-key for Public API
+    if (selected.auth === 'bearer') {
+      opts.headers['Authorization'] = 'Bearer ' + apiKey;
+    } else {
+      opts.headers['x-api-key'] = apiKey;
+    }
     if (selected.body && (selected.m === 'POST' || selected.m === 'PUT')) {
       opts.headers['Content-Type'] = 'application/json';
       opts.body = elBodyEdit.value.trim();
