@@ -5,8 +5,10 @@
 ## Base URL
 
 ```
-https://www.fanbasis.com/public-api/
+https://www.fanbasis.com
 ```
+
+All endpoint paths are documented with the full route (including the `/public-api/...` prefix), so a complete request URL is `{base}{path}` — e.g. `https://www.fanbasis.com/public-api/products`.
 
 ## Authentication
 
@@ -20,8 +22,8 @@ x-api-key: YOUR_API_KEY
 
 | Environment | Base URL |
 |-------------|----------|
-| Production  | `https://www.fanbasis.com/public-api/` |
-| Sandbox     | `https://sandbox.fanbasis.com/public-api/` |
+| Production  | `https://www.fanbasis.com` |
+| Sandbox     | `https://qa.dev-fan-basis.com` |
 
 ## Endpoints
 
