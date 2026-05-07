@@ -66,6 +66,7 @@
       --post:         #16A34A; --post-bg: #F0FDF4; --post-border: #BBF7D0;
       --delete:       #DC2626; --delete-bg: #FEF2F2; --delete-border: #FECACA;
       --put:          #D97706; --put-bg: #FFFBEB; --put-border: #FDE68A;
+      --patch:        #7C3AED; --patch-bg: #F5F3FF; --patch-border: #DDD6FE;
 
       /* Shadows */
       --shadow-xs:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
@@ -112,6 +113,7 @@
       --post:         #4ADE80; --post-bg: rgba(22,163,74,0.12); --post-border: rgba(74,222,128,0.25);
       --delete:       #F87171; --delete-bg: rgba(220,38,38,0.12); --delete-border: rgba(248,113,113,0.25);
       --put:          #FBBF24; --put-bg: rgba(217,119,6,0.12); --put-border: rgba(251,191,36,0.25);
+      --patch:        #A78BFA; --patch-bg: rgba(124,58,237,0.12); --patch-border: rgba(167,139,250,0.25);
 
       --shadow-xs:    0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
       --shadow-sm:    0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -1px rgba(0,0,0,0.2);
@@ -333,6 +335,7 @@
     .method.post   { background: var(--post-bg);   color: var(--post);   border: 1px solid var(--post-border); }
     .method.delete { background: var(--delete-bg); color: var(--delete); border: 1px solid var(--delete-border); }
     .method.put    { background: var(--put-bg);    color: var(--put);    border: 1px solid var(--put-border); }
+    .method.patch  { background: var(--patch-bg);  color: var(--patch);  border: 1px solid var(--patch-border); }
     .endpoint-url {
       font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
@@ -3102,7 +3105,7 @@
   .try-it-method.m-get    { background: rgba(59,130,246,0.2);  color: #93C5FD; }
   .try-it-method.m-post   { background: rgba(52,211,153,0.2);  color: #6EE7B7; }
   .try-it-method.m-put    { background: rgba(251,191,36,0.2);  color: #FCD34D; }
-  .try-it-method.m-patch  { background: rgba(251,191,36,0.2);  color: #FCD34D; }
+  .try-it-method.m-patch  { background: rgba(167,139,250,0.2); color: #C4B5FD; }
   .try-it-method.m-delete { background: rgba(248,113,113,0.2); color: #FCA5A5; }
   .try-it-url-text {
     font-size: 12.5px;
@@ -3209,6 +3212,7 @@
   [data-theme="light"] .try-it-method.m-get    { background: rgba(59,130,246,0.12);  color: #2563EB; }
   [data-theme="light"] .try-it-method.m-post   { background: rgba(16,185,129,0.12);  color: #059669; }
   [data-theme="light"] .try-it-method.m-put    { background: rgba(245,158,11,0.12);  color: #D97706; }
+  [data-theme="light"] .try-it-method.m-patch  { background: rgba(124,58,237,0.12);  color: #7C3AED; }
   [data-theme="light"] .try-it-method.m-delete { background: rgba(239,68,68,0.12);   color: #DC2626; }
   [data-theme="light"] .try-it-body { background: #fff; border-color: rgba(0,0,0,0.15); color: #1e293b; }
   [data-theme="light"] .try-it-send { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #059669; }
@@ -4474,6 +4478,7 @@ function googleTranslateElementInit() {
     <a href="#checkout-sessions">Checkout Sessions</a>
     <a href="#create-checkout" class="sub">Create a Session</a>
     <a href="#embedded-checkout" class="sub">Embedded Checkout</a>
+    <a href="#update-embedded-checkout" class="sub">Update Embedded Checkout</a>
     <a href="#get-checkout" class="sub">Look Up a Session</a>
     <a href="#delete-checkout" class="sub">Delete a Session</a>
   </div>
@@ -7139,7 +7144,8 @@ end</code></pre>
     <tbody>
       <tr><td><code>creator_id</code></td><td>string</td><td>Yes</td><td>Your creator slug (e.g., <code>your-creator-slug</code>).</td></tr>
       <tr><td><code>product_id</code></td><td>string</td><td>Yes</td><td>The product to embed checkout for. The returned secret is reusable across all your products.</td></tr>
-      <tr><td><code>metadata</code></td><td>object</td><td>No</td><td>Arbitrary JSON object stored on the session and echoed back in webhook events for the resulting transaction.</td></tr>
+      <tr><td><code>metadata</code></td><td>object</td><td>No</td><td>Arbitrary JSON object stored on the session and echoed back in webhook events for the resulting transaction. Reserved key: <code>allowed_payment_methods</code>. If <code>metadata</code> is omitted, the checkout falls back to the creator's account-level payment method settings.</td></tr>
+      <tr><td><code>metadata.allowed_payment_methods</code></td><td>array of strings</td><td>No</td><td>Per-session allow-list of payment methods. When provided, only these methods will be offered at checkout (intersected with the creator's account-level settings, amount limits, service-type rules, and global disables). Bypasses product-level disabled methods for this session only. Must contain at least 1 entry. See <a href="#accepted-payment-methods">Accepted payment methods</a>.</td></tr>
     </tbody>
   </table>
   <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
@@ -7148,8 +7154,8 @@ end</code></pre>
   "creator_id": "your-creator-slug",
   "product_id": "NLxj6",
   "metadata": {
-    "user_id": "usr_abc123",
-    "source": "in-app"
+    "campaign_id": "summer-2026",
+    "allowed_payment_methods": ["card", "cashapp"]
   }
 }</code></pre>
 </div>
@@ -7161,7 +7167,10 @@ end</code></pre>
   -d '{
     "creator_id": "your-creator-slug",
     "product_id": "NLxj6",
-    "metadata": { "source": "in-app" }
+    "metadata": {
+      "campaign_id": "summer-2026",
+      "allowed_payment_methods": ["card", "cashapp"]
+    }
   }'</code></pre>
   </div>
   <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-embedded">
@@ -7173,8 +7182,10 @@ end</code></pre>
     "id": 3204,
     "checkout_session_secret": "550e8400-e29b-41d4-a716-446655440000",
     "your_handle": "your-creator-slug",
-    "metadata": { "user_id": "usr_abc123", "source": "in-app" },
-    "allowed_payment_methods": null,
+    "metadata": {
+      "campaign_id": "summer-2026",
+      "allowed_payment_methods": ["card", "cashapp"]
+    },
     "created_at": "2026-04-30T22:34:36.000000Z"
   }
 }</code></pre>
@@ -7184,6 +7195,97 @@ end</code></pre>
     <p>Construct the embeddable URL using your creator handle, the product <code>id</code>, and the <code>checkout_session_secret</code>:</p>
     <pre style="margin-top:8px;padding:10px;background:rgba(0,0,0,0.2);border-radius:6px;font-size:0.85rem;"><code>https://embedded.fanbasis.io/session/{your-handle}/{product-id}/{checkout_session_secret}</code></pre>
     <p style="margin-top:8px;">Load this URL inside an <code>&lt;iframe&gt;</code> or open it as a popup to display the embedded payment form.</p>
+  </div>
+
+  <!-- Update Embedded Checkout -->
+  <h2 id="update-embedded-checkout" class="endpoint-title">Update an Embedded Checkout Session</h2>
+<div class="endpoint-badge" style="margin-top:36px;" id="cs-embed-update">
+    <span class="method patch">PATCH</span>
+    <span class="endpoint-url">/public-api/checkout-sessions/embedded/:checkoutSessionId</span>
+  </div>
+  <p>Updates an existing embedded checkout session's metadata or changes the allowed payment methods after creation. Performs a <strong>shallow merge</strong> into the existing metadata — only the keys you supply are updated, others are preserved.</p>
+  <div class="callout info" style="margin-top:8px;margin-bottom:8px;">
+    <div class="callout-title">&#8505; Notes</div>
+    <ul style="margin:6px 0 0 18px; padding:0;">
+      <li>Lookup is scoped to the authenticated creator. A key from creator A cannot modify creator B's sessions.</li>
+      <li>Sending <code>metadata: null</code> or an empty object is a no-op — the endpoint never clears existing metadata.</li>
+    </ul>
+  </div>
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>checkoutSessionId</code></td><td>string</td><td>Yes</td><td>The <code>checkout_session_secret</code> of the session to update.</td></tr>
+    </tbody>
+  </table>
+  <h3 class="subsection-title">Request Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>metadata</code></td><td>object</td><td>No</td><td>Object shallow-merged into existing session metadata. Unsupplied keys are preserved.</td></tr>
+      <tr><td><code>metadata.allowed_payment_methods</code></td><td>array of strings</td><td>No</td><td>Replaces the previous list under <code>metadata.allowed_payment_methods</code>. Must contain at least 1 entry if provided. See <a href="#accepted-payment-methods">Accepted payment methods</a>.</td></tr>
+    </tbody>
+  </table>
+  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
+  <div class="code-label req-body">Request Body</div>
+  <pre><code>{
+  "metadata": {
+    "allowed_payment_methods": ["card", "klarna"]
+  }
+}</code></pre>
+</div>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X PATCH "https://www.fanbasis.com/public-api/checkout-sessions/embedded/550e8400-e29b-41d4-a716-446655440000" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata": {
+      "allowed_payment_methods": ["card", "klarna"]
+    }
+  }'</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="cs-embed-update">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "message": "Embedded checkout session updated successfully",
+  "data": {
+    "id": 3204,
+    "checkout_session_secret": "550e8400-e29b-41d4-a716-446655440000",
+    "your_handle": "your-creator-slug",
+    "metadata": {
+      "campaign_id": "summer-2026",
+      "allowed_payment_methods": ["card", "klarna"]
+    },
+    "updated_at": "2026-04-30T22:39:42.000000Z"
+  }
+}</code></pre>
+  </div>
+
+  <!-- Accepted Payment Methods Reference -->
+  <h3 id="accepted-payment-methods" class="subsection-title" style="margin-top:32px;">Accepted Payment Methods</h3>
+  <p>The following strings are accepted in <code>allowed_payment_methods</code>. Anything outside this list returns <code>400 Validation failed</code>.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;margin-bottom:8px;">
+    <code>card</code> <code>cashapp</code> <code>affirm</code> <code>klarna</code> <code>afterpay_clearpay</code> <code>apple_pay</code> <code>google_pay</code> <code>link</code> <code>zip</code> <code>nmi</code> <code>blinc</code> <code>sezzle</code> <code>crypto</code> <code>us_bank_account</code> <code>payva</code> <code>climb</code> <code>paypal</code> <code>paypal_later</code> <code>creditkey</code> <code>amazon_pay</code> <code>claritypay</code>
+  </div>
+
+  <h3 class="subsection-title" style="margin-top:24px;">How <code>allowed_payment_methods</code> is enforced</h3>
+  <p>The session list is <strong>intersected</strong> with the creator's enabled methods — it can only narrow what the buyer sees, never expand it.</p>
+  <p>The following filters always apply on top of the session list:</p>
+  <table class="param-table">
+    <thead><tr><th>Filter</th><th>Applied?</th></tr></thead>
+    <tbody>
+      <tr><td>Global platform kill switch</td><td>✅ Always</td></tr>
+      <tr><td>Creator's account-level enabled methods</td><td>✅ Always (intersection)</td></tr>
+      <tr><td>Service-type restrictions (e.g. subscriptions remove BNPL)</td><td>✅ Always</td></tr>
+      <tr><td>Per-method amount limits (Affirm, Klarna, Afterpay, Zip, ClarityPay, Climb, CreditKey min/max)</td><td>✅ Always</td></tr>
+      <tr><td>Product-level disabled methods</td><td>❌ Bypassed (session takes precedence)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip" style="margin-top:8px;">
+    <div class="callout-title">✓ Empty-list fallback</div>
+    <p>If filtering leaves the list empty, the session falls back to <code>["card"]</code> so checkout is never blank.</p>
   </div>
 </section>
 
@@ -13776,8 +13878,14 @@ function copyCode(btn) {
     },
     'cs-embedded': {
       _tabs: ['200','400','500'],
-      '400': JSON.stringify({"status":"error","message":"Validation failed","errors":{}}, null, 2),
-      '500': JSON.stringify({"status":"error","message":"Failed to create embedded checkout session"}, null, 2)
+      '400': JSON.stringify({"status":"error","message":"Validation failed","data":[],"errors":{"metadata.allowed_payment_methods.0":["The selected metadata.allowed_payment_methods.0 is invalid."]}}, null, 2),
+      '500': JSON.stringify({"status":"error","message":"Failed to create embedded checkout session","data":[]}, null, 2)
+    },
+    'cs-embed-update': {
+      _tabs: ['200','400','404','500'],
+      '400': JSON.stringify({"status":"error","message":"Validation failed","data":[],"errors":{"metadata.allowed_payment_methods.0":["The selected metadata.allowed_payment_methods.0 is invalid."]}}, null, 2),
+      '404': JSON.stringify({"status":"error","message":"Embedded checkout session not found","data":[]}, null, 2),
+      '500': JSON.stringify({"status":"error","message":"Failed to update embedded checkout session","data":[]}, null, 2)
     },
     'cs-refund': {
       _tabs: ['200','400','401','403','404','500'],
@@ -14751,7 +14859,9 @@ function copyClaudeMCPConfig() {
     {id:'cs-create-otn',  cat:'Checkout Sessions', m:'POST',   path:'/public-api/checkout-sessions', title:'Create Session — One-Time (Single-Buyer)', desc:'Custom invoice, link expires after one payment',
       body:'{\n  "product": {\n    "title": "Custom Logo Design",\n    "description": "Full brand identity package"\n  },\n  "amount_cents": 250000,\n  "type": "onetime_non_reusable",\n  "expiration_date": "2026-06-30",\n  "success_url": "https://yoursite.com/clients/thank-you",\n  "metadata": {}\n}'},
     {id:'cs-embed',   cat:'Checkout Sessions', m:'POST',   path:'/public-api/checkout-sessions/embedded', title:'Embedded Checkout', desc:'Create an embeddable checkout widget',
-      body:'{\n  "creator_id": "your-creator-slug",\n  "product_id": "your_product_id",\n  "metadata": {}\n}'},
+      body:'{\n  "creator_id": "your-creator-slug",\n  "product_id": "your_product_id",\n  "metadata": {\n    "allowed_payment_methods": ["card", "cashapp"]\n  }\n}'},
+    {id:'cs-embed-update', cat:'Checkout Sessions', m:'PATCH', path:'/public-api/checkout-sessions/embedded/:checkoutSessionId', title:'Update Embedded Checkout', desc:'Change metadata or allowed payment methods on an existing session',
+      pp:['checkoutSessionId'], body:'{\n  "metadata": {\n    "allowed_payment_methods": ["card", "klarna"]\n  }\n}'},
     {id:'cs-get',     cat:'Checkout Sessions', m:'GET',    path:'/public-api/checkout-sessions/:checkoutSessionId', title:'Get Session', desc:'Retrieve session details',
       pp:['checkoutSessionId']},
     {id:'cs-delete',  cat:'Checkout Sessions', m:'DELETE', path:'/public-api/checkout-sessions/:checkoutSessionId', title:'Delete Session', desc:'Remove a checkout session',

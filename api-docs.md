@@ -386,16 +386,28 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/transactions?p
 POST /public-api/checkout-sessions/embedded
 ```
 
-Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Requires an existing Fanbasis product_id. Returns a checkout_session_secret you use to construct the embedded checkout URL. The checkout_session_secret is scoped to your creator account, not to a single product. You can reuse the same secret and swap the product_id…
+Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Requires an existing Fanbasis `product_id`. Returns a `checkout_session_secret` you use to construct the embedded checkout URL.
+
+You can optionally restrict the payment methods that will appear on this specific session by passing `allowed_payment_methods` inside `metadata`. If `metadata` is omitted, the checkout falls back to the creator's account-level payment method settings.
+
+**Request Parameters**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `creator_id` | string | yes | Creator/seller ID. |
+| `product_id` | string | yes | Product ID to create the embedded checkout for. |
+| `metadata` | object | no | Arbitrary JSON object stored with the checkout session. Reserved key: `allowed_payment_methods`. |
+| `metadata.allowed_payment_methods` | array of strings | no | Per-session allow-list of payment methods. Must contain at least 1 entry. See [Accepted payment methods](#accepted-payment-methods). |
 
 **Request Body**
 
 ```json
 {
+  "creator_id": "your-creator-slug",
   "product_id": "NLxj6",
   "metadata": {
-    "user_id": "usr_abc123",
-    "source": "in-app"
+    "campaign_id": "summer-2026",
+    "allowed_payment_methods": ["card", "cashapp"]
   }
 }
 ```
@@ -406,7 +418,14 @@ Creates a checkout session designed to be embedded directly inside your app or w
 curl -X POST https://www.fanbasis.com/public-api/checkout-sessions/embedded \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "product_id": "NLxj6", "metadata": { "source": "in-app" } }'
+  -d '{
+    "creator_id": "your-creator-slug",
+    "product_id": "NLxj6",
+    "metadata": {
+      "campaign_id": "summer-2026",
+      "allowed_payment_methods": ["card", "cashapp"]
+    }
+  }'
 ```
 
 **Response**
@@ -414,12 +433,106 @@ curl -X POST https://www.fanbasis.com/public-api/checkout-sessions/embedded \
 ```json
 {
   "status": "success",
+  "message": "Embedded checkout session created successfully",
   "data": {
+    "id": 3204,
     "checkout_session_secret": "550e8400-e29b-41d4-a716-446655440000",
-    "created_at": "2025-01-15T10:00:00Z"
+    "your_handle": "your-creator-slug",
+    "metadata": {
+      "campaign_id": "summer-2026",
+      "allowed_payment_methods": ["card", "cashapp"]
+    },
+    "created_at": "2026-04-30T22:34:36.000000Z"
   }
 }
 ```
+
+#### Update an Embedded Checkout Session
+
+```
+PATCH /public-api/checkout-sessions/embedded/:checkoutSessionId
+```
+
+Update an existing embedded checkout session's metadata or change the allowed payment methods after creation. Performs a **shallow merge** into the existing metadata — only the keys you supply are updated, others are preserved.
+
+> Notes
+> - Lookup is scoped to the authenticated creator. A key from creator A cannot modify creator B's sessions.
+> - Sending `metadata: null` or an empty object is a no-op — the endpoint never clears existing metadata.
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `checkoutSessionId` | string | yes | The `checkout_session_secret` of the session to update. |
+
+**Request Parameters**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `metadata` | object | no | Object shallow-merged into existing session metadata. Unsupplied keys preserved. |
+| `metadata.allowed_payment_methods` | array of strings | no | Replaces the previous list under `metadata.allowed_payment_methods`. Must contain at least 1 entry if provided. |
+
+**Request Body**
+
+```json
+{
+  "metadata": {
+    "allowed_payment_methods": ["card", "klarna"]
+  }
+}
+```
+
+**Request**
+
+```bash
+curl -X PATCH "https://www.fanbasis.com/public-api/checkout-sessions/embedded/550e8400-e29b-41d4-a716-446655440000" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata": {
+      "allowed_payment_methods": ["card", "klarna"]
+    }
+  }'
+```
+
+**Response**
+
+```json
+{
+  "status": "success",
+  "message": "Embedded checkout session updated successfully",
+  "data": {
+    "id": 3204,
+    "checkout_session_secret": "550e8400-e29b-41d4-a716-446655440000",
+    "your_handle": "your-creator-slug",
+    "metadata": {
+      "campaign_id": "summer-2026",
+      "allowed_payment_methods": ["card", "klarna"]
+    },
+    "updated_at": "2026-04-30T22:39:42.000000Z"
+  }
+}
+```
+
+#### Accepted Payment Methods
+
+The following strings are accepted in `allowed_payment_methods`. Anything outside this list returns `400 Validation failed`.
+
+`card`, `cashapp`, `affirm`, `klarna`, `afterpay_clearpay`, `apple_pay`, `google_pay`, `link`, `zip`, `nmi`, `blinc`, `sezzle`, `crypto`, `us_bank_account`, `payva`, `climb`, `paypal`, `paypal_later`, `creditkey`, `amazon_pay`, `claritypay`
+
+**How `allowed_payment_methods` is enforced**
+
+The session list is **intersected** with the creator's enabled methods — it can only narrow what the buyer sees, never expand it.
+
+| Filter | Applied? |
+|---|---|
+| Global platform kill switch | ✅ Always |
+| Creator's account-level enabled methods | ✅ Always (intersection) |
+| Service-type restrictions (e.g. subscriptions remove BNPL) | ✅ Always |
+| Per-method amount limits (Affirm, Klarna, Afterpay, Zip, ClarityPay, Climb, CreditKey min/max) | ✅ Always |
+| Product-level disabled methods | ❌ Bypassed (session takes precedence) |
+
+If filtering leaves the list empty, the session falls back to `["card"]` so checkout is never blank.
 
 ---
 
