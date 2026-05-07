@@ -15110,7 +15110,7 @@ function copyClaudeMCPConfig() {
     elQueryF.innerHTML = qpHtml;
 
     // Body
-    if (ep.body && (ep.m === 'POST' || ep.m === 'PUT')) {
+    if (ep.body && (ep.m === 'POST' || ep.m === 'PUT' || ep.m === 'PATCH')) {
       elBodyWrap.style.display = 'block';
       elBodyEdit.value = ep.body;
     } else {
@@ -15153,7 +15153,7 @@ function copyClaudeMCPConfig() {
     } else {
       opts.headers['x-api-key'] = apiKey;
     }
-    if (selected.body && (selected.m === 'POST' || selected.m === 'PUT')) {
+    if (selected.body && (selected.m === 'POST' || selected.m === 'PUT' || selected.m === 'PATCH')) {
       opts.headers['Content-Type'] = 'application/json';
       opts.body = elBodyEdit.value.trim();
     }
@@ -15305,7 +15305,7 @@ function copyClaudeMCPConfig() {
           });
         }
         // Restore saved request body
-        if (h.reqBody && ep.body && (ep.m === 'POST' || ep.m === 'PUT')) {
+        if (h.reqBody && ep.body && (ep.m === 'POST' || ep.m === 'PUT' || ep.m === 'PATCH')) {
           elBodyEdit.value = h.reqBody;
         }
         // Update curl with restored values
