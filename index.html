@@ -4498,6 +4498,10 @@ function googleTranslateElementInit() {
     <a href="#extend-subscription" class="sub">Extend a Subscription</a>
   </div>
   <div class="sidebar-section">
+    <a href="#proration">Subscription Proration</a>
+    <a href="#proration-list" class="sub">Get Available Upgrades</a>
+    <a href="#proration-preview" class="sub">Preview Upgrade</a>
+    <a href="#proration-process" class="sub">Process Upgrade</a>
   </div>
   <div class="sidebar-section">
     <a href="#discount-codes">Discount Codes</a>
@@ -7683,6 +7687,467 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
   "data": { "subscription_id": "sub_1", "new_completion_date": "2025-04-15T00:00:00Z" }
 }</code></pre>
   </div>
+
+</section>
+
+<!-- ═══════════════════════ SUBSCRIPTION PRORATION ═══════════════════════ -->
+<section id="proration">
+  <div class="section-head">
+    <h1>Subscription Proration</h1>
+  </div>
+
+  <p>The Subscription Proration API lets sellers offer <strong>tier upgrades</strong> to existing subscribers, where the buyer pays only the prorated price difference for the remainder of their current cycle rather than the full price of the new tier.</p>
+
+  <p>Three endpoints drive the upgrade flow:</p>
+  <ol style="margin:8px 0 0 20px;line-height:1.9;">
+    <li><strong><a href="#proration-list">Get Available Upgrades</a></strong> — list all valid upgrade targets for a subscription, with proration math pre-calculated for each.</li>
+    <li><strong><a href="#proration-preview">Preview Upgrade</a></strong> — get the proration calculation for a single specific target tier before executing.</li>
+    <li><strong><a href="#proration-process">Process Upgrade</a></strong> — execute the upgrade, marking the original subscription as <code class="inline">upgraded</code> and creating a new <code class="inline">active</code> subscription on the target tier.</li>
+  </ol>
+
+  <h3 class="subsection-title" style="margin-top:28px;">Prerequisites</h3>
+  <p>Before any of these endpoints will return upgrade options, the seller must enable subscription proration in the admin panel:</p>
+  <ul style="margin:6px 0 0 20px;line-height:1.8;">
+    <li><strong>Subscription proration:</strong> enabled.</li>
+    <li><strong>Proration billing mode:</strong> <code class="inline">immediate</code> (charge prorated amount at upgrade time) or <code class="inline">next_cycle</code> (defer to next renewal).</li>
+  </ul>
+  <p style="margin-top:8px;">If proration is not enabled on the seller account, <strong>Get Available Upgrades</strong> returns an empty <code class="inline">available_upgrades</code> array, and <strong>Preview Upgrade</strong> / <strong>Process Upgrade</strong> return a <code class="inline">422</code>. Proration must also be enabled on the <strong>target service</strong> — a buyer cannot upgrade into a tier that has proration disabled.</p>
+
+  <h3 class="subsection-title" style="margin-top:28px;">Authentication</h3>
+  <p>All proration endpoints authenticate via the seller API key, the same as the rest of the Public API.</p>
+  <table class="param-table">
+    <thead><tr><th>Header</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td><code>x-api-key</code></td><td>Seller API key.</td></tr>
+      <tr><td><code>Content-Type</code></td><td><code class="inline">application/json</code> (POST requests only).</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:28px;">Base URL</h3>
+  <table class="param-table">
+    <thead><tr><th>Environment</th><th>Base URL</th></tr></thead>
+    <tbody>
+      <tr><td>Production</td><td><code>https://fanbasis.com</code></td></tr>
+      <tr><td>QA</td><td><code>https://qa.dev-fan-basis.com</code></td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:8px;">All proration endpoints are mounted under <code class="inline">/api/seller/v1/</code>.</p>
+
+  <h3 class="subsection-title" style="margin-top:28px;">Standard Upgrade Flow</h3>
+  <ol style="margin:6px 0 0 20px;line-height:1.9;">
+    <li>Call <strong>Get Available Upgrades</strong> to display valid upgrade options to the buyer.</li>
+    <li>Buyer selects a target tier.</li>
+    <li>Call <strong>Preview Upgrade</strong> with the selected <code class="inline">target_service_id</code> to confirm the exact charge.</li>
+    <li>Display <code class="inline">amount_due</code> to the buyer for confirmation.</li>
+    <li>Call <strong>Process Upgrade</strong> to execute.</li>
+  </ol>
+
+  <!-- ─── Get Available Upgrades ─── -->
+  <h2 id="proration-list" class="endpoint-title">Get Available Upgrades</h2>
+  <div class="endpoint-badge" style="margin-top:36px;" id="pr-list">
+    <span class="method get">GET</span>
+    <span class="endpoint-url">/api/seller/v1/subscriptions/:id/upgrades</span>
+  </div>
+  <p>Returns all upgrade options available to a given subscriber, with full proration math pre-calculated for each target tier.</p>
+
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>integer</td><td>Yes</td><td>The subscriber ID (subscription record ID, not the buyer's user ID).</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X GET "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrades" \
+  -H "x-api-key: YOUR_API_KEY"</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="pr-list">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "statuscode": 200,
+  "message": "Available upgrades retrieved successfully",
+  "data": {
+    "subscription_id": 12345,
+    "subscription_status": "active",
+    "current_tier": {
+      "id": 1001,
+      "title": "Basic Plan",
+      "price": 10,
+      "payment_frequency": 30
+    },
+    "proration_credit": 0,
+    "available_upgrades": [
+      {
+        "service": { "id": 1002, "title": "Pro Plan", "price": 25, "payment_frequency": 30 },
+        "calculation": {
+          "current_service": { "id": 1001, "title": "Basic Plan", "price": 10 },
+          "target_service":  { "id": 1002, "title": "Pro Plan",  "price": 25 },
+          "price_difference": 15,
+          "days_remaining": 22,
+          "total_cycle_days": 30,
+          "proration_ratio": 0.7333,
+          "upgrade_charge": 11,
+          "renewal_credit": 7.33,
+          "existing_credit": 0,
+          "amount_due": 11,
+          "completion_date": "2026-12-31 09:53:09"
+        }
+      },
+      {
+        "service": { "id": 1003, "title": "VIP Plan", "price": 50, "payment_frequency": 30 },
+        "calculation": {
+          "current_service": { "id": 1001, "title": "Basic Plan", "price": 10 },
+          "target_service":  { "id": 1003, "title": "VIP Plan",   "price": 50 },
+          "price_difference": 40,
+          "days_remaining": 22,
+          "total_cycle_days": 30,
+          "proration_ratio": 0.7333,
+          "upgrade_charge": 29.33,
+          "renewal_credit": 7.33,
+          "existing_credit": 0,
+          "amount_due": 29.33,
+          "completion_date": "2026-12-31 09:53:09"
+        }
+      }
+    ]
+  }
+}</code></pre>
+  </div>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Response Fields — <code>data</code></h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>subscription_id</code></td><td>integer</td><td>The subscription's ID.</td></tr>
+      <tr><td><code>subscription_status</code></td><td>string</td><td>Current state of the subscription (e.g. <code class="inline">active</code>, <code class="inline">upgraded</code>). See <a href="#proration-statuses">Subscription Statuses</a>.</td></tr>
+      <tr><td><code>current_tier</code></td><td>object</td><td>The subscriber's existing service tier.</td></tr>
+      <tr><td><code>proration_credit</code></td><td>number</td><td>Any unused credit already applied to this subscription.</td></tr>
+      <tr><td><code>available_upgrades</code></td><td>array</td><td>List of eligible upgrade targets, each with a pre-computed proration calculation. Empty array if no upgrades are available.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Service Object (<code>current_tier</code>, <code>service</code>)</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>integer</td><td>Service (product) ID.</td></tr>
+      <tr><td><code>title</code></td><td>string</td><td>Service display name.</td></tr>
+      <tr><td><code>price</code></td><td>number</td><td>Service price.</td></tr>
+      <tr><td><code>payment_frequency</code></td><td>integer</td><td>Billing cycle length in days. <code class="inline">1</code> = daily, <code class="inline">7</code> = weekly, <code class="inline">30</code> = monthly, etc.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="proration-calculation" class="subsection-title" style="margin-top:20px;">Calculation Object</h3>
+  <p>Proration math for upgrading from the current tier to a target tier. The same shape is returned by all three endpoints.</p>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>current_service</code></td><td>object</td><td>Tier the subscriber is upgrading from (<code class="inline">id</code>, <code class="inline">title</code>, <code class="inline">price</code>).</td></tr>
+      <tr><td><code>target_service</code></td><td>object</td><td>Tier the subscriber would upgrade to (<code class="inline">id</code>, <code class="inline">title</code>, <code class="inline">price</code>).</td></tr>
+      <tr><td><code>price_difference</code></td><td>number</td><td><code class="inline">target_service.price − current_service.price</code>.</td></tr>
+      <tr><td><code>days_remaining</code></td><td>integer</td><td>Days left in the current billing cycle.</td></tr>
+      <tr><td><code>total_cycle_days</code></td><td>integer</td><td>Total length of the billing cycle in days.</td></tr>
+      <tr><td><code>proration_ratio</code></td><td>number</td><td><code class="inline">days_remaining / total_cycle_days</code>, rounded to 4 decimals.</td></tr>
+      <tr><td><code>upgrade_charge</code></td><td>number</td><td>Prorated charge for the remainder of the current cycle.</td></tr>
+      <tr><td><code>renewal_credit</code></td><td>number</td><td>Credit applied to the next renewal.</td></tr>
+      <tr><td><code>existing_credit</code></td><td>number</td><td>Any credit already on the subscription.</td></tr>
+      <tr><td><code>amount_due</code></td><td>number</td><td>Final amount the subscriber will be charged immediately.</td></tr>
+      <tr><td><code>completion_date</code></td><td>string</td><td>End of the current cycle / when the upgrade fully completes (<code class="inline">YYYY-MM-DD HH:MM:SS</code>).</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info" style="margin-top:12px;">
+    <div class="callout-title">&#8505; Empty result cases</div>
+    <p><code class="inline">available_upgrades</code> returns as an empty array (with <code class="inline">200 OK</code>) when:</p>
+    <ul style="margin:6px 0 0 18px;">
+      <li>The current tier is already the highest available — no upgrade targets exist.</li>
+      <li>The subscription's <code class="inline">subscription_status</code> is <code class="inline">upgraded</code> (already upgraded once).</li>
+      <li>The subscription's <code class="inline">subscription_status</code> is anything other than <code class="inline">active</code> (<code class="inline">past_due</code>, <code class="inline">cancelled</code>, <code class="inline">paused</code>, etc.).</li>
+      <li>No other services in the seller's catalog have proration enabled.</li>
+    </ul>
+  </div>
+
+  <div class="callout tip" style="margin-top:12px;">
+    <div class="callout-title">✓ Notes</div>
+    <ul style="margin:6px 0 0 18px;">
+      <li>Only tiers priced <strong>higher</strong> than the current tier are returned. Downgrades are never returned.</li>
+      <li><code class="inline">amount_due</code> is what gets charged when the upgrade is processed — display this value to the buyer before they confirm.</li>
+      <li>All monetary values are in the seller's account currency.</li>
+      <li>Only subscriptions with status <code class="inline">active</code> are upgradeable.</li>
+    </ul>
+  </div>
+
+  <!-- ─── Preview Upgrade ─── -->
+  <h2 id="proration-preview" class="endpoint-title">Preview Upgrade</h2>
+  <div class="endpoint-badge" style="margin-top:36px;" id="pr-preview">
+    <span class="method get">GET</span>
+    <span class="endpoint-url">/api/seller/v1/subscriptions/:id/upgrade/preview</span>
+  </div>
+  <p>Returns the proration calculation for a single specific target service before executing the upgrade. Use this when the buyer has already selected a target tier and you want to confirm the exact charge before processing.</p>
+
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>integer</td><td>Yes</td><td>The subscriber ID (subscription record ID, not the buyer's user ID).</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title">Query Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>target_service_id</code></td><td>integer</td><td>Yes</td><td>The service ID the subscriber wants to upgrade to.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X GET "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade/preview?target_service_id=1003" \
+  -H "x-api-key: YOUR_API_KEY"</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="pr-preview">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "statuscode": 200,
+  "message": "Upgrade preview calculated",
+  "data": {
+    "current_service": { "id": 1001, "title": "Basic Plan", "price": 10 },
+    "target_service":  { "id": 1003, "title": "VIP Plan",   "price": 50 },
+    "price_difference": 40,
+    "days_remaining": 22,
+    "total_cycle_days": 30,
+    "proration_ratio": 0.7333,
+    "upgrade_charge": 29.33,
+    "renewal_credit": 7.33,
+    "existing_credit": 0,
+    "amount_due": 29.33,
+    "completion_date": "2026-12-31 09:53:09",
+    "available_credit": 0
+  }
+}</code></pre>
+  </div>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Response Fields</h3>
+  <p>The <code class="inline">data</code> object is the same as the <a href="#proration-calculation">Calculation Object</a>, plus one extra field:</p>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>available_credit</code></td><td>number</td><td>Total credit available to apply against this upgrade. When zero, the full <code class="inline">upgrade_charge</code> becomes <code class="inline">amount_due</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip" style="margin-top:12px;">
+    <div class="callout-title">✓ Notes</div>
+    <ul style="margin:6px 0 0 18px;">
+      <li>Read-only — this endpoint does not charge the buyer or modify the subscription. Use <a href="#proration-process">Process Upgrade</a> to actually execute.</li>
+      <li><code class="inline">amount_due</code> is the value to display to the buyer before they confirm.</li>
+    </ul>
+  </div>
+
+  <!-- ─── Process Upgrade ─── -->
+  <h2 id="proration-process" class="endpoint-title">Process Upgrade</h2>
+  <div class="endpoint-badge" style="margin-top:36px;" id="pr-process">
+    <span class="method post">POST</span>
+    <span class="endpoint-url">/api/seller/v1/subscriptions/:id/upgrade</span>
+  </div>
+  <p>Executes the subscription upgrade. Marks the original subscription as <code class="inline">upgraded</code> (stops auto-renewing), creates a new <code class="inline">active</code> subscription on the target tier, and either charges the buyer immediately or defers billing to the next renewal cycle.</p>
+
+  <div class="callout warning" style="margin-top:8px;margin-bottom:8px;">
+    <div class="callout-title">⚠ Destructive operation</div>
+    <p>This endpoint creates a new subscription and modifies the existing one. Always call <a href="#proration-preview">Preview Upgrade</a> first to confirm the calculation with the buyer.</p>
+  </div>
+
+  <h3 class="subsection-title">Path Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td>integer</td><td>Yes</td><td>The subscriber ID (subscription record ID, not the buyer's user ID).</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title">Body Parameters</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>target_service_id</code></td><td>integer</td><td>Yes</td><td>—</td><td>The service ID to upgrade to.</td></tr>
+      <tr><td><code>billing_mode</code></td><td>string</td><td>No</td><td><code class="inline">immediate</code></td><td><code class="inline">immediate</code> (charge prorated amount now) or <code class="inline">next_cycle</code> (defer to next renewal).</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Billing Modes</h3>
+  <table class="param-table">
+    <thead><tr><th>Mode</th><th>Behavior</th></tr></thead>
+    <tbody>
+      <tr><td><code>immediate</code></td><td>Buyer is charged the prorated <code class="inline">amount_due</code> at the time of the upgrade. Use when the buyer should get instant access and pay the difference now.</td></tr>
+      <tr><td><code>next_cycle</code></td><td>No immediate charge. Credit is stored against the new subscription and applied at the next renewal date. Use when deferring billing to the regular renewal.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block" style="margin-top:8px; margin-bottom:8px;">
+    <div class="code-label req-body">Request Body</div>
+    <pre><code>{
+  "target_service_id": 1003,
+  "billing_mode": "next_cycle"
+}</code></pre>
+  </div>
+  <div class="code-block">
+    <div class="code-label request">Request</div>
+    <pre><code>curl -X POST "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_service_id": 1003,
+    "billing_mode": "next_cycle"
+  }'</code></pre>
+  </div>
+  <div class="code-block" style="margin-top:8px;" data-endpoint-id="pr-process">
+    <div class="code-label response">Response</div>
+    <pre><code>{
+  "status": "success",
+  "statuscode": 200,
+  "message": "Upgrade processed successfully",
+  "data": {
+    "upgrade_id": "00000000-0000-0000-0000-000000000000",
+    "base_subscription": {
+      "subscription_id": 12345,
+      "subscription_status": "upgraded",
+      "current_tier": { "id": 1001, "title": "Basic Plan", "price": 10, "payment_frequency": 30 },
+      "proration_credit": 0
+    },
+    "new_subscription": {
+      "subscription_id": 12346,
+      "subscription_status": "active",
+      "current_tier": { "id": 1003, "title": "VIP Plan", "price": 50, "payment_frequency": 30 },
+      "proration_credit": 0
+    },
+    "calculation": {
+      "current_service": { "id": 1001, "title": "Basic Plan", "price": 10 },
+      "target_service":  { "id": 1003, "title": "VIP Plan",   "price": 50 },
+      "price_difference": 40,
+      "days_remaining": 22,
+      "total_cycle_days": 30,
+      "proration_ratio": 0.7333,
+      "upgrade_charge": 29.33,
+      "renewal_credit": 7.33,
+      "existing_credit": 0,
+      "amount_due": 29.33,
+      "completion_date": "2026-12-31 09:53:09"
+    },
+    "charge": {
+      "payment_id": null,
+      "amount_charged": 0,
+      "payment_method_type": "none"
+    }
+  }
+}</code></pre>
+  </div>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Response Fields — <code>data</code></h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>upgrade_id</code></td><td>string (UUID)</td><td>Unique identifier for this upgrade event. Use for audit trail and webhook reconciliation — store this on the buyer's record.</td></tr>
+      <tr><td><code>base_subscription</code></td><td>object</td><td>The original subscription, now marked <code class="inline">upgraded</code> and no longer auto-renewing.</td></tr>
+      <tr><td><code>new_subscription</code></td><td>object</td><td>The newly created subscription on the target tier, now <code class="inline">active</code> and auto-renewing.</td></tr>
+      <tr><td><code>calculation</code></td><td>object</td><td>Full proration breakdown applied to this upgrade — see <a href="#proration-calculation">Calculation Object</a>.</td></tr>
+      <tr><td><code>charge</code></td><td>object</td><td>Details of the immediate charge, if any.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Subscription Object (<code>base_subscription</code>, <code>new_subscription</code>)</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>subscription_id</code></td><td>integer</td><td>The subscription's ID.</td></tr>
+      <tr><td><code>subscription_status</code></td><td>string</td><td>Resulting status — <code class="inline">upgraded</code> for the base, <code class="inline">active</code> for the new.</td></tr>
+      <tr><td><code>current_tier</code></td><td>object</td><td>The service tier the subscription is on (<code class="inline">id</code>, <code class="inline">title</code>, <code class="inline">price</code>, <code class="inline">payment_frequency</code>).</td></tr>
+      <tr><td><code>proration_credit</code></td><td>number</td><td>Credit currently held against this subscription.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Charge Object</h3>
+  <table class="param-table">
+    <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>payment_id</code></td><td>string \| null</td><td>ID of the payment record. <code class="inline">null</code> when no immediate charge was made (i.e. <code class="inline">billing_mode: next_cycle</code>).</td></tr>
+      <tr><td><code>amount_charged</code></td><td>number</td><td>Amount actually charged to the buyer's payment method. <code class="inline">0</code> when <code class="inline">billing_mode: next_cycle</code>.</td></tr>
+      <tr><td><code>payment_method_type</code></td><td>string</td><td>The payment method used (e.g. <code class="inline">card</code>). Returns <code class="inline">none</code> when no immediate charge was made.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Behavior By Billing Mode</h3>
+  <div class="response-compare">
+    <div class="response-box success">
+      <div class="response-box-title">billing_mode: immediate</div>
+      <pre><code>charge.payment_id     = new payment ID
+charge.amount_charged = calculation.amount_due
+charge.payment_method_type = "card" (or buyer's stored method)</code></pre>
+    </div>
+    <div class="response-box success">
+      <div class="response-box-title">billing_mode: next_cycle</div>
+      <pre><code>charge.payment_id     = null
+charge.amount_charged = 0
+charge.payment_method_type = "none"
+// Prorated amount stored as credit, applied at next renewal</code></pre>
+    </div>
+  </div>
+
+  <h3 class="subsection-title" style="margin-top:20px;">Subscription State After Upgrade</h3>
+  <table class="param-table">
+    <thead><tr><th>Subscription</th><th>Status</th><th>Auto-Renew</th></tr></thead>
+    <tbody>
+      <tr><td><code>base_subscription</code> (original)</td><td><code class="inline">upgraded</code></td><td>❌ NO</td></tr>
+      <tr><td><code>new_subscription</code> (new)</td><td><code class="inline">active</code></td><td>✅ YES</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip" style="margin-top:12px;">
+    <div class="callout-title">✓ Notes</div>
+    <ul style="margin:6px 0 0 18px;">
+      <li><code class="inline">upgrade_id</code> is the canonical reference for this event in audit logs and webhooks.</li>
+      <li>The new subscription's billing cycle starts fresh on the upgrade date. The original <code class="inline">completion_date</code> only matters for the credit/charge calculation — the new subscription renews on its own schedule.</li>
+      <li>A subscription can only be upgraded once. After upgrade, <code class="inline">base_subscription</code> is permanently marked <code class="inline">upgraded</code> and is no longer eligible for further upgrades. To upgrade again, call this endpoint on <code class="inline">new_subscription.subscription_id</code>.</li>
+      <li>For <code class="inline">billing_mode: immediate</code>, the charge uses the buyer's stored payment method on the original subscription. If the card has expired or fails, the upgrade returns <code class="inline">422</code>.</li>
+    </ul>
+  </div>
+
+  <!-- ─── Errors + Statuses ─── -->
+  <h3 class="subsection-title" style="margin-top:32px;">Error Responses</h3>
+  <table class="param-table">
+    <thead><tr><th>Status</th><th>When it fires</th></tr></thead>
+    <tbody>
+      <tr><td><code class="inline">400 Bad Request</code></td><td>Target tier is not a valid upgrade (Preview only) — same tier or downgrade.</td></tr>
+      <tr><td><code class="inline">401 Unauthorized</code></td><td>Missing, invalid, or inactive API key.</td></tr>
+      <tr><td><code class="inline">404 Not Found</code></td><td>Subscription ID does not exist or doesn't belong to the authenticated seller.</td></tr>
+      <tr><td><code class="inline">422 Unprocessable Entity</code></td><td>Upgrade rejected — subscription not <code class="inline">active</code>, target service has proration disabled, target tier is same or lower, or buyer's stored payment method failed.</td></tr>
+      <tr><td><code class="inline">500 Internal Server Error</code></td><td>Unhandled error during upgrade processing.</td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:8px;">Common <code class="inline">errors.general</code> messages on <code class="inline">422</code>:</p>
+  <ul style="margin:4px 0 0 18px;line-height:1.8;">
+    <li><code class="inline">"Subscription is not active"</code></li>
+    <li><code class="inline">"Proration is not enabled for this service"</code></li>
+    <li><code class="inline">"Downgrade not allowed"</code></li>
+    <li><code class="inline">"Target service price must be higher than current service price"</code></li>
+  </ul>
+
+  <h3 id="proration-statuses" class="subsection-title" style="margin-top:28px;">Subscription Statuses Reference</h3>
+  <table class="param-table">
+    <thead><tr><th>Status</th><th>Auto-Renew</th><th>Upgradeable</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code class="inline">active</code></td><td>✅ YES</td><td>✅ YES</td><td>Normal active subscription.</td></tr>
+      <tr><td><code class="inline">past_due</code></td><td>✅ YES</td><td>❌ NO</td><td>Payment failed, retry in progress.</td></tr>
+      <tr><td><code class="inline">upgraded</code></td><td>❌ NO</td><td>❌ NO</td><td>Original subscription after upgrade (stopped renewing).</td></tr>
+      <tr><td><code class="inline">cancelled</code></td><td>❌ NO</td><td>❌ NO</td><td>Manually cancelled.</td></tr>
+      <tr><td><code class="inline">paused</code></td><td>❌ NO</td><td>❌ NO</td><td>Paused by seller or buyer.</td></tr>
+    </tbody>
+  </table>
 
 </section>
 <!-- ═══════════════════════ DISCOUNT CODES ═══════════════════════ -->
@@ -12012,6 +12477,7 @@ function copyCode(btn) {
 <div class="cmdkItem" data-section="webhook-events-reference" data-group="platform"><span class="cmdkItemIcon">🏗</span><span class="cmdkItemLabel">Webhook Events Reference</span><span class="cmdkItemSub">Platform</span></div></div><div class="cmdkGroup" data-group-block><span class="cmdkGroupLabel">API Reference</span><div class="cmdkItem" data-section="checkout-sessions" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Checkout Sessions</span><span class="cmdkItemSub">API Reference</span></div>
 <div class="cmdkItem" data-section="customers" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Customers</span><span class="cmdkItemSub">API Reference</span></div>
 <div class="cmdkItem" data-section="subscribers" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Subscribers</span><span class="cmdkItemSub">API Reference</span></div>
+<div class="cmdkItem" data-section="proration" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Subscription Proration</span><span class="cmdkItemSub">API Reference</span></div>
 <div class="cmdkItem" data-section="discount-codes" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Discount Codes</span><span class="cmdkItemSub">API Reference</span></div>
 <div class="cmdkItem" data-section="products" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Products</span><span class="cmdkItemSub">API Reference</span></div>
 <div class="cmdkItem" data-section="transactions" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Transactions</span><span class="cmdkItemSub">API Reference</span></div>
@@ -12048,6 +12514,7 @@ function copyCode(btn) {
   "checkout-sessions": "api-reference",
   "customers": "api-reference",
   "subscribers": "api-reference",
+  "proration": "api-reference",
   "discount-codes": "api-reference",
   "products": "api-reference",
   "transactions": "api-reference",
@@ -12090,6 +12557,7 @@ function copyCode(btn) {
   "checkout-sessions",
   "customers",
   "subscribers",
+  "proration",
   "discount-codes",
   "products",
   "transactions",
@@ -12132,6 +12600,7 @@ function copyCode(btn) {
   "checkout-sessions": "Checkout Sessions",
   "customers": "Customers",
   "subscribers": "Subscribers",
+  "proration": "Subscription Proration",
   "discount-codes": "Discount Codes",
   "products": "Products",
   "transactions": "Transactions",
@@ -13588,6 +14057,26 @@ function copyCode(btn) {
       '404': JSON.stringify({"status":"error","message":"Checkout session or active subscription not found"}, null, 2),
       '500': JSON.stringify({"status":"error","message":"Failed to extend subscription"}, null, 2)
     },
+    /* ── Subscription Proration ────────────────────────────────── */
+    'pr-list': {
+      _tabs: ['200','401','404'],
+      '401': JSON.stringify({"status":"error","statuscode":401,"message":"Please check user token or client credentials"}, null, 2),
+      '404': JSON.stringify({"status":"error","statuscode":404,"message":"Subscription not found","errors":{}}, null, 2)
+    },
+    'pr-preview': {
+      _tabs: ['200','400','401','404','422'],
+      '400': JSON.stringify({"status":"error","statuscode":400,"message":"Upgrade not allowed to this tier","errors":422}, null, 2),
+      '401': JSON.stringify({"status":"error","statuscode":401,"message":"Please check user token or client credentials"}, null, 2),
+      '404': JSON.stringify({"status":"error","statuscode":404,"message":"Subscription not found","errors":{}}, null, 2),
+      '422': JSON.stringify({"status":"error","statuscode":422,"message":"Upgrade not allowed","errors":{"general":["Subscription is not active"]}}, null, 2)
+    },
+    'pr-process': {
+      _tabs: ['200','401','404','422','500'],
+      '401': JSON.stringify({"status":"error","statuscode":401,"message":"Please check user token or client credentials"}, null, 2),
+      '404': JSON.stringify({"status":"error","statuscode":404,"message":"Subscription not found","errors":{}}, null, 2),
+      '422': JSON.stringify({"status":"error","statuscode":422,"message":"Upgrade not allowed","errors":{"general":["Subscription is not active"]}}, null, 2),
+      '500': JSON.stringify({"status":"error","statuscode":500,"message":"An error occurred while processing the upgrade","errors":{}}, null, 2)
+    },
     'cs-embedded': {
       _tabs: ['200','400','500'],
       '400': JSON.stringify({"status":"error","message":"Validation failed","data":[],"errors":{"metadata.allowed_payment_methods.0":["The selected metadata.allowed_payment_methods.0 is invalid."]}}, null, 2),
@@ -13964,7 +14453,7 @@ document.addEventListener('click', function(e) {
 });
 
 // Embedded API docs markdown (~9KB) for instant clipboard copy
-var FANBASIS_API_MD = "# FanBasis API Reference\n\n> FanBasis is a payment processor for digital products. This document covers the complete REST API for managing checkout sessions, transactions, customers, subscriptions, products, discount codes, and webhooks.\n\n**Base URL:** `https://www.fanbasis.com` (paths shown below include the `/public-api/...` prefix)\n\n**Authentication:** Include your API key in the `x-api-key` header on every request.\n\n```\ncurl https://www.fanbasis.com/public-api/products \\\n  -H \"x-api-key: YOUR_API_KEY\"\n```\n\n**Pagination:** Most list endpoints support `page` and `per_page` query parameters (default: 20 per page).\n\n---\n\n## Products\n\n### List Products\n```\nGET /public-api/products\n```\nReturns all products associated with your account, including prices, payment links, and product metadata.\n\n**Response fields:** `id`, `name`, `description`, `price`, `currency`, `payment_link`, `type` (one-time, subscription, etc.), `created_at`, `updated_at`\n\n---\n\n## Customers\n\n### List / Search Customers\n```\nGET /public-api/customers?search={query}\n```\nSearch customers by name, email, or phone number. Returns customer profiles with contact information.\n\n**Query parameters:**\n- `search` \u2014 Filter by name, email, or phone\n- `page`, `per_page` \u2014 Pagination\n\n**Response fields:** `id`, `name`, `email`, `phone`, `created_at`, `metadata`\n\n### Get Customer Payment Methods\n```\nGET /public-api/customers/:customerId/payment-methods\n```\nReturns saved payment methods for a customer (card last 4 digits, brand, expiry only \u2014 no full card numbers).\n\n### Charge a Customer\n```\nPOST /public-api/customers/:customerId/charge\n```\nCharge a customer using a saved payment method.\n\n**Body parameters:** `payment_method_id`, `amount`, `currency`, `description`\n\n---\n\n## Checkout Sessions\n\n### Create Checkout Session\n```\nPOST /public-api/checkout-sessions\n```\nCreate a new checkout session. Returns a `checkout_session_id` and `payment_link` for the buyer.\n\n**Body parameters:**\n- `product.title` (string, required), `product.description` (string, optional)\n- `amount_cents` (integer, required) \u2014 price in cents\n- `type` (string, required) \u2014 one of `subscription`, `onetime_reusable`, `onetime_non_reusable`\n- `metadata` (object, optional), `success_url` (uri, optional), `webhook_url` (uri, optional), `expiration_date` (date, optional)\n- For subscriptions: `subscription.frequency_days` (required), `subscription.free_trial_days`, `subscription.auto_expire_after_x_periods`, `subscription.initial_fee`, `subscription.initial_fee_days` (all optional)\n\n**Type guide:**\n- `subscription` \u2014 recurring billing every `frequency_days`\n- `onetime_reusable` \u2014 single-charge link, unlimited buyers (good for digital products)\n- `onetime_non_reusable` \u2014 single-charge link, expires after first payment (good for custom invoices)\n\n**Response:** `{ \"id\": \"NLxj6\", \"checkout_session_id\": 345424, \"payment_link\": \"https://...\" }`\n\n### Get Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId\n```\nRetrieve details of a specific checkout session including configuration and pricing.\n\n### Delete Checkout Session\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId\n```\nDelete/archive a checkout session.\n\n### Create Embedded Checkout Session\n```\nPOST /public-api/checkout-sessions/embedded\n```\nCreate an embedded checkout session for iframe-based payment forms.\n\n**Body parameters:** `creator_id` (string, required) \u2014 your creator slug; `product_id` (string, required) \u2014 the product to embed; `metadata` (object, optional) \u2014 echoed in webhooks.\n\n**Response:** `{ \"id\", \"checkout_session_secret\", \"your_handle\", \"metadata\", \"allowed_payment_methods\", \"created_at\" }`\n\n---\n\n## Transactions\n\n### List All Transactions\n```\nGET /public-api/checkout-sessions/transactions?page=1&per_page=20\n```\nList all transactions across all checkout sessions. Supports pagination.\n\n**Response fields:** `id`, `checkout_session_id`, `customer_email`, `amount`, `currency`, `status`, `product_name`, `created_at`, `fees`, `net_amount`\n\n### Get Single Transaction\n```\nGET /public-api/transactions/:transactionId\n```\nGet detailed information about a specific transaction including fees, refund status, and payment method.\n\n### Get Transactions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/transactions?page=1&per_page=20\n```\nList all transactions associated with a specific checkout session.\n\n### Refund a Transaction\n```\nPOST /public-api/checkout-sessions/transactions/:transactionId/refund\n```\nIssue a full or partial refund for a transaction.\n\n**Body parameters:** `amount` (optional \u2014 omit for full refund), `reason` (optional)\n\n---\n\n## Subscriptions\n\n### List All Subscribers\n```\nGET /public-api/subscribers\n```\nList all active subscribers across all products. Returns subscription status, billing dates, and plan details.\n\n**Response fields:** `id`, `customer_email`, `customer_name`, `product_name`, `status` (active, canceled, past_due), `current_period_start`, `current_period_end`, `interval`, `amount`, `currency`\n\n### Get Subscriptions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/subscriptions?page=1\n```\nList all subscriptions associated with a specific checkout session.\n\n### Get Subscriptions for a Product\n```\nGET /public-api/checkout-sessions/:productId/subscriptions?page=1\n```\nList all subscriptions for a specific product.\n\n### Cancel a Subscription\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId\n```\nCancel a subscription immediately. The customer keeps access until the end of the current billing period.\n\n### Extend a Subscription\n```\nPOST /public-api/checkout-sessions/:checkoutSessionId/extend-subscription\n```\nPush the next billing date forward by a set number of days (e.g., for gifting extra time).\n\n**Body parameters:** `days` \u2014 Number of days to extend\n\n---\n\n## Discount Codes\n\n### List Discount Codes\n```\nGET /public-api/discount-codes\n```\nList all discount codes with usage statistics.\n\n**Response fields:** `id`, `code`, `type` (percentage, fixed), `value`, `max_uses`, `current_uses`, `active`, `expires_at`, `applicable_products`\n\n### Get Discount Code\n```\nGET /public-api/discount-codes/:discountCodeId\n```\nGet details of a specific discount code.\n\n### Create Discount Code\n```\nPOST /public-api/discount-codes\n```\nCreate a new discount code.\n\n**Body parameters:** `code`, `type` (percentage, fixed), `value`, `max_uses` (optional), `expires_at` (optional), `applicable_products` (optional array of product IDs)\n\n### Update Discount Code\n```\nPUT /public-api/discount-codes/:discountCodeId\n```\nUpdate an existing discount code.\n\n### Delete Discount Code\n```\nDELETE /public-api/discount-codes/:discountCodeId\n```\nDelete a discount code.\n\n---\n\n## Webhooks\n\n### List Webhook Subscriptions\n```\nGET /public-api/webhook-subscriptions\n```\nList all configured webhook endpoints.\n\n### Create Webhook Subscription\n```\nPOST /public-api/webhook-subscriptions\n```\nRegister a new webhook endpoint.\n\n**Body parameters:** `url`, `events` (array of event types like `checkout.completed`, `subscription.created`, `subscription.canceled`, `payment.refunded`)\n\n### Delete Webhook Subscription\n```\nDELETE /public-api/webhook-subscriptions/:webhookSubscriptionId\n```\nRemove a webhook endpoint.\n\n### Test Webhook\n```\nPOST /public-api/webhook-subscriptions/:webhookSubscriptionId/test\n```\nSend a test event to your webhook endpoint.\n\n**Body parameters:** `event` \u2014 The event type to test (e.g., `checkout.completed`)\n\n---\n\n## Common Response Patterns\n\n**Success:** Returns `200 OK` with JSON body.\n\n**Pagination:** List endpoints return `{ \"data\": [...], \"page\": 1, \"per_page\": 20, \"total\": 150 }`\n\n**Errors:** Returns appropriate HTTP status code with `{ \"error\": \"message\" }`\n- `401` \u2014 Invalid or missing API key\n- `404` \u2014 Resource not found\n- `422` \u2014 Validation error\n- `429` \u2014 Rate limited\n- `500` \u2014 Server error\n\n---\n\n## Quick Reference\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/products` | GET | List all products |\n| `/customers` | GET | Search customers |\n| `/customers/:id/payment-methods` | GET | Customer's saved cards |\n| `/customers/:id/charge` | POST | Charge a customer |\n| `/checkout-sessions` | POST | Create checkout session |\n| `/checkout-sessions/:id` | GET | Get session details |\n| `/checkout-sessions/:id` | DELETE | Delete session |\n| `/checkout-sessions/embedded` | POST | Create embedded checkout |\n| `/checkout-sessions/transactions` | GET | List all transactions |\n| `/checkout-sessions/:id/transactions` | GET | Session transactions |\n| `/checkout-sessions/:id/subscriptions` | GET | Session subscriptions |\n| `/checkout-sessions/:id/subscriptions/:subId` | DELETE | Cancel subscription |\n| `/checkout-sessions/:id/extend-subscription` | POST | Extend subscription |\n| `/checkout-sessions/transactions/:txnId/refund` | POST | Refund transaction |\n| `/transactions/:id` | GET | Get transaction detail |\n| `/subscribers` | GET | List all subscribers |\n| `/discount-codes` | GET | List discount codes |\n| `/discount-codes/:id` | GET | Get discount code |\n| `/discount-codes` | POST | Create discount code |\n| `/discount-codes/:id` | PUT | Update discount code |\n| `/discount-codes/:id` | DELETE | Delete discount code |\n| `/webhook-subscriptions` | GET | List webhooks |\n| `/webhook-subscriptions` | POST | Create webhook |\n| `/webhook-subscriptions/:id` | DELETE | Delete webhook |\n| `/webhook-subscriptions/:id/test` | POST | Test webhook |\n";
+var FANBASIS_API_MD = "# FanBasis API Reference\n\n> FanBasis is a payment processor for digital products. This document covers the complete REST API for managing checkout sessions, transactions, customers, subscriptions, products, discount codes, and webhooks.\n\n**Base URL:** `https://www.fanbasis.com` (paths shown below include the `/public-api/...` prefix)\n\n**Authentication:** Include your API key in the `x-api-key` header on every request.\n\n```\ncurl https://www.fanbasis.com/public-api/products \\\n  -H \"x-api-key: YOUR_API_KEY\"\n```\n\n**Pagination:** Most list endpoints support `page` and `per_page` query parameters (default: 20 per page).\n\n---\n\n## Products\n\n### List Products\n```\nGET /public-api/products\n```\nReturns all products associated with your account, including prices, payment links, and product metadata.\n\n**Response fields:** `id`, `name`, `description`, `price`, `currency`, `payment_link`, `type` (one-time, subscription, etc.), `created_at`, `updated_at`\n\n---\n\n## Customers\n\n### List / Search Customers\n```\nGET /public-api/customers?search={query}\n```\nSearch customers by name, email, or phone number. Returns customer profiles with contact information.\n\n**Query parameters:**\n- `search` \u2014 Filter by name, email, or phone\n- `page`, `per_page` \u2014 Pagination\n\n**Response fields:** `id`, `name`, `email`, `phone`, `created_at`, `metadata`\n\n### Get Customer Payment Methods\n```\nGET /public-api/customers/:customerId/payment-methods\n```\nReturns saved payment methods for a customer (card last 4 digits, brand, expiry only \u2014 no full card numbers).\n\n### Charge a Customer\n```\nPOST /public-api/customers/:customerId/charge\n```\nCharge a customer using a saved payment method.\n\n**Body parameters:** `payment_method_id`, `amount`, `currency`, `description`\n\n---\n\n## Checkout Sessions\n\n### Create Checkout Session\n```\nPOST /public-api/checkout-sessions\n```\nCreate a new checkout session. Returns a `checkout_session_id` and `payment_link` for the buyer.\n\n**Body parameters:**\n- `product.title` (string, required), `product.description` (string, optional)\n- `amount_cents` (integer, required) \u2014 price in cents\n- `type` (string, required) \u2014 one of `subscription`, `onetime_reusable`, `onetime_non_reusable`\n- `metadata` (object, optional), `success_url` (uri, optional), `webhook_url` (uri, optional), `expiration_date` (date, optional)\n- For subscriptions: `subscription.frequency_days` (required), `subscription.free_trial_days`, `subscription.auto_expire_after_x_periods`, `subscription.initial_fee`, `subscription.initial_fee_days` (all optional)\n\n**Type guide:**\n- `subscription` \u2014 recurring billing every `frequency_days`\n- `onetime_reusable` \u2014 single-charge link, unlimited buyers (good for digital products)\n- `onetime_non_reusable` \u2014 single-charge link, expires after first payment (good for custom invoices)\n\n**Response:** `{ \"id\": \"NLxj6\", \"checkout_session_id\": 345424, \"payment_link\": \"https://...\" }`\n\n### Get Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId\n```\nRetrieve details of a specific checkout session including configuration and pricing.\n\n### Delete Checkout Session\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId\n```\nDelete/archive a checkout session.\n\n### Create Embedded Checkout Session\n```\nPOST /public-api/checkout-sessions/embedded\n```\nCreate an embedded checkout session for iframe-based payment forms.\n\n**Body parameters:** `creator_id` (string, required) \u2014 your creator slug; `product_id` (string, required) \u2014 the product to embed; `metadata` (object, optional) \u2014 echoed in webhooks.\n\n**Response:** `{ \"id\", \"checkout_session_secret\", \"your_handle\", \"metadata\", \"allowed_payment_methods\", \"created_at\" }`\n\n---\n\n## Transactions\n\n### List All Transactions\n```\nGET /public-api/checkout-sessions/transactions?page=1&per_page=20\n```\nList all transactions across all checkout sessions. Supports pagination.\n\n**Response fields:** `id`, `checkout_session_id`, `customer_email`, `amount`, `currency`, `status`, `product_name`, `created_at`, `fees`, `net_amount`\n\n### Get Single Transaction\n```\nGET /public-api/transactions/:transactionId\n```\nGet detailed information about a specific transaction including fees, refund status, and payment method.\n\n### Get Transactions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/transactions?page=1&per_page=20\n```\nList all transactions associated with a specific checkout session.\n\n### Refund a Transaction\n```\nPOST /public-api/checkout-sessions/transactions/:transactionId/refund\n```\nIssue a full or partial refund for a transaction.\n\n**Body parameters:** `amount` (optional \u2014 omit for full refund), `reason` (optional)\n\n---\n\n## Subscriptions\n\n### List All Subscribers\n```\nGET /public-api/subscribers\n```\nList all active subscribers across all products. Returns subscription status, billing dates, and plan details.\n\n**Response fields:** `id`, `customer_email`, `customer_name`, `product_name`, `status` (active, canceled, past_due), `current_period_start`, `current_period_end`, `interval`, `amount`, `currency`\n\n### Get Subscriptions for a Checkout Session\n```\nGET /public-api/checkout-sessions/:checkoutSessionId/subscriptions?page=1\n```\nList all subscriptions associated with a specific checkout session.\n\n### Get Subscriptions for a Product\n```\nGET /public-api/checkout-sessions/:productId/subscriptions?page=1\n```\nList all subscriptions for a specific product.\n\n### Cancel a Subscription\n```\nDELETE /public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId\n```\nCancel a subscription immediately. The customer keeps access until the end of the current billing period.\n\n### Extend a Subscription\n```\nPOST /public-api/checkout-sessions/:checkoutSessionId/extend-subscription\n```\nPush the next billing date forward by a set number of days (e.g., for gifting extra time).\n\n**Body parameters:** `days` \u2014 Number of days to extend\n\n---\n\n## Subscription Proration\n\n> **Note:** These endpoints live on the Seller v1 API (`/api/seller/v1/`) but use the same `x-api-key` authentication as the rest of the Public API. Production base URL: `https://fanbasis.com` (apex, no www). QA: `https://qa.dev-fan-basis.com`.\n\nTier-upgrade endpoints with automatic proration. Three calls drive the flow: list available targets, preview the math, then execute.\n\n### Get Available Upgrades\n```\nGET /api/seller/v1/subscriptions/:id/upgrades\n```\nLists every valid upgrade target for a subscription with proration math pre-calculated for each.\n\n**Path:** `id` (integer) \u2014 the subscription record ID.\n\n**Response shape:** `{ subscription_id, subscription_status, current_tier, proration_credit, available_upgrades: [{ service, calculation }] }`. Empty `available_upgrades` array (with 200) when no targets exist or proration isn't enabled.\n\n### Preview Upgrade\n```\nGET /api/seller/v1/subscriptions/:id/upgrade/preview?target_service_id=X\n```\nProration calculation for one specific target tier \u2014 read-only, doesn't charge or modify.\n\n**Response shape:** `{ current_service, target_service, price_difference, days_remaining, total_cycle_days, proration_ratio, upgrade_charge, renewal_credit, existing_credit, amount_due, completion_date, available_credit }`.\n\n### Process Upgrade\n```\nPOST /api/seller/v1/subscriptions/:id/upgrade\n```\nExecutes the upgrade. Marks the original subscription as `upgraded` (stops auto-renewing), creates a new `active` subscription on the target tier, charges immediately or defers.\n\n**Body:** `target_service_id` (integer, required), `billing_mode` (`immediate` | `next_cycle`, default `immediate`).\n\n**Response shape:** `{ upgrade_id (UUID), base_subscription, new_subscription, calculation, charge: { payment_id, amount_charged, payment_method_type } }`.\n\n**Errors:** `400` invalid target tier (Preview only); `401` bad API key; `404` subscription not found; `422` not upgradeable (e.g. `Subscription is not active`, `Proration is not enabled for this service`, `Downgrade not allowed`); `500` unhandled processing error. All error bodies include a `statuscode` field matching the HTTP status.\n\n**Subscription statuses:** `active` (\u2705 upgradeable), `past_due`, `upgraded`, `cancelled`, `paused` (last four \u274c not upgradeable). Each subscription can only be upgraded once \u2014 call this endpoint on `new_subscription.subscription_id` to upgrade again.\n\n---\n\n## Discount Codes\n\n### List Discount Codes\n```\nGET /public-api/discount-codes\n```\nList all discount codes with usage statistics.\n\n**Response fields:** `id`, `code`, `type` (percentage, fixed), `value`, `max_uses`, `current_uses`, `active`, `expires_at`, `applicable_products`\n\n### Get Discount Code\n```\nGET /public-api/discount-codes/:discountCodeId\n```\nGet details of a specific discount code.\n\n### Create Discount Code\n```\nPOST /public-api/discount-codes\n```\nCreate a new discount code.\n\n**Body parameters:** `code`, `type` (percentage, fixed), `value`, `max_uses` (optional), `expires_at` (optional), `applicable_products` (optional array of product IDs)\n\n### Update Discount Code\n```\nPUT /public-api/discount-codes/:discountCodeId\n```\nUpdate an existing discount code.\n\n### Delete Discount Code\n```\nDELETE /public-api/discount-codes/:discountCodeId\n```\nDelete a discount code.\n\n---\n\n## Webhooks\n\n### List Webhook Subscriptions\n```\nGET /public-api/webhook-subscriptions\n```\nList all configured webhook endpoints.\n\n### Create Webhook Subscription\n```\nPOST /public-api/webhook-subscriptions\n```\nRegister a new webhook endpoint.\n\n**Body parameters:** `url`, `events` (array of event types like `checkout.completed`, `subscription.created`, `subscription.canceled`, `payment.refunded`)\n\n### Delete Webhook Subscription\n```\nDELETE /public-api/webhook-subscriptions/:webhookSubscriptionId\n```\nRemove a webhook endpoint.\n\n### Test Webhook\n```\nPOST /public-api/webhook-subscriptions/:webhookSubscriptionId/test\n```\nSend a test event to your webhook endpoint.\n\n**Body parameters:** `event` \u2014 The event type to test (e.g., `checkout.completed`)\n\n---\n\n## Common Response Patterns\n\n**Success:** Returns `200 OK` with JSON body.\n\n**Pagination:** List endpoints return `{ \"data\": [...], \"page\": 1, \"per_page\": 20, \"total\": 150 }`\n\n**Errors:** Returns appropriate HTTP status code with `{ \"error\": \"message\" }`\n- `401` \u2014 Invalid or missing API key\n- `404` \u2014 Resource not found\n- `422` \u2014 Validation error\n- `429` \u2014 Rate limited\n- `500` \u2014 Server error\n\n---\n\n## Quick Reference\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/products` | GET | List all products |\n| `/customers` | GET | Search customers |\n| `/customers/:id/payment-methods` | GET | Customer's saved cards |\n| `/customers/:id/charge` | POST | Charge a customer |\n| `/checkout-sessions` | POST | Create checkout session |\n| `/checkout-sessions/:id` | GET | Get session details |\n| `/checkout-sessions/:id` | DELETE | Delete session |\n| `/checkout-sessions/embedded` | POST | Create embedded checkout |\n| `/checkout-sessions/transactions` | GET | List all transactions |\n| `/checkout-sessions/:id/transactions` | GET | Session transactions |\n| `/checkout-sessions/:id/subscriptions` | GET | Session subscriptions |\n| `/checkout-sessions/:id/subscriptions/:subId` | DELETE | Cancel subscription |\n| `/checkout-sessions/:id/extend-subscription` | POST | Extend subscription |\n| `/checkout-sessions/transactions/:txnId/refund` | POST | Refund transaction |\n| `/api/seller/v1/subscriptions/:id/upgrades` | GET | List available upgrades (proration) |\n| `/api/seller/v1/subscriptions/:id/upgrade/preview` | GET | Preview upgrade calculation |\n| `/api/seller/v1/subscriptions/:id/upgrade` | POST | Process upgrade |\n| `/transactions/:id` | GET | Get transaction detail |\n| `/subscribers` | GET | List all subscribers |\n| `/discount-codes` | GET | List discount codes |\n| `/discount-codes/:id` | GET | Get discount code |\n| `/discount-codes` | POST | Create discount code |\n| `/discount-codes/:id` | PUT | Update discount code |\n| `/discount-codes/:id` | DELETE | Delete discount code |\n| `/webhook-subscriptions` | GET | List webhooks |\n| `/webhook-subscriptions` | POST | Create webhook |\n| `/webhook-subscriptions/:id` | DELETE | Delete webhook |\n| `/webhook-subscriptions/:id/test` | POST | Test webhook |\n";
 
 function copyPageAsMarkdown(btn) {
   navigator.clipboard.writeText(FANBASIS_API_MD).then(function() {
@@ -14609,6 +15098,18 @@ function copyClaudeMCPConfig() {
       pp:['transactionId'], body:'{\n  "amount": 10.00\n}'},
     {id:'cs-extend',  cat:'Subscribers', m:'POST',   path:'/public-api/checkout-sessions/:checkoutSessionId/extend-subscription', title:'Extend Subscription', desc:'Add time to an active subscription',
       pp:['checkoutSessionId'], body:'{\n  "user_id": "string",\n  "duration_days": 0\n}'},
+
+    // Subscription Proration (Seller v1 — x-api-key auth, apex host)
+    {id:'pr-list', cat:'Subscription Proration', m:'GET', path:'/api/seller/v1/subscriptions/:id/upgrades', title:'Get Available Upgrades', desc:'List valid upgrade targets with proration math',
+      host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
+      pp:['id']},
+    {id:'pr-preview', cat:'Subscription Proration', m:'GET', path:'/api/seller/v1/subscriptions/:id/upgrade/preview', title:'Preview Upgrade', desc:'Get proration calculation for a single target tier',
+      host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
+      pp:['id'], qp:['target_service_id']},
+    {id:'pr-process', cat:'Subscription Proration', m:'POST', path:'/api/seller/v1/subscriptions/:id/upgrade', title:'Process Upgrade', desc:'Execute the upgrade and create the new subscription',
+      host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
+      pp:['id'], body:'{\n  "target_service_id": 1003,\n  "billing_mode": "next_cycle"\n}'},
+
     // Discount Codes
     {id:'dc-list',   cat:'Discount Codes', m:'GET',    path:'/public-api/discount-codes', title:'List Codes', desc:'Get all discount codes',
       qp:['page','limit']},

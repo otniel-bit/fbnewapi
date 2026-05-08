@@ -951,6 +951,220 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend
 
 ---
 
+### Subscription Proration
+
+> **Note:** These endpoints live on the Seller v1 API (`/api/seller/v1/`) but use the same `x-api-key` auth as the rest of the Public API. Production base URL: `https://fanbasis.com` (apex, no www). QA: `https://qa.dev-fan-basis.com`.
+
+Tier-upgrade endpoints with automatic proration. Three calls drive the flow: list available upgrade targets, preview the math, then execute.
+
+**Prerequisites:** the seller must enable Subscription Proration in the admin panel and choose a billing mode (`immediate` or `next_cycle`). Proration must also be enabled on each target service. If proration is disabled, `Get Available Upgrades` returns an empty array; `Preview` / `Process` return `422`.
+
+#### Get Available Upgrades
+
+```
+GET /api/seller/v1/subscriptions/:id/upgrades
+```
+
+Lists every valid upgrade target for a subscription, with proration math pre-calculated for each tier.
+
+**Path Parameters**
+
+| Param | Type | Description |
+|---|---|---|
+| `id` | integer | The subscription record ID (not the buyer's user ID). |
+
+**Request**
+
+```bash
+curl -X GET "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrades" \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "status": "success",
+  "statuscode": 200,
+  "message": "Available upgrades retrieved successfully",
+  "data": {
+    "subscription_id": 12345,
+    "subscription_status": "active",
+    "current_tier": { "id": 1001, "title": "Basic Plan", "price": 10, "payment_frequency": 30 },
+    "proration_credit": 0,
+    "available_upgrades": [
+      {
+        "service": { "id": 1003, "title": "VIP Plan", "price": 50, "payment_frequency": 30 },
+        "calculation": {
+          "current_service": { "id": 1001, "title": "Basic Plan", "price": 10 },
+          "target_service":  { "id": 1003, "title": "VIP Plan",   "price": 50 },
+          "price_difference": 40,
+          "days_remaining": 22,
+          "total_cycle_days": 30,
+          "proration_ratio": 0.7333,
+          "upgrade_charge": 29.33,
+          "renewal_credit": 7.33,
+          "existing_credit": 0,
+          "amount_due": 29.33,
+          "completion_date": "2026-12-31 09:53:09"
+        }
+      }
+    ]
+  }
+}
+```
+
+`available_upgrades` is an empty array (with `200`) when the current tier is already the highest, the subscription is anything other than `active`, or no other services have proration enabled. Only tiers priced higher than the current tier are returned.
+
+#### Preview Upgrade
+
+```
+GET /api/seller/v1/subscriptions/:id/upgrade/preview?target_service_id={target_service_id}
+```
+
+Returns the proration calculation for a single specific target tier. Read-only — does not charge the buyer or modify the subscription.
+
+**Path Parameters**
+
+| Param | Type | Description |
+|---|---|---|
+| `id` | integer | The subscription record ID. |
+
+**Query Parameters**
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `target_service_id` | integer | yes | The service ID the subscriber wants to upgrade to. |
+
+**Request**
+
+```bash
+curl -X GET "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade/preview?target_service_id=1003" \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "status": "success",
+  "statuscode": 200,
+  "message": "Upgrade preview calculated",
+  "data": {
+    "current_service": { "id": 1001, "title": "Basic Plan", "price": 10 },
+    "target_service":  { "id": 1003, "title": "VIP Plan",   "price": 50 },
+    "price_difference": 40,
+    "days_remaining": 22,
+    "total_cycle_days": 30,
+    "proration_ratio": 0.7333,
+    "upgrade_charge": 29.33,
+    "renewal_credit": 7.33,
+    "existing_credit": 0,
+    "amount_due": 29.33,
+    "completion_date": "2026-12-31 09:53:09",
+    "available_credit": 0
+  }
+}
+```
+
+`amount_due` is the value to display to the buyer before they confirm. `available_credit` is the total credit applicable to this upgrade — when zero, the full `upgrade_charge` becomes `amount_due`.
+
+#### Process Upgrade
+
+```
+POST /api/seller/v1/subscriptions/:id/upgrade
+```
+
+Executes the upgrade. Marks the original subscription as `upgraded` (stops auto-renewing), creates a new `active` subscription on the target tier, and either charges immediately or defers to the next renewal.
+
+**Path Parameters**
+
+| Param | Type | Description |
+|---|---|---|
+| `id` | integer | The subscription record ID. |
+
+**Body Parameters**
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `target_service_id` | integer | yes | — | The service ID to upgrade to. |
+| `billing_mode` | string | no | `immediate` | `immediate` (charge prorated `amount_due` now) or `next_cycle` (defer; credit applied at next renewal). |
+
+**Request**
+
+```bash
+curl -X POST "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target_service_id": 1003,
+    "billing_mode": "next_cycle"
+  }'
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "status": "success",
+  "statuscode": 200,
+  "message": "Upgrade processed successfully",
+  "data": {
+    "upgrade_id": "00000000-0000-0000-0000-000000000000",
+    "base_subscription": {
+      "subscription_id": 12345,
+      "subscription_status": "upgraded",
+      "current_tier": { "id": 1001, "title": "Basic Plan", "price": 10, "payment_frequency": 30 },
+      "proration_credit": 0
+    },
+    "new_subscription": {
+      "subscription_id": 12346,
+      "subscription_status": "active",
+      "current_tier": { "id": 1003, "title": "VIP Plan", "price": 50, "payment_frequency": 30 },
+      "proration_credit": 0
+    },
+    "calculation": { /* same shape as Preview Upgrade response */ },
+    "charge": {
+      "payment_id": null,
+      "amount_charged": 0,
+      "payment_method_type": "none"
+    }
+  }
+}
+```
+
+**Charge object behavior:**
+- `billing_mode: immediate` — `payment_id` populated, `amount_charged = calculation.amount_due`, `payment_method_type` reflects the buyer's stored method.
+- `billing_mode: next_cycle` — `payment_id: null`, `amount_charged: 0`, `payment_method_type: "none"`. Credit stored against the new subscription, applied at the next renewal.
+
+**Errors**
+
+| Status | When |
+|---|---|
+| `400` | Target tier is not a valid upgrade (Preview only). |
+| `401` | Missing/invalid/inactive API key. |
+| `404` | Subscription not found or doesn't belong to the seller. |
+| `422` | Subscription not `active`, target service has proration disabled, downgrade attempted, or stored payment method failed. Common `errors.general` messages: `Subscription is not active`, `Proration is not enabled for this service`, `Downgrade not allowed`, `Target service price must be higher than current service price`. |
+| `500` | Unhandled error during upgrade processing. |
+
+All error bodies include a `statuscode` field matching the HTTP status.
+
+**Subscription statuses**
+
+| Status | Auto-Renew | Upgradeable | Description |
+|---|---|---|---|
+| `active` | ✅ | ✅ | Normal active subscription. |
+| `past_due` | ✅ | ❌ | Payment failed, retry in progress. |
+| `upgraded` | ❌ | ❌ | Original subscription after upgrade — stopped renewing. |
+| `cancelled` | ❌ | ❌ | Manually cancelled. |
+| `paused` | ❌ | ❌ | Paused by seller or buyer. |
+
+A subscription can only be upgraded once. After upgrade, `base_subscription` is permanently `upgraded`; to upgrade again, call this endpoint on `new_subscription.subscription_id`.
+
+`upgrade_id` is the canonical reference for this event in audit logs and webhooks — store it on the buyer's record.
+
+---
+
 ### Discount Codes
 
 Discount codes let you offer reduced pricing to specific customers or as part of a promotion. You control the discount type (percentage or fixed amount), how long it applies, when it expires, and how many times it can be used. ✦ Ideas for using discount codes "SUMMER20" — 20% off the first payment.…
