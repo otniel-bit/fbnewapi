@@ -15126,7 +15126,7 @@ function copyClaudeMCPConfig() {
       pp:['id']},
     {id:'pr-preview', cat:'Subscription Proration', m:'GET', path:'/api/seller/v1/subscriptions/:id/upgrade/preview', title:'Preview Upgrade', desc:'Get proration calculation for a single target tier',
       host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
-      pp:['id'], qp:['target_service_id']},
+      pp:['id'], qp:['target_service_id'], qpRequired:['target_service_id']},
     {id:'pr-process', cat:'Subscription Proration', m:'POST', path:'/api/seller/v1/subscriptions/:id/upgrade', title:'Process Upgrade', desc:'Execute the upgrade and create the new subscription',
       host:{ sandbox:'https://qa.dev-fan-basis.com', production:'https://fanbasis.com' },
       pp:['id'], body:'{\n  "target_service_id": 1003,\n  "billing_mode": "next_cycle"\n}'},
@@ -15324,9 +15324,14 @@ function copyClaudeMCPConfig() {
     var qpHtml = '';
     if (ep.qp && ep.qp.length) {
       qpHtml += '<div class="pg-field-group"><div class="pg-field-group-title">Query Parameters</div>';
+      var requiredQp = ep.qpRequired || [];
       ep.qp.forEach(function(p) {
-        qpHtml += '<div class="pg-field"><label>' + p + ' <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(optional)</span></label>';
-        qpHtml += '<input type="text" id="pg-qp-' + p + '" placeholder="' + p + '" /></div>';
+        var isRequired = requiredQp.indexOf(p) > -1;
+        var tag = isRequired
+          ? '<span style="font-weight:600;color:var(--accent);font-size:12px;">*</span>'
+          : '<span style="font-weight:400;color:var(--text-muted);font-size:12px;">(optional)</span>';
+        qpHtml += '<div class="pg-field"><label>' + p + ' ' + tag + '</label>';
+        qpHtml += '<input type="text" id="pg-qp-' + p + '" placeholder="' + p + (isRequired ? ' (required)' : '') + '"' + (isRequired ? ' data-required="true"' : '') + ' /></div>';
       });
       qpHtml += '</div>';
     }
