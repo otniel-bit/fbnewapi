@@ -12677,10 +12677,12 @@ function copyCode(btn) {
     // TOC panel already injected
     // CMD+K modal already injected
 
-    // Add CMD+K search button to navbar (before theme toggle)
+    // Add CMD+K search button to navbar (before theme toggle).
+    // Scope to navbar's own toggle by ID — Google Translate widget injects
+    // a second `.theme-toggle` that querySelector('.theme-toggle') matches first.
     var navbar = document.querySelector('.navbar');
-    var themeToggle = document.querySelector('.theme-toggle');
-    if (navbar && themeToggle) {
+    var themeToggle = document.getElementById('themeToggle');
+    if (navbar && themeToggle && themeToggle.parentElement === navbar) {
       var searchBtn = document.createElement('button');
       searchBtn.className = 'navbar-search-btn';
       searchBtn.id = 'navSearchBtn';
