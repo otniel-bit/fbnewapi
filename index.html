@@ -4129,73 +4129,115 @@
     color: var(--text);
   }
 
-  /* Live parent-page mock for the Add-on variant */
-  .sdkd-helper-product {
-    background: rgba(255,255,255,0.6);
+  /* Live parent-page addon picker for the Add-on variant */
+  .sdkd-helper-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+  }
+  .sdkd-helper-cards {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .sdkd-helper-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center; gap: 14px;
+    padding: 13px 16px;
+    background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                border-color 0.18s, background 0.18s, box-shadow 0.18s;
+    overflow: hidden;
   }
-  .sdkd-helper-product-meta {
-    display: flex; justify-content: space-between; align-items: baseline;
-    gap: 10px;
+  .sdkd-helper-card:hover {
+    border-color: rgba(var(--accent-rgb), 0.45);
+    background: rgba(var(--accent-rgb), 0.03);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.05);
   }
-  .sdkd-helper-product-name {
+  .sdkd-helper-card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .sdkd-helper-card.selected {
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.06);
+    box-shadow: inset 0 0 0 1px var(--accent), 0 6px 18px rgba(var(--accent-rgb), 0.12);
+  }
+  .sdkd-helper-card-check {
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    border: 2px solid var(--border-dark);
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    flex-shrink: 0;
+  }
+  .sdkd-helper-card.selected .sdkd-helper-card-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.05);
+  }
+  .sdkd-helper-card-check svg {
+    width: 12px; height: 12px;
+    stroke: #fff; stroke-width: 2.5;
+    fill: none; stroke-linecap: round; stroke-linejoin: round;
+    stroke-dasharray: 16; stroke-dashoffset: 16;
+    transition: stroke-dashoffset 0.3s cubic-bezier(0.34,1.56,0.64,1) 0.05s;
+  }
+  .sdkd-helper-card.selected .sdkd-helper-card-check svg {
+    stroke-dashoffset: 0;
+  }
+  .sdkd-helper-card-meta { min-width: 0; }
+  .sdkd-helper-card-name {
     font-weight: 700; font-size: 14px;
     color: var(--text);
+    line-height: 1.3;
+    transition: color 0.2s;
   }
-  .sdkd-helper-product-price {
-    font-weight: 700; font-size: 16px;
-    color: var(--accent);
-    font-feature-settings: 'tnum';
-  }
-  .sdkd-helper-product-note {
-    font-size: 11.5px;
+  .sdkd-helper-card.selected .sdkd-helper-card-name { color: var(--accent); }
+  .sdkd-helper-card-desc {
+    font-size: 12px;
     color: var(--text-muted);
-    margin-top: 4px;
+    line-height: 1.45;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
-  .sdkd-helper-addons {
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .sdkd-helper-addon {
-    display: grid;
-    grid-template-columns: 18px 1fr auto;
-    align-items: center; gap: 10px;
-    padding: 7px 12px;
-    background: rgba(255,255,255,0.5);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .sdkd-helper-addon:hover {
-    border-color: rgba(var(--accent-rgb), 0.35);
-    background: rgba(var(--accent-rgb), 0.04);
-  }
-  .sdkd-helper-addon input[type="checkbox"] {
-    accent-color: var(--accent);
-    width: 15px; height: 15px;
-    cursor: pointer;
-  }
-  .sdkd-helper-addon-name {
-    font-size: 13px; font-weight: 600;
-    color: var(--text);
-  }
-  .sdkd-helper-addon-price {
-    font-size: 13px; font-weight: 700;
-    color: var(--accent);
+  .sdkd-helper-card-price {
+    font-size: 15px; font-weight: 800;
+    color: var(--text-muted);
     font-feature-settings: 'tnum';
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+    transition: color 0.2s;
   }
+  .sdkd-helper-card.selected .sdkd-helper-card-price { color: var(--accent); }
   .sdkd-helper-empty {
-    padding: 8px 12px;
-    font-size: 12px; font-style: italic;
+    padding: 14px;
+    font-size: 12.5px; font-style: italic;
     color: var(--text-muted);
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
   }
-  [data-theme="dark"] .sdkd-helper-product,
-  [data-theme="dark"] .sdkd-helper-addon {
-    background: rgba(255,255,255,0.04);
+  [data-theme="dark"] .sdkd-helper-card {
+    background: rgba(255,255,255,0.03);
     border-color: rgba(255,255,255,0.1);
+  }
+  [data-theme="dark"] .sdkd-helper-card.selected {
+    background: rgba(var(--accent-rgb), 0.12);
+  }
+  [data-theme="dark"] .sdkd-helper-empty {
+    background: rgba(255,255,255,0.02);
+    border-color: rgba(255,255,255,0.08);
   }
   .sdkd-checkout-mount {
     flex: 1;
@@ -16538,10 +16580,9 @@ function copyClaudeMCPConfig() {
       function buildConfig() {
         var variant = VARIANTS[state.variant] || VARIANTS.main;
         var fieldsCsv = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',');
-        // Addon variant: products + addons live on the parent page, so the SDK
-        // iframe shows ONLY billing/payment. Force the two flags that hide the
-        // SDK's own product display regardless of what the user picked in the
-        // Layout tab.
+        // Addon variant: addons live on the parent page; the main product +
+        // total are displayed INSIDE the SDK iframe (no parent-page hero).
+        // Force show_product_info ON so the iframe shows the product/price.
         var addonMode = state.variant === 'addon';
         // The SDK nests all theme/layout/color/billing fields under `theme`.
         return {
@@ -16551,8 +16592,8 @@ function copyClaudeMCPConfig() {
           environment: variant.previewEnvironment,
           theme: {
             theme: state.theme,
-            show_product_info: addonMode ? false : state.show_product_info,
-            product_layout: addonMode ? 'none' : state.product_layout,
+            show_product_info: addonMode ? true : state.show_product_info,
+            product_layout: addonMode ? 'left' : state.product_layout,
             show_coupon_row: state.show_coupon_row,
             accent_color: state.accent_color,
             background_color: state.background_color,
@@ -16830,29 +16871,9 @@ function copyClaudeMCPConfig() {
 '<div class="page-wrapper">',
 '  <div class="layout">',
 '    <div class="left-col">',
-'      <div class="product-hero glass-card">',
-'        <div class="hero-shimmer"><\/div>',
-'        <div class="hero-body">',
-'          <div class="hero-eyebrow"><span class="dot"><\/span> Enrollment Open<\/div>',
-'          <h1 class="hero-title">' + escHtml(product.name) + '<\/h1>',
-'          <p class="hero-desc">' + escHtml(product.desc) + '<\/p>',
-(featurePills ? '          <div class="hero-features">\n' + featurePills + '\n          <\/div>' : ''),
-'          <div class="hero-price-block">',
-'            <span class="hero-price">' + basePriceWhole + '<\/span>',
-'            <span class="hero-price-note">one-time<\/span>',
-'          <\/div>',
-'        <\/div>',
-'      <\/div>',
 '      <div class="addon-section">',
 '        <div class="section-label">Enhance Your Order<\/div>',
 '        <div id="addon-list"><\/div>',
-'      <\/div>',
-'      <div class="order-summary glass-card">',
-'        <div class="summary-label">Order Summary<\/div>',
-'        <div class="summary-row"><span class="label">' + escHtml(product.name) + '<\/span><span class="value">' + basePriceFmt + '<\/span><\/div>',
-'        <div id="addon-summary-items"><\/div>',
-'        <div class="summary-divider"><\/div>',
-'        <div class="summary-row grand"><span class="label">Total<\/span><span class="value" id="total-display">' + basePriceFmt + '<\/span><\/div>',
 '      <\/div>',
 '    <\/div>',
 '    <div class="checkout-col">',
@@ -16892,8 +16913,8 @@ function copyClaudeMCPConfig() {
 '      secondary_color: \'' + state.secondary_color + '\',',
 '      surface_color: \'' + state.surface_color + '\',',
 '      product_text_color: \'' + state.product_text_color + '\',',
-'      show_product_info: false,',
-'      product_layout: \'none\',',
+'      show_product_info: true,',
+'      product_layout: \'left\',',
 '      show_coupon_row: ' + state.show_coupon_row + ',',
 '      billing_display_fields: \'' + fields + '\',',
 '      billing_form_placement: \'' + state.billing_form_placement + '\'',
@@ -16915,28 +16936,12 @@ function copyClaudeMCPConfig() {
 '  var checkout = await PaymentCheckout.create(config);',
 '  checkout.attachToElement(document.getElementById(\'checkout-container\'));',
 '',
+'  // Render addon cards on the parent page. Selection state is held locally',
+'  // and synced to the SDK via addAddon / removeAddon. The SDK iframe displays',
+'  // the main product + running total internally (show_product_info: true).',
 '  var addonListEl = document.getElementById(\'addon-list\');',
-'  var addonSummaryEl = document.getElementById(\'addon-summary-items\');',
-'  var totalDisplay = document.getElementById(\'total-display\');',
 '  var selectedAddons = {};',
 '  ADDON_PRODUCTS.forEach(function (a) { selectedAddons[a.id] = false; });',
-'',
-'  ADDON_PRODUCTS.forEach(function (a) {',
-'    var row = document.createElement(\'div\');',
-'    row.className = \'addon-summary-item summary-row\';',
-'    row.id = \'summary-\' + a.id;',
-'    row.innerHTML = \'<span class="label">\' + a.name + \'<\/span><span class="value">+\' + formatPrice(a.price) + \'<\/span>\';',
-'    addonSummaryEl.appendChild(row);',
-'  });',
-'',
-'  function updateTotals() {',
-'    var sum = 0;',
-'    ADDON_PRODUCTS.forEach(function (a) {',
-'      if (selectedAddons[a.id]) sum += a.price;',
-'      document.getElementById(\'summary-\' + a.id).classList.toggle(\'visible\', !!selectedAddons[a.id]);',
-'    });',
-'    totalDisplay.textContent = formatPrice(BASE_PRICE + sum);',
-'  }',
 '',
 '  ADDON_PRODUCTS.forEach(function (addon) {',
 '    var card = document.createElement(\'div\');',
@@ -16950,17 +16955,13 @@ function copyClaudeMCPConfig() {
 '      var isNow = !selectedAddons[addon.id];',
 '      selectedAddons[addon.id] = isNow;',
 '      card.classList.toggle(\'selected\', isNow);',
-'      if (isNow) { checkout.addAddon(addon.id); log(\'addAddon()\', { id: addon.id }); }',
-'      else { checkout.removeAddon(addon.id); log(\'removeAddon()\', { id: addon.id }); }',
-'      updateTotals();',
+'      if (isNow) { checkout.addAddon(addon.id);    log(\'addAddon()\',    { id: addon.id }); }',
+'      else       { checkout.removeAddon(addon.id); log(\'removeAddon()\', { id: addon.id }); }',
 '    });',
 '    addonListEl.appendChild(card);',
 '  });',
 '',
-'  checkout.on(\'addons:changed\', function (data) {',
-'    log(\'addons:changed\', data);',
-'    if (typeof data.total === \'number\') totalDisplay.textContent = formatPrice(data.total);',
-'  });',
+'  checkout.on(\'addons:changed\', function (data) { log(\'addons:changed\', data); });',
 '  checkout.on(\'checkout:success\', function (d) { log(\'checkout:success\', d); });',
 '  checkout.on(\'checkout:error\',   function (e) { log(\'checkout:error\',   e); });',
 '  checkout.on(\'form:ready\',       function ()  { log(\'form:ready\'); });',
@@ -17051,30 +17052,43 @@ function copyClaudeMCPConfig() {
       // SDK iframe respond to their selections.
       function renderAddonHelper() {
         if (state.variant !== 'addon') return;
-        var pricePretty = '$' + (Number(state.product.price) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        var addonRows = state.addons.map(function(a, i) {
+        var checkSvg = '<svg viewBox="0 0 12 12" aria-hidden="true"><polyline points="2 6 5 9 10 3"/></svg>';
+        var addonCards = state.addons.map(function(a, i) {
           var p = '$' + (Number(a.price) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-          return '<label class="sdkd-helper-addon"><input type="checkbox" data-helper-addon-idx="' + i + '" data-helper-addon-id="' + escAttr(a.id) + '"><span class="sdkd-helper-addon-name">' + escHtml(a.name) + '</span><span class="sdkd-helper-addon-price">+' + p + '</span></label>';
+          return (
+            '<div class="sdkd-helper-card" data-helper-addon-idx="' + i + '" data-helper-addon-id="' + escAttr(a.id) + '" role="button" tabindex="0">' +
+              '<div class="sdkd-helper-card-check">' + checkSvg + '</div>' +
+              '<div class="sdkd-helper-card-meta">' +
+                '<div class="sdkd-helper-card-name">' + escHtml(a.name) + '</div>' +
+                (a.desc ? '<div class="sdkd-helper-card-desc">' + escHtml(a.desc) + '</div>' : '') +
+              '</div>' +
+              '<div class="sdkd-helper-card-price">+' + p + '</div>' +
+            '</div>'
+          );
         }).join('');
         $helper.innerHTML =
-          '<div class="sdkd-helper-product">' +
-            '<div class="sdkd-helper-product-meta">' +
-              '<div class="sdkd-helper-product-name">' + escHtml(state.product.name) + '</div>' +
-              '<div class="sdkd-helper-product-price">' + pricePretty + '</div>' +
-            '</div>' +
-            '<div class="sdkd-helper-product-note">Live preview of your parent-page UI. Toggle addons to see the SDK iframe respond.</div>' +
-          '</div>' +
-          (addonRows ? '<div class="sdkd-helper-addons">' + addonRows + '</div>'
-                     : '<div class="sdkd-helper-empty">No addons yet — open the Products tab to add some.</div>');
-        // Wire checkboxes to the live SDK instance
-        $helper.querySelectorAll('[data-helper-addon-id]').forEach(function(cb) {
-          cb.addEventListener('change', function() {
-            var id = cb.dataset.helperAddonId;
-            if (!id || !checkoutInstance) return;
+          '<div class="sdkd-helper-label">Choose your add-ons</div>' +
+          (addonCards
+            ? '<div class="sdkd-helper-cards">' + addonCards + '</div>'
+            : '<div class="sdkd-helper-empty">No add-ons yet — open the Products tab to add some.</div>');
+        // Wire card clicks (+ keyboard) to the live SDK instance and track
+        // selected state for visual feedback.
+        var selectedSet = {};
+        $helper.querySelectorAll('.sdkd-helper-card').forEach(function(card) {
+          var id = card.dataset.helperAddonId;
+          var toggle = function() {
+            var nowSelected = !selectedSet[id];
+            selectedSet[id] = nowSelected;
+            card.classList.toggle('selected', nowSelected);
+            if (!checkoutInstance) return;
             try {
-              if (cb.checked) { checkoutInstance.addAddon(id); logEvent('addAddon()', id); }
-              else            { checkoutInstance.removeAddon(id); logEvent('removeAddon()', id); }
+              if (nowSelected) { checkoutInstance.addAddon(id);    logEvent('addAddon()',    id); }
+              else             { checkoutInstance.removeAddon(id); logEvent('removeAddon()', id); }
             } catch (e) { console.error('[addon helper] toggle failed', e); }
+          };
+          card.addEventListener('click', toggle);
+          card.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
           });
         });
       }
