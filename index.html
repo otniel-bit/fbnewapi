@@ -3998,6 +3998,97 @@
     cursor: pointer;
     transition: all 0.15s;
   }
+
+  /* Products editor (iFrame v2) */
+  .sdkd-prod-section { margin-bottom: 16px; }
+  .sdkd-prod-section-title {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    margin: 8px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sdkd-prod-row {
+    display: flex; flex-direction: column; gap: 4px;
+    margin-bottom: 9px;
+    font-size: 12.5px;
+  }
+  .sdkd-prod-row label {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .sdkd-prod-row .sdkd-hint {
+    font-weight: 400; opacity: 0.7; font-size: 11px;
+  }
+  .sdkd-prod-row input,
+  .sdkd-prod-row textarea {
+    padding: 6px 9px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border-dark);
+    border-radius: 5px;
+    resize: vertical;
+  }
+  .sdkd-prod-row textarea { min-height: 50px; }
+  .sdkd-prod-row input:focus,
+  .sdkd-prod-row textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+  }
+
+  .sdkd-addon-add {
+    padding: 3px 9px;
+    font-size: 10.5px; font-weight: 700;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.08);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .sdkd-addon-add:hover {
+    background: rgba(var(--accent-rgb), 0.15);
+  }
+
+  .sdkd-addon-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    position: relative;
+  }
+  .sdkd-addon-item .sdkd-addon-rm {
+    position: absolute; top: 6px; right: 8px;
+    width: 22px; height: 22px;
+    padding: 0; line-height: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .sdkd-addon-item .sdkd-addon-rm:hover {
+    color: var(--delete);
+    background: rgba(220,38,38,0.08);
+    border-color: rgba(220,38,38,0.2);
+  }
+  .sdkd-addon-item .sdkd-prod-row { margin-bottom: 6px; }
+  .sdkd-addon-item input { padding: 4px 8px; font-size: 12px; }
+
+  [data-theme="dark"] .sdkd-prod-row input,
+  [data-theme="dark"] .sdkd-prod-row textarea,
+  [data-theme="dark"] .sdkd-addon-item {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.12);
+    color: var(--text);
+  }
   .sdkd-reset:hover {
     border-color: var(--delete-border);
     color: var(--delete);
@@ -11930,6 +12021,7 @@ await checkout.init();                              // async</code></pre></div>
         <button class="sdkd-cust-tab" data-cust-tab="layout" type="button">Layout</button>
         <button class="sdkd-cust-tab" data-cust-tab="fields" type="button">Fields</button>
         <button class="sdkd-cust-tab" data-cust-tab="presets" type="button">Presets</button>
+        <button class="sdkd-cust-tab sdkd-tab-products" data-cust-tab="products" type="button" hidden>Products</button>
       </div>
 
       <!-- Colors -->
@@ -11994,6 +12086,39 @@ await checkout.init();                              // async</code></pre></div>
           <button class="sdkd-preset" data-preset="forest" type="button">Forest</button>
           <button class="sdkd-preset" data-preset="sunset" type="button">Sunset</button>
           <button class="sdkd-preset" data-preset="minimal" type="button">Minimal</button>
+        </div>
+      </div>
+
+      <!-- Products (iFrame v2 only) -->
+      <div class="sdkd-cust-panel" data-cust-panel="products">
+        <p class="sdkd-cust-help">The main product + addons that get rendered on your custom page. The SDK iframe only handles billing/payment.</p>
+
+        <div class="sdkd-prod-section">
+          <div class="sdkd-prod-section-title">Main product</div>
+          <div class="sdkd-prod-row">
+            <label>Name</label>
+            <input type="text" data-prod-field="name" placeholder="Your Product Name" />
+          </div>
+          <div class="sdkd-prod-row">
+            <label>Description</label>
+            <textarea data-prod-field="desc" rows="3" placeholder="Short description"></textarea>
+          </div>
+          <div class="sdkd-prod-row">
+            <label>Price (USD)</label>
+            <input type="number" data-prod-field="price" min="0" step="0.01" />
+          </div>
+          <div class="sdkd-prod-row">
+            <label>Feature pills <span class="sdkd-hint">(comma-separated)</span></label>
+            <input type="text" data-prod-field="features" placeholder="Feature one, Feature two" />
+          </div>
+        </div>
+
+        <div class="sdkd-prod-section">
+          <div class="sdkd-prod-section-title">
+            Addons
+            <button class="sdkd-addon-add" id="sdkd-addon-add" type="button">+ Add</button>
+          </div>
+          <div class="sdkd-addons-list" id="sdkd-addons-list"></div>
         </div>
       </div>
 
@@ -16300,9 +16425,23 @@ function copyClaudeMCPConfig() {
         'minimal':  { theme:'light', accent_color:'#0F172A', background_color:'#FFFFFF', surface_color:'#FAFAFA', heading_color:'#0F172A', label_color:'#52525B', product_text_color:'#0F172A', secondary_color:'#71717A', input_background_color:'#FFFFFF', border_color:'#E4E4E7' }
       };
 
+      // ─── iFrame v2: product + addons defaults ───
+      var PRODUCT_DEFAULTS = {
+        name: 'Your Product Name',
+        desc: 'Replace this with your own product description. The hero block, addon cards, and order summary are 100% yours to style.',
+        price: 1000,
+        features: 'Feature one, Feature two, Feature three'
+      };
+      var ADDON_DEFAULTS = [
+        { id: 'addon_id_1', name: 'Add-on One', price: 100, desc: 'Optional upgrade — describe what the buyer gets.' },
+        { id: 'addon_id_2', name: 'Add-on Two', price: 250, desc: 'Another upgrade tier.' }
+      ];
+
       // ─── State ───
       var state = Object.assign({ variant: 'main' }, DEFAULTS);
       state.fields = Object.assign({}, DEFAULTS.fields);
+      state.product = Object.assign({}, PRODUCT_DEFAULTS);
+      state.addons = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
 
       // ─── DOM refs ───
       var $variant      = document.getElementById('sdkd-variant');
@@ -16511,6 +16650,22 @@ function copyClaudeMCPConfig() {
         // The full document is assembled as an array of lines for readability.
         // Note: closing-script-tag strings inside this builder are split as
         // '<\\/script>' so the HTML parser doesn't close this script early.
+        function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function escJs(s)   { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/<\//g, '<\\/'); }
+        function fmtPrice(n) { var v = Number(n) || 0; return '$' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+        function fmtPriceWhole(n) { var v = Number(n) || 0; return '$' + Math.round(v).toLocaleString(); }
+        var product = state.product;
+        var addons  = state.addons;
+        var featureList = (product.features || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+        var featureIcons = ['🎓','🎯','♾️','✨','🚀','⚡','💎','🏆','🔥','🎁'];
+        var featurePills = featureList.map(function(f, i) {
+          return '            <span class="feature-pill">' + featureIcons[i % featureIcons.length] + ' ' + escHtml(f) + '<\/span>';
+        }).join('\n');
+        var basePriceFmt  = fmtPrice(product.price);
+        var basePriceWhole = fmtPriceWhole(product.price);
+        var addonJsLines = addons.map(function(a) {
+          return "    { id: '" + escJs(a.id) + "', name: '" + escJs(a.name) + "', price: " + (Number(a.price) || 0).toFixed(2) + ", desc: '" + escJs(a.desc) + "' }";
+        }).join(',\n');
         return [
 '<!DOCTYPE html>',
 '<html lang="en">',
@@ -16623,15 +16778,11 @@ function copyClaudeMCPConfig() {
 '        <div class="hero-shimmer"><\/div>',
 '        <div class="hero-body">',
 '          <div class="hero-eyebrow"><span class="dot"><\/span> Enrollment Open<\/div>',
-'          <h1 class="hero-title">Your Product Name<\/h1>',
-'          <p class="hero-desc">Replace this with your own product description. The hero block, addon cards, and order summary are 100% yours to style.<\/p>',
-'          <div class="hero-features">',
-'            <span class="feature-pill">🎓 Feature one<\/span>',
-'            <span class="feature-pill">🎯 Feature two<\/span>',
-'            <span class="feature-pill">♾️ Feature three<\/span>',
-'          <\/div>',
+'          <h1 class="hero-title">' + escHtml(product.name) + '<\/h1>',
+'          <p class="hero-desc">' + escHtml(product.desc) + '<\/p>',
+(featurePills ? '          <div class="hero-features">\n' + featurePills + '\n          <\/div>' : ''),
 '          <div class="hero-price-block">',
-'            <span class="hero-price">$1,000<\/span>',
+'            <span class="hero-price">' + basePriceWhole + '<\/span>',
 '            <span class="hero-price-note">one-time<\/span>',
 '          <\/div>',
 '        <\/div>',
@@ -16642,10 +16793,10 @@ function copyClaudeMCPConfig() {
 '      <\/div>',
 '      <div class="order-summary glass-card">',
 '        <div class="summary-label">Order Summary<\/div>',
-'        <div class="summary-row"><span class="label">Base product<\/span><span class="value">$1,000.00<\/span><\/div>',
+'        <div class="summary-row"><span class="label">' + escHtml(product.name) + '<\/span><span class="value">' + basePriceFmt + '<\/span><\/div>',
 '        <div id="addon-summary-items"><\/div>',
 '        <div class="summary-divider"><\/div>',
-'        <div class="summary-row grand"><span class="label">Total<\/span><span class="value" id="total-display">$1,000.00<\/span><\/div>',
+'        <div class="summary-row grand"><span class="label">Total<\/span><span class="value" id="total-display">' + basePriceFmt + '<\/span><\/div>',
 '      <\/div>',
 '    <\/div>',
 '    <div class="checkout-col">',
@@ -16662,12 +16813,11 @@ function copyClaudeMCPConfig() {
 '<script src="https://cdn.embedded.fanbasis.io/embed/index.js"><\/script>',
 '<script>',
 'document.addEventListener(\'DOMContentLoaded\', async function () {',
-'  // Replace these with your own product\'s addons',
+'  // Edit these (or add more) — the parent-page UI iterates this list',
 '  var ADDON_PRODUCTS = [',
-'    { id: \'addon_id_1\', name: \'Add-on One\', price: 100.00, desc: \'Optional upgrade — describe what the buyer gets.\' },',
-'    { id: \'addon_id_2\', name: \'Add-on Two\', price: 250.00, desc: \'Another upgrade tier.\' }',
+(addonJsLines || "    // add { id, name, price, desc } objects here"),
 '  ];',
-'  var BASE_PRICE = 1000.00;',
+'  var BASE_PRICE = ' + (Number(product.price) || 0).toFixed(2) + ';',
 '',
 '  var config = {',
 '    creatorId: \'YOUR_CREATOR_SLUG\',',
@@ -16821,8 +16971,68 @@ function copyClaudeMCPConfig() {
         if (v === 'programmatic') $eventLog.removeAttribute('hidden');
         else $eventLog.setAttribute('hidden', '');
         $eventBody.innerHTML = '';
+        // Products tab is iframe-v2 only
+        var prodTab = section.querySelector('.sdkd-tab-products');
+        if (prodTab) {
+          if (v === 'iframev2') prodTab.removeAttribute('hidden');
+          else {
+            prodTab.setAttribute('hidden', '');
+            // If user was on Products tab when they switched off iframev2, reset to Colors
+            if (prodTab.classList.contains('active')) {
+              section.querySelectorAll('.sdkd-cust-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.custTab === 'colors'); });
+              section.querySelectorAll('.sdkd-cust-panel').forEach(function(p) { p.classList.toggle('active', p.dataset.custPanel === 'colors'); });
+            }
+          }
+        }
         refreshSnippet();
         scheduleMount();
+      }
+
+      // ─── iFrame v2: addon list editor ───
+      function renderAddons() {
+        var list = document.getElementById('sdkd-addons-list');
+        if (!list) return;
+        list.innerHTML = '';
+        state.addons.forEach(function(addon, idx) {
+          var item = document.createElement('div');
+          item.className = 'sdkd-addon-item';
+          item.innerHTML =
+            '<button class="sdkd-addon-rm" data-addon-rm="' + idx + '" type="button" title="Remove addon">×</button>' +
+            '<div class="sdkd-prod-row"><label>Addon ID</label><input type="text" data-addon-field="id" data-addon-idx="' + idx + '" placeholder="addon_id_1"></div>' +
+            '<div class="sdkd-prod-row"><label>Name</label><input type="text" data-addon-field="name" data-addon-idx="' + idx + '" placeholder="Addon Name"></div>' +
+            '<div class="sdkd-prod-row"><label>Price (USD)</label><input type="number" data-addon-field="price" data-addon-idx="' + idx + '" min="0" step="0.01"></div>' +
+            '<div class="sdkd-prod-row"><label>Description</label><input type="text" data-addon-field="desc" data-addon-idx="' + idx + '" placeholder="What does this addon include?"></div>';
+          list.appendChild(item);
+          // Set values
+          item.querySelector('[data-addon-field="id"]').value = addon.id;
+          item.querySelector('[data-addon-field="name"]').value = addon.name;
+          item.querySelector('[data-addon-field="price"]').value = addon.price;
+          item.querySelector('[data-addon-field="desc"]').value = addon.desc;
+        });
+        // Wire inputs (delegate via direct binding since list rebuilds)
+        list.querySelectorAll('input[data-addon-field]').forEach(function(inp) {
+          inp.addEventListener('input', function() {
+            var idx = parseInt(inp.dataset.addonIdx, 10);
+            var field = inp.dataset.addonField;
+            if (!state.addons[idx]) return;
+            state.addons[idx][field] = field === 'price' ? parseFloat(inp.value) || 0 : inp.value;
+            refreshSnippet();
+          });
+        });
+        list.querySelectorAll('[data-addon-rm]').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var idx = parseInt(btn.dataset.addonRm, 10);
+            state.addons.splice(idx, 1);
+            renderAddons();
+            refreshSnippet();
+          });
+        });
+      }
+      function syncProductInputs() {
+        section.querySelectorAll('input[data-prod-field], textarea[data-prod-field]').forEach(function(el) {
+          var k = el.dataset.prodField;
+          if (state.product[k] !== undefined) el.value = state.product[k];
+        });
       }
 
       // ─── Preset application ───
@@ -16839,7 +17049,11 @@ function copyClaudeMCPConfig() {
       function resetAll() {
         Object.assign(state, DEFAULTS);
         state.fields = Object.assign({}, DEFAULTS.fields);
+        state.product = Object.assign({}, PRODUCT_DEFAULTS);
+        state.addons = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
         syncControlsFromState();
+        syncProductInputs();
+        renderAddons();
         refreshSnippet();
         scheduleMount();
       }
@@ -16910,6 +17124,28 @@ function copyClaudeMCPConfig() {
       section.querySelectorAll('.sdkd-preset').forEach(function(btn) {
         btn.addEventListener('click', function() { applyPreset(btn.dataset.preset); });
       });
+      // Product field inputs (iFrame v2 only)
+      section.querySelectorAll('input[data-prod-field], textarea[data-prod-field]').forEach(function(el) {
+        el.addEventListener('input', function() {
+          var k = el.dataset.prodField;
+          state.product[k] = (k === 'price') ? (parseFloat(el.value) || 0) : el.value;
+          refreshSnippet();
+        });
+      });
+      // Addon add button
+      var addonAddBtn = document.getElementById('sdkd-addon-add');
+      if (addonAddBtn) {
+        addonAddBtn.addEventListener('click', function() {
+          state.addons.push({
+            id: 'addon_id_' + (state.addons.length + 1),
+            name: 'New addon',
+            price: 0,
+            desc: 'Describe what this addon includes.'
+          });
+          renderAddons();
+          refreshSnippet();
+        });
+      }
       // Reset
       $resetBtn.addEventListener('click', resetAll);
       // Event-log clear
@@ -16949,6 +17185,8 @@ function copyClaudeMCPConfig() {
 
       // ─── Initial render ───
       syncControlsFromState();
+      syncProductInputs();
+      renderAddons();
       applyVariant('main');
       attachSnippetCopy();
 
