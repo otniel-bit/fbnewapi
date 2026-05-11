@@ -3875,6 +3875,28 @@
   }
   [data-theme="dark"] .demo-iframe-wrap { border-color: rgba(255,255,255,0.1); background: #0d0d14; }
   [data-theme="dark"] .demo-tabs { border-bottom-color: rgba(255,255,255,0.1); }
+  /* Self-contained copy button for SDK Demo snippets (sits above chrome) */
+  .demo-panel .code-block { position: relative; }
+  .demo-copy-btn {
+    position: absolute; top: 8px; right: 10px; z-index: 10;
+    padding: 4px 12px; font-size: 11.5px; font-weight: 600;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 5px; cursor: pointer;
+    font-family: 'Inter', sans-serif; letter-spacing: 0.04em;
+    transition: all 0.15s ease;
+  }
+  .demo-copy-btn:hover {
+    background: rgba(var(--accent-rgb), 0.18);
+    border-color: rgba(var(--accent-rgb), 0.4);
+    color: var(--accent);
+  }
+  .demo-copy-btn.copied {
+    background: rgba(74,222,128,0.18);
+    border-color: rgba(74,222,128,0.4);
+    color: #4ade80;
+  }
 
   /* ── 1. RADIAL DARK MODE WIPE (View Transitions API) ────────── */
   /* The browser screenshots the OLD state, then we shrink that
@@ -11651,7 +11673,7 @@ await checkout.init();                              // async</code></pre></div>
     <h3 class="subsection-title">Embed this demo on your page</h3>
     <p>Substitute your <code class="inline">creator_id</code>, <code class="inline">product_id</code>, and a <code class="inline">checkout_session_secret</code> (created via the <a href="#embedded-checkout">Create Embedded Checkout Session</a> endpoint), then drop the snippet into any HTML page.</p>
     <div class="code-block">
-      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <div class="code-label plain">html</div>
       <pre><code>&lt;!-- Add this where you want the checkout to appear --&gt;
 &lt;div id="checkout-container"&gt;&lt;/div&gt;
 
@@ -11694,7 +11716,7 @@ await checkout.init();                              // async</code></pre></div>
     <h3 class="subsection-title">Embed this demo on your page</h3>
     <p>Use this pattern when you want full control over the Pay button or need to gate submission on parent-page state.</p>
     <div class="code-block">
-      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <div class="code-label plain">html</div>
       <pre><code>&lt;div id="checkout-container"&gt;&lt;/div&gt;
 &lt;button id="external-submit"&gt;Pay $1,010.00&lt;/button&gt;
 
@@ -11748,7 +11770,7 @@ await checkout.init();                              // async</code></pre></div>
       <p>Bumps from the config load <strong>pre-selected</strong>, which inflates the total before the buyer opts in. Omit <code class="inline">bumpProductIds</code> and drive selection from your own UI with <code class="inline">addAddon</code> / <code class="inline">removeAddon</code>.</p>
     </div>
     <div class="code-block">
-      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <div class="code-label plain">html</div>
       <pre><code>&lt;div id="checkout-container"&gt;&lt;/div&gt;
 &lt;label&gt;
   &lt;input type="checkbox" data-addon-id="bump-product-id"&gt;
@@ -11800,7 +11822,7 @@ await checkout.init();                              // async</code></pre></div>
     <h3 class="subsection-title">Embed this demo on your page</h3>
     <p>Same shape as the Main variant — the only change is <code class="inline">environment: 'sandbox'</code>. Use any test card listed in the comment below; no real charges occur.</p>
     <div class="code-block">
-      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <div class="code-label plain">html</div>
       <pre><code>&lt;!-- Sandbox / test environment. Use test cards listed below. --&gt;
 &lt;div id="checkout-container"&gt;&lt;/div&gt;
 
@@ -16026,6 +16048,15 @@ function copyClaudeMCPConfig() {
           if (match) mountIframe(p);
         });
       }
+      function fallbackCopy(text) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) { /* swallow */ }
+        document.body.removeChild(ta);
+      }
       function mountIframe(panel) {
         var iframe = panel.querySelector('iframe[data-demo-src]');
         if (!iframe) return;
@@ -16043,6 +16074,38 @@ function copyClaudeMCPConfig() {
 
       document.querySelectorAll('.demo-tab').forEach(function(tab) {
         tab.addEventListener('click', function() { activateDemoTab(tab.dataset.demo); });
+      });
+
+      // Attach a working copy button to every SDK Demo code-block.
+      // We use our own button + clipboard call rather than rely on the
+      // site's auto-injected .code-copy-float, which is unreliable inside
+      // hidden demo panels and gets stomped on by the chrome injector.
+      document.querySelectorAll('#sdk-demo .demo-panel .code-block').forEach(function(block) {
+        if (block.querySelector('.demo-copy-btn')) return;
+        var codeEl = block.querySelector('code');
+        if (!codeEl) return;
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'demo-copy-btn';
+        btn.textContent = 'Copy';
+        btn.addEventListener('click', function() {
+          var text = (codeEl.innerText || codeEl.textContent).trim();
+          // Optimistic UI: flip state first, attempt copy after.
+          // Most browsers (Clipboard API on HTTPS) succeed; the few that
+          // fail silently still leave the user with clear feedback.
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function() {
+              fallbackCopy(text);
+            });
+          } else {
+            fallbackCopy(text);
+          }
+        });
+        block.appendChild(btn);
       });
 
       // Sidebar sub-links with data-demo-link activate the matching tab
