@@ -3863,24 +3863,96 @@
     .main > section#sdk-demo { max-width: 880px !important; }
   }
 
+  /* Single-column layout — checkout takes full width. Customize lives in a
+     slide-in drawer triggered by the toolbar button. */
   .sdkd-grid {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 18px;
+    display: block;
     margin-top: 4px;
   }
-  @media (max-width: 960px) {
-    .sdkd-grid { grid-template-columns: 1fr; }
+
+  /* Floating Customize button in the toolbar */
+  .sdkd-cust-toggle {
+    margin-left: auto;
+    padding: 9px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    font-size: 13px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35);
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  .sdkd-cust-toggle:hover {
+    background: var(--accent-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.45);
+  }
+  .sdkd-cust-toggle:active { transform: translateY(0); }
+
+  /* Customize drawer + backdrop */
+  .sdkd-drawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    z-index: 9000;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+  .sdkd-drawer-backdrop.open { opacity: 1; visibility: visible; }
+
+  .sdkd-customize.sdkd-drawer {
+    position: fixed;
+    top: 0; right: 0;
+    width: 360px; max-width: 95vw;
+    height: 100vh;
+    z-index: 9001;
+    background: var(--bg);
+    border: none;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    overflow-y: auto;
+    transform: translateX(105%);
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
+  }
+  .sdkd-customize.sdkd-drawer.open { transform: translateX(0); }
+
+  .sdkd-drawer-head {
+    position: sticky; top: 0;
+    z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .sdkd-drawer-title {
+    font-size: 14px; font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+  .sdkd-drawer-close {
+    width: 28px; height: 28px;
+    padding: 0; line-height: 1;
+    background: transparent;
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .sdkd-drawer-close:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.05);
   }
 
-  /* Customize sidebar */
-  .sdkd-customize {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+  /* Tighten internal layout for drawer */
+  .sdkd-customize.sdkd-drawer {
     background: var(--bg-alt);
-    padding: 0;
-    overflow: hidden;
-    align-self: start;
   }
   .sdkd-cust-tabs {
     display: flex;
@@ -12110,7 +12182,7 @@ await checkout.init();                              // async</code></pre></div>
 <section id="sdk-demo">
   <div class="section-head"><h1>SDK Demo</h1></div>
 
-  <p>An interactive playground for the FanBasis Embedded Checkout SDK. The checkout below is the <strong>real SDK</strong> loaded from <code class="inline">cdn.embedded.fanbasis.io/embed/index.js</code>. Tweak any setting on the left — colors, layout, fields, presets — and the code snippet underneath updates in real time so you can copy exactly what you see.</p>
+  <p>An interactive playground for the FanBasis Embedded Checkout SDK. The checkout below is the <strong>real SDK</strong> loaded from <code class="inline">cdn.embedded.fanbasis.io/embed/index.js</code>. Click <strong>🎨 Customize</strong> to tweak colors, layout, fields, or presets — the code snippet underneath updates in real time so you can copy exactly what you see.</p>
 
   <div class="sdkd-toolbar">
     <label class="sdkd-toolbar-label" for="sdkd-variant">Variant</label>
@@ -12121,17 +12193,22 @@ await checkout.init();                              // async</code></pre></div>
       <option value="qa">QA / sandbox</option>
     </select>
     <span class="sdkd-toolbar-desc" id="sdkd-variant-desc">Default checkout with full theme + field customization.</span>
+    <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
   </div>
 
   <div class="sdkd-grid">
-    <!-- ─── Customize panel ─── -->
-    <aside class="sdkd-customize">
+    <!-- ─── Customize drawer (slides in from right edge) ─── -->
+    <div class="sdkd-drawer-backdrop" id="sdkd-drawer-backdrop"></div>
+    <aside class="sdkd-customize sdkd-drawer" id="sdkd-customize">
+      <div class="sdkd-drawer-head">
+        <span class="sdkd-drawer-title">🎨 Customize</span>
+        <button class="sdkd-drawer-close" id="sdkd-drawer-close" type="button" aria-label="Close">×</button>
+      </div>
       <div class="sdkd-cust-tabs" role="tablist">
         <button class="sdkd-cust-tab active" data-cust-tab="colors" type="button">Colors</button>
         <button class="sdkd-cust-tab" data-cust-tab="layout" type="button">Layout</button>
         <button class="sdkd-cust-tab" data-cust-tab="fields" type="button">Fields</button>
         <button class="sdkd-cust-tab" data-cust-tab="presets" type="button">Presets</button>
-        <button class="sdkd-cust-tab sdkd-tab-products" data-cust-tab="products" type="button" hidden>Products</button>
       </div>
 
       <!-- Colors -->
@@ -12196,39 +12273,6 @@ await checkout.init();                              // async</code></pre></div>
           <button class="sdkd-preset" data-preset="forest" type="button">Forest</button>
           <button class="sdkd-preset" data-preset="sunset" type="button">Sunset</button>
           <button class="sdkd-preset" data-preset="minimal" type="button">Minimal</button>
-        </div>
-      </div>
-
-      <!-- Products (iFrame v2 only) -->
-      <div class="sdkd-cust-panel" data-cust-panel="products">
-        <p class="sdkd-cust-help">The main product + addons that get rendered on your custom page. The SDK iframe only handles billing/payment.</p>
-
-        <div class="sdkd-prod-section">
-          <div class="sdkd-prod-section-title">Main product</div>
-          <div class="sdkd-prod-row">
-            <label>Name</label>
-            <input type="text" data-prod-field="name" placeholder="Your Product Name" />
-          </div>
-          <div class="sdkd-prod-row">
-            <label>Description</label>
-            <textarea data-prod-field="desc" rows="3" placeholder="Short description"></textarea>
-          </div>
-          <div class="sdkd-prod-row">
-            <label>Price (USD)</label>
-            <input type="number" data-prod-field="price" min="0" step="0.01" />
-          </div>
-          <div class="sdkd-prod-row">
-            <label>Feature pills <span class="sdkd-hint">(comma-separated)</span></label>
-            <input type="text" data-prod-field="features" placeholder="Feature one, Feature two" />
-          </div>
-        </div>
-
-        <div class="sdkd-prod-section">
-          <div class="sdkd-prod-section-title">
-            Addons
-            <button class="sdkd-addon-add" id="sdkd-addon-add" type="button">+ Add</button>
-          </div>
-          <div class="sdkd-addons-list" id="sdkd-addons-list"></div>
         </div>
       </div>
 
@@ -17261,6 +17305,28 @@ function copyClaudeMCPConfig() {
       $resetBtn.addEventListener('click', resetAll);
       // Event-log clear
       if ($eventClear) $eventClear.addEventListener('click', function() { $eventBody.innerHTML = ''; });
+
+      // Customize drawer open/close
+      var $custToggle   = document.getElementById('sdkd-cust-toggle');
+      var $custDrawer   = document.getElementById('sdkd-customize');
+      var $custBackdrop = document.getElementById('sdkd-drawer-backdrop');
+      var $custClose    = document.getElementById('sdkd-drawer-close');
+      function openCust() {
+        if (!$custDrawer) return;
+        $custDrawer.classList.add('open');
+        if ($custBackdrop) $custBackdrop.classList.add('open');
+      }
+      function closeCust() {
+        if (!$custDrawer) return;
+        $custDrawer.classList.remove('open');
+        if ($custBackdrop) $custBackdrop.classList.remove('open');
+      }
+      if ($custToggle)   $custToggle.addEventListener('click', openCust);
+      if ($custClose)    $custClose.addEventListener('click', closeCust);
+      if ($custBackdrop) $custBackdrop.addEventListener('click', closeCust);
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && $custDrawer && $custDrawer.classList.contains('open')) closeCust();
+      });
 
       // ─── Copy button on the snippet ───
       function attachSnippetCopy() {
