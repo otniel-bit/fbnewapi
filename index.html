@@ -3818,6 +3818,64 @@
   .pg-history-item .pg-hist-status.err { color: #ef4444; }
   .pg-history-empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
 
+  /* ── SDK DEMO (iframe + variant tabs) ──────────────────────── */
+  .demo-tabs {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin: 18px 0 0;
+  }
+  .demo-tab {
+    padding: 9px 18px; border: none; background: transparent;
+    cursor: pointer; font-size: 13.5px; font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    border-radius: 6px 6px 0 0;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .demo-tab:hover { color: var(--accent); background: rgba(var(--accent-rgb), 0.05); }
+  .demo-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.06);
+  }
+  .demo-panel { display: none; margin-top: 20px; }
+  .demo-panel.active { display: block; }
+  .demo-iframe-wrap {
+    position: relative;
+    width: 100%;
+    height: 900px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg-alt);
+  }
+  .demo-iframe-wrap iframe {
+    width: 100%; height: 100%; border: 0; display: block;
+  }
+  .demo-iframe-loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 14px;
+    pointer-events: none;
+  }
+  .demo-open-new {
+    display: inline-block; margin-top: 10px;
+    font-size: 13px; color: var(--accent);
+    text-decoration: none;
+  }
+  .demo-open-new:hover { text-decoration: underline; }
+  .demo-desc {
+    margin-top: 14px; font-size: 14px; color: var(--text-muted);
+    line-height: 1.65;
+  }
+  @media (max-width: 720px) {
+    .demo-iframe-wrap { height: 720px; }
+    .demo-tab { padding: 8px 12px; font-size: 12.5px; }
+  }
+  [data-theme="dark"] .demo-iframe-wrap { border-color: rgba(255,255,255,0.1); background: #0d0d14; }
+  [data-theme="dark"] .demo-tabs { border-bottom-color: rgba(255,255,255,0.1); }
+
   /* ── 1. RADIAL DARK MODE WIPE (View Transitions API) ────────── */
   /* The browser screenshots the OLD state, then we shrink that
      screenshot away with a clip-path circle originating from the
@@ -4615,6 +4673,11 @@ function googleTranslateElementInit() {
   <div class="sidebar-section">
     <div class="sidebar-section-title">Tools</div>
     <a href="#api-playground">🧪 API Playground</a>
+    <a href="#sdk-demo">🎮 SDK Demo</a>
+    <a href="#sdk-demo" class="sub" data-demo-link="main">Main</a>
+    <a href="#sdk-demo" class="sub" data-demo-link="programmatic">Programmatic</a>
+    <a href="#sdk-demo" class="sub" data-demo-link="addon">Add-on</a>
+    <a href="#sdk-demo" class="sub" data-demo-link="qa">QA Testing</a>
   </div>
   <!-- ── AI AGENT ── -->
   <div class="sidebar-section">
@@ -11555,6 +11618,215 @@ await checkout.init();                              // async</code></pre></div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
+     SDK DEMO — Live iframe + copy-paste embed snippets
+     ═══════════════════════════════════════════════════════ -->
+<section id="sdk-demo">
+  <div class="section-head">
+    <h1>SDK Demo</h1>
+  </div>
+
+  <p>A live, interactive playground for the FanBasis Embedded Checkout SDK. Pick a variant below to see how the SDK behaves, then copy the snippet under each demo to drop the same experience into your own page.</p>
+  <p class="demo-desc">Every variant loads the real SDK from <code class="inline">cdn.embedded.fanbasis.io/embed/index.js</code>. The standalone demo lives at <a href="https://embedded-checkout-demo.qa.dev-fan-basis.com/" target="_blank" rel="noopener">embedded-checkout-demo.qa.dev-fan-basis.com</a>.</p>
+
+  <div class="demo-tabs" role="tablist" aria-label="SDK Demo variants">
+    <button class="demo-tab active" data-demo="main" role="tab">Main</button>
+    <button class="demo-tab" data-demo="programmatic" role="tab">Programmatic</button>
+    <button class="demo-tab" data-demo="addon" role="tab">Add-on</button>
+    <button class="demo-tab" data-demo="qa" role="tab">QA Testing</button>
+  </div>
+
+  <!-- ── Main variant ── -->
+  <div class="demo-panel active" data-demo-panel="main">
+    <p class="demo-desc">The default checkout experience with real-time theme, layout, and field customization. Click <strong>🎨 Customize</strong> on the right edge of the demo to play with the controls.</p>
+    <div class="demo-iframe-wrap">
+      <div class="demo-iframe-loading">Loading demo…</div>
+      <iframe data-demo-src="https://embedded-checkout-demo.qa.dev-fan-basis.com/"
+              title="FanBasis Embedded Checkout Demo"
+              loading="lazy"
+              allow="clipboard-write; payment"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <a class="demo-open-new" href="https://embedded-checkout-demo.qa.dev-fan-basis.com/" target="_blank" rel="noopener">Open in new tab ↗</a>
+
+    <h3 class="subsection-title">Embed this demo on your page</h3>
+    <p>Substitute your <code class="inline">creator_id</code>, <code class="inline">product_id</code>, and a <code class="inline">checkout_session_secret</code> (created via the <a href="#embedded-checkout">Create Embedded Checkout Session</a> endpoint), then drop the snippet into any HTML page.</p>
+    <div class="code-block">
+      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>&lt;!-- Add this where you want the checkout to appear --&gt;
+&lt;div id="checkout-container"&gt;&lt;/div&gt;
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const checkout = PaymentCheckout.create({
+    creatorId: 'YOUR_CREATOR_SLUG',
+    productId: 'YOUR_PRODUCT_ID',
+    checkoutSessionSecret: 'YOUR_SESSION_SECRET',
+    environment: 'production',
+    theme: {
+      primaryColor: '#007bff',
+      backgroundColor: '#ffffff',
+      textColor: '#111827'
+    },
+    redirectSettings: {
+      success_redirect_url: '/thank-you',
+      always_redirect: true
+    }
+  });
+  checkout.attachToElement(document.getElementById('checkout-container'));
+  checkout.init();
+&lt;/script&gt;</code></pre>
+    </div>
+  </div>
+
+  <!-- ── Programmatic variant ── -->
+  <div class="demo-panel" data-demo-panel="programmatic">
+    <p class="demo-desc">Drive the checkout from outside the iframe — trigger submit from a parent-page button, react to form state via events, and read validation errors before the buyer hits Pay.</p>
+    <div class="demo-iframe-wrap">
+      <div class="demo-iframe-loading">Loading demo…</div>
+      <iframe data-demo-src="https://embedded-checkout-demo.qa.dev-fan-basis.com/programmatic"
+              title="FanBasis Programmatic Checkout Demo"
+              loading="lazy"
+              allow="clipboard-write; payment"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <a class="demo-open-new" href="https://embedded-checkout-demo.qa.dev-fan-basis.com/programmatic" target="_blank" rel="noopener">Open in new tab ↗</a>
+
+    <h3 class="subsection-title">Embed this demo on your page</h3>
+    <p>Use this pattern when you want full control over the Pay button or need to gate submission on parent-page state.</p>
+    <div class="code-block">
+      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>&lt;div id="checkout-container"&gt;&lt;/div&gt;
+&lt;button id="external-submit"&gt;Pay $1,010.00&lt;/button&gt;
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const checkout = PaymentCheckout.create({
+    creatorId: 'YOUR_CREATOR_SLUG',
+    productId: 'YOUR_PRODUCT_ID',
+    checkoutSessionSecret: 'YOUR_SESSION_SECRET',
+    environment: 'production'
+  });
+  checkout.attachToElement(document.getElementById('checkout-container'));
+
+  // Submit from a button outside the iframe
+  document.getElementById('external-submit').addEventListener('click', function () {
+    checkout.submit();
+  });
+
+  // React to validation + payment lifecycle
+  checkout.on('form:validation', function (data) {
+    console.log('isValid:', data.isValid, 'fields:', data.fields);
+  });
+  checkout.on('payment:success', function (data) {
+    console.log('payment succeeded:', data);
+  });
+  checkout.on('payment:error', function (data) {
+    console.error('payment failed:', data);
+  });
+
+  checkout.init();
+&lt;/script&gt;</code></pre>
+    </div>
+  </div>
+
+  <!-- ── Add-on variant ── -->
+  <div class="demo-panel" data-demo-panel="addon">
+    <p class="demo-desc">Render order-bumps as checkboxes on the parent page and toggle them on the checkout with <code class="inline">addAddon()</code> / <code class="inline">removeAddon()</code>. Order bumps must be associated with the main product in the FanBasis dashboard first.</p>
+    <div class="demo-iframe-wrap">
+      <div class="demo-iframe-loading">Loading demo…</div>
+      <iframe data-demo-src="https://embedded-checkout-demo.qa.dev-fan-basis.com/addon-demo"
+              title="FanBasis Add-on Checkout Demo"
+              loading="lazy"
+              allow="clipboard-write; payment"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <a class="demo-open-new" href="https://embedded-checkout-demo.qa.dev-fan-basis.com/addon-demo" target="_blank" rel="noopener">Open in new tab ↗</a>
+
+    <h3 class="subsection-title">Embed this demo on your page</h3>
+    <div class="callout warning" style="margin:8px 0;">
+      <div class="callout-title">⚠ Do not pass <code class="inline">bumpProductIds</code> in the config</div>
+      <p>Bumps from the config load <strong>pre-selected</strong>, which inflates the total before the buyer opts in. Omit <code class="inline">bumpProductIds</code> and drive selection from your own UI with <code class="inline">addAddon</code> / <code class="inline">removeAddon</code>.</p>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>&lt;div id="checkout-container"&gt;&lt;/div&gt;
+&lt;label&gt;
+  &lt;input type="checkbox" data-addon-id="bump-product-id"&gt;
+  Add extended warranty (+$50)
+&lt;/label&gt;
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const checkout = PaymentCheckout.create({
+    creatorId: 'YOUR_CREATOR_SLUG',
+    productId: 'YOUR_PRODUCT_ID',
+    checkoutSessionSecret: 'YOUR_SESSION_SECRET',
+    environment: 'production'
+    // Intentionally no bumpProductIds — drive selection from the parent UI.
+  });
+  checkout.attachToElement(document.getElementById('checkout-container'));
+
+  document.querySelector('[data-addon-id]').addEventListener('change', function (e) {
+    const addonId = e.target.dataset.addonId;
+    if (e.target.checked) checkout.addAddon(addonId);
+    else checkout.removeAddon(addonId);
+  });
+
+  // Sync UI when the checkout reports an addon change
+  checkout.on('addons:changed', function (data) {
+    document.querySelectorAll('[data-addon-id]').forEach(function (cb) {
+      cb.checked = data.selectedAddons.indexOf(cb.dataset.addonId) !== -1;
+    });
+  });
+
+  checkout.init();
+&lt;/script&gt;</code></pre>
+    </div>
+  </div>
+
+  <!-- ── QA Testing variant ── -->
+  <div class="demo-panel" data-demo-panel="qa">
+    <p class="demo-desc">A sandbox-environment build of the demo for safe testing with non-real cards. Use this for integration testing and QA scripts.</p>
+    <div class="demo-iframe-wrap">
+      <div class="demo-iframe-loading">Loading demo…</div>
+      <iframe data-demo-src="https://embedded-checkout-demo.qa.dev-fan-basis.com/qa"
+              title="FanBasis QA Checkout Demo"
+              loading="lazy"
+              allow="clipboard-write; payment"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <a class="demo-open-new" href="https://embedded-checkout-demo.qa.dev-fan-basis.com/qa" target="_blank" rel="noopener">Open in new tab ↗</a>
+
+    <h3 class="subsection-title">Embed this demo on your page</h3>
+    <p>Same shape as the Main variant — the only change is <code class="inline">environment: 'sandbox'</code>. Use any test card listed in the comment below; no real charges occur.</p>
+    <div class="code-block">
+      <div class="code-header"><span>HTML</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code>&lt;!-- Sandbox / test environment. Use test cards listed below. --&gt;
+&lt;div id="checkout-container"&gt;&lt;/div&gt;
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const checkout = PaymentCheckout.create({
+    creatorId: 'YOUR_CREATOR_SLUG',
+    productId: 'YOUR_PRODUCT_ID',
+    checkoutSessionSecret: 'YOUR_SESSION_SECRET',
+    environment: 'sandbox'
+  });
+  checkout.attachToElement(document.getElementById('checkout-container'));
+  checkout.init();
+
+  // Test cards (sandbox only):
+  //   Visa        4242 4242 4242 4242
+  //   Mastercard  5555 5555 5555 4444
+  //   Amex        3782 822463 10005
+  //   Discover    6011 1111 1111 1117
+  // Use any future expiry and any valid CVV.
+&lt;/script&gt;</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
      AI AGENT — Multi-Platform MCP Integration
      ═══════════════════════════════════════════════════════ -->
 <section id="ai-agent">
@@ -12503,7 +12775,8 @@ function copyCode(btn) {
 <div class="cmdkItem" data-section="refunds" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Refunds</span><span class="cmdkItemSub">API Reference</span></div>
 <div class="cmdkItem" data-section="disputes" data-group="api-reference"><span class="cmdkItemIcon">⬡</span><span class="cmdkItemLabel">Disputes</span><span class="cmdkItemSub">API Reference</span></div></div><div class="cmdkGroup" data-group-block><span class="cmdkGroupLabel">Errors & Limits</span><div class="cmdkItem" data-section="rate-limits" data-group="errors-limits"><span class="cmdkItemIcon">⚠</span><span class="cmdkItemLabel">Rate Limits</span><span class="cmdkItemSub">Errors & Limits</span></div>
 <div class="cmdkItem" data-section="error-reference" data-group="errors-limits"><span class="cmdkItemIcon">⚠</span><span class="cmdkItemLabel">Error Reference</span><span class="cmdkItemSub">Errors & Limits</span></div></div><div class="cmdkGroup" data-group-block><span class="cmdkGroupLabel">FAQ & Support</span><div class="cmdkItem" data-section="faq" data-group="faq-support"><span class="cmdkItemIcon">💬</span><span class="cmdkItemLabel">Faq</span><span class="cmdkItemSub">FAQ & Support</span></div>
-<div class="cmdkItem" data-section="support" data-group="faq-support"><span class="cmdkItemIcon">💬</span><span class="cmdkItemLabel">Support</span><span class="cmdkItemSub">FAQ & Support</span></div></div><div class="cmdkGroup" data-group-block><span class="cmdkGroupLabel">Tools</span><div class="cmdkItem" data-section="api-playground" data-group="tools"><span class="cmdkItemIcon">🧪</span><span class="cmdkItemLabel">API Playground</span><span class="cmdkItemSub">Tools</span></div></div>
+<div class="cmdkItem" data-section="support" data-group="faq-support"><span class="cmdkItemIcon">💬</span><span class="cmdkItemLabel">Support</span><span class="cmdkItemSub">FAQ & Support</span></div></div><div class="cmdkGroup" data-group-block><span class="cmdkGroupLabel">Tools</span><div class="cmdkItem" data-section="api-playground" data-group="tools"><span class="cmdkItemIcon">🧪</span><span class="cmdkItemLabel">API Playground</span><span class="cmdkItemSub">Tools</span></div>
+<div class="cmdkItem" data-section="sdk-demo" data-group="tools"><span class="cmdkItemIcon">🎮</span><span class="cmdkItemLabel">SDK Demo</span><span class="cmdkItemSub">Tools</span></div></div>
       <div class="cmdkEmpty" id="cmdkEmpty" style="display:none;">No results found</div>
     </div>
     <div class="cmdkFooter">
@@ -12563,6 +12836,7 @@ function copyCode(btn) {
   "sdk-troubleshooting": "developer-resources",
   "sdk-migration": "developer-resources",
   "api-playground": "tools",
+  "sdk-demo": "tools",
   "ai-agent": "tools",
 };
   var ALL_SECTIONS = [
@@ -12606,6 +12880,7 @@ function copyCode(btn) {
   "sdk-troubleshooting",
   "sdk-migration",
   "api-playground",
+  "sdk-demo",
   "ai-agent",
 ];
   var SECTION_LABELS = {
@@ -12649,6 +12924,7 @@ function copyCode(btn) {
   "sdk-troubleshooting": "Troubleshooting",
   "sdk-migration": "Migration Guide",
   "api-playground": "API Playground",
+  "sdk-demo": "SDK Demo",
   "ai-agent": "Connect an AI Agent",
 };
   var currentSection = 'introduction';
@@ -15730,6 +16006,73 @@ function copyClaudeMCPConfig() {
     mobileHeader.insertBefore(mobileTransBtn, closeBtn);
   }
 })();
+</script>
+
+<script>
+  // ── SDK DEMO TABS + LAZY IFRAME LOADING ─────────────────────
+  (function() {
+    function ready(fn) {
+      if (document.readyState !== 'loading') fn();
+      else document.addEventListener('DOMContentLoaded', fn);
+    }
+    ready(function() {
+      function activateDemoTab(demo) {
+        document.querySelectorAll('.demo-tab').forEach(function(t) {
+          t.classList.toggle('active', t.dataset.demo === demo);
+        });
+        document.querySelectorAll('.demo-panel').forEach(function(p) {
+          var match = p.dataset.demoPanel === demo;
+          p.classList.toggle('active', match);
+          if (match) mountIframe(p);
+        });
+      }
+      function mountIframe(panel) {
+        var iframe = panel.querySelector('iframe[data-demo-src]');
+        if (!iframe) return;
+        if (!iframe.src) {
+          iframe.src = iframe.dataset.demoSrc;
+          iframe.addEventListener('load', function() {
+            var loader = panel.querySelector('.demo-iframe-loading');
+            if (loader) loader.style.display = 'none';
+          }, { once: true });
+        } else {
+          var loader = panel.querySelector('.demo-iframe-loading');
+          if (loader) loader.style.display = 'none';
+        }
+      }
+
+      document.querySelectorAll('.demo-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() { activateDemoTab(tab.dataset.demo); });
+      });
+
+      // Sidebar sub-links with data-demo-link activate the matching tab
+      document.querySelectorAll('.sidebar a[data-demo-link]').forEach(function(link) {
+        link.addEventListener('click', function() {
+          var demo = link.dataset.demoLink;
+          setTimeout(function() { activateDemoTab(demo); }, 0);
+        });
+      });
+
+      // Lazy-mount the default-active iframe once the section enters the viewport
+      var section = document.getElementById('sdk-demo');
+      if (!section) return;
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              var active = section.querySelector('.demo-panel.active');
+              if (active) mountIframe(active);
+              io.disconnect();
+            }
+          });
+        }, { rootMargin: '200px' });
+        io.observe(section);
+      } else {
+        var active = section.querySelector('.demo-panel.active');
+        if (active) mountIframe(active);
+      }
+    });
+  })();
 </script>
 
 </body>
