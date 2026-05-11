@@ -12191,6 +12191,7 @@ await checkout.init();                              // async</code></pre></div>
       <option value="programmatic">Programmatic API</option>
       <option value="addon">Add-on selection</option>
       <option value="qa">QA / sandbox</option>
+      <option value="prefill">Prefill (skip data entry)</option>
     </select>
     <span class="sdkd-toolbar-desc" id="sdkd-variant-desc">Default checkout with full theme + field customization.</span>
     <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
@@ -12241,7 +12242,7 @@ await checkout.init();                              // async</code></pre></div>
           <select data-cfg-select="product_layout">
             <option value="left">Left</option>
             <option value="right">Right</option>
-            <option value="hidden">Hidden</option>
+            <option value="none">Hidden</option>
           </select>
         </div>
         <div class="sdkd-row"><label>Billing form placement</label>
@@ -12260,6 +12261,7 @@ await checkout.init();                              // async</code></pre></div>
         <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="first_name" checked> First name</label></div>
         <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="last_name" checked> Last name</label></div>
         <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="email" checked> Email</label></div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-bool="collectPhone"> Phone <span class="sdkd-hint">(SDK top-level <code class="inline">collectPhone</code> flag)</span></label></div>
         <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="country" checked> Country</label></div>
         <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="address" checked> Address</label></div>
       </div>
@@ -16535,7 +16537,17 @@ function copyClaudeMCPConfig() {
         billing_form_placement: 'above',
         show_product_info: true,
         show_coupon_row: false,
-        fields: { first_name: true, last_name: true, email: true, country: true, address: true }
+        fields: { first_name: true, last_name: true, email: true, country: true, address: true },
+        collectPhone: false
+      };
+      // Sample prefill payload used by the Prefill variant (and snippet).
+      var PREFILL_DEFAULT = {
+        first_name: 'Jane',
+        last_name: 'Doe',
+        email: 'jane@example.com',
+        phone: '+15551234567',
+        country: 'US',
+        address: '123 Main St'
       };
 
       // Variant presets — additive overrides on top of DEFAULTS
@@ -16572,6 +16584,13 @@ function copyClaudeMCPConfig() {
           snippetEnvironment: 'sandbox',
           helperHTML:
             '<strong>QA / Sandbox.</strong> Test cards: 4242 4242 4242 4242 (Visa) · 5555 5555 5555 4444 (Mastercard). Any future expiry, any CVV.'
+        },
+        prefill: {
+          desc: 'Pre-populate billing fields when you already have the buyer’s info — name, email, phone, address. Skip data entry, speed up checkout.',
+          previewEnvironment: 'sandbox',
+          snippetEnvironment: 'production',
+          helperHTML:
+            '<strong>Prefill.</strong> The form below loads with sample buyer info already in place — the SDK reads <code class="inline">theme.prefill</code> on init. In your own app, populate it from your session/account record.'
         }
       };
 
@@ -16602,6 +16621,7 @@ function copyClaudeMCPConfig() {
       state.fields = Object.assign({}, DEFAULTS.fields);
       state.product = Object.assign({}, PRODUCT_DEFAULTS);
       state.addons = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
+      state.prefill = Object.assign({}, PREFILL_DEFAULT);
 
       // ─── DOM refs ───
       var $variant      = document.getElementById('sdkd-variant');
@@ -16641,29 +16661,37 @@ function copyClaudeMCPConfig() {
         // total are displayed INSIDE the SDK iframe (no parent-page hero).
         // Force show_product_info ON so the iframe shows the product/price.
         var addonMode = state.variant === 'addon';
-        // The SDK nests all theme/layout/color/billing fields under `theme`.
+        // 'Hidden' position in the Layout tab means: don't render the product
+        // info at all. The SDK needs both flags (product_layout:'none' AND
+        // show_product_info:false) for it to actually disappear.
+        var hideProductInfo = state.product_layout === 'none';
+        var theme = {
+          theme: state.theme,
+          show_product_info: addonMode ? true : (hideProductInfo ? false : state.show_product_info),
+          product_layout: addonMode ? 'left' : state.product_layout,
+          show_coupon_row: state.show_coupon_row,
+          accent_color: state.accent_color,
+          background_color: state.background_color,
+          surface_color: state.surface_color,
+          heading_color: state.heading_color,
+          label_color: state.label_color,
+          product_text_color: state.product_text_color,
+          secondary_color: state.secondary_color,
+          input_background_color: state.input_background_color,
+          border_color: state.border_color,
+          billing_display_fields: fieldsCsv || 'first_name,last_name,email,country,address',
+          billing_form_placement: state.billing_form_placement
+        };
+        // Prefill variant: bake the sample buyer info into theme.prefill so
+        // the live iframe loads with the form already populated.
+        if (state.variant === 'prefill') theme.prefill = Object.assign({}, state.prefill);
         return {
           creatorId: DEMO_CREDS.creator_id,
           productId: DEMO_CREDS.product_id,
           checkoutSessionSecret: DEMO_CREDS.session_secret,
           environment: variant.previewEnvironment,
-          theme: {
-            theme: state.theme,
-            show_product_info: addonMode ? true : state.show_product_info,
-            product_layout: addonMode ? 'left' : state.product_layout,
-            show_coupon_row: state.show_coupon_row,
-            accent_color: state.accent_color,
-            background_color: state.background_color,
-            surface_color: state.surface_color,
-            heading_color: state.heading_color,
-            label_color: state.label_color,
-            product_text_color: state.product_text_color,
-            secondary_color: state.secondary_color,
-            input_background_color: state.input_background_color,
-            border_color: state.border_color,
-            billing_display_fields: fieldsCsv || 'first_name,last_name,email,country,address',
-            billing_form_placement: state.billing_form_placement
-          }
+          collectPhone: !!state.collectPhone,
+          theme: theme
         };
       }
 
@@ -16740,14 +16768,13 @@ function copyClaudeMCPConfig() {
         var variant = VARIANTS[state.variant] || VARIANTS.main;
         var fields = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',') ||
                      'first_name,last_name,email,country,address';
-        var configLines = [
-          "    creatorId: 'YOUR_CREATOR_SLUG',",
-          "    productId: 'YOUR_PRODUCT_ID',",
-          "    checkoutSessionSecret: 'YOUR_SESSION_SECRET',",
-          "    environment: '" + variant.snippetEnvironment + "',",
+        var hideProductInfo = state.product_layout === 'none';
+        var effShowProduct = hideProductInfo ? false : state.show_product_info;
+        // Build theme block; tack on `prefill` for the Prefill variant.
+        var themeLines = [
           "    theme: {",
           "      theme: '" + state.theme + "',",
-          "      show_product_info: " + state.show_product_info + ",",
+          "      show_product_info: " + effShowProduct + ",",
           "      product_layout: '" + state.product_layout + "',",
           "      show_coupon_row: " + state.show_coupon_row + ",",
           "      accent_color: '" + state.accent_color + "',",
@@ -16760,9 +16787,29 @@ function copyClaudeMCPConfig() {
           "      input_background_color: '" + state.input_background_color + "',",
           "      border_color: '" + state.border_color + "',",
           "      billing_display_fields: '" + fields + "',",
-          "      billing_form_placement: '" + state.billing_form_placement + "'",
-          "    }"
-        ].join('\n');
+          "      billing_form_placement: '" + state.billing_form_placement + "'"
+        ];
+        if (state.variant === 'prefill') {
+          themeLines[themeLines.length - 1] += ',';
+          themeLines.push(
+            "      prefill: {",
+            "        first_name: '" + state.prefill.first_name + "',",
+            "        last_name: '"  + state.prefill.last_name  + "',",
+            "        email: '"      + state.prefill.email      + "',",
+            (state.collectPhone ? "        phone: '" + state.prefill.phone + "'," : null),
+            "        country: '"    + state.prefill.country    + "',",
+            "        address: '"    + state.prefill.address    + "'",
+            "      }"
+          );
+        }
+        themeLines.push("    }");
+        var configLines = [
+          "    creatorId: 'YOUR_CREATOR_SLUG',",
+          "    productId: 'YOUR_PRODUCT_ID',",
+          "    checkoutSessionSecret: 'YOUR_SESSION_SECRET',",
+          "    environment: '" + variant.snippetEnvironment + "',",
+          "    collectPhone: " + (!!state.collectPhone) + ","
+        ].concat(themeLines).filter(function(l) { return l !== null; }).join('\n');
 
         var extras = '';
         if (state.variant === 'programmatic') {
@@ -16958,6 +17005,7 @@ function copyClaudeMCPConfig() {
 '    productId: \'YOUR_PRODUCT_ID\',',
 '    checkoutSessionSecret: \'YOUR_SESSION_SECRET\',',
 '    environment: \'' + variant.snippetEnvironment + '\',',
+'    collectPhone: ' + (!!state.collectPhone) + ',',
 '    redirectSettings: { success_redirect_url: \'https://your-site.com/thank-you\', always_redirect: true },',
 '    theme: {',
 '      theme: \'' + state.theme + '\',',
@@ -17217,6 +17265,7 @@ function copyClaudeMCPConfig() {
         state.fields = Object.assign({}, DEFAULTS.fields);
         state.product = Object.assign({}, PRODUCT_DEFAULTS);
         state.addons = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
+        state.prefill = Object.assign({}, PREFILL_DEFAULT);
         syncControlsFromState();
         syncProductInputs();
         renderAddons();
