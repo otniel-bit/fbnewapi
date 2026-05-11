@@ -12209,6 +12209,7 @@ await checkout.init();                              // async</code></pre></div>
         <button class="sdkd-cust-tab" data-cust-tab="layout" type="button">Layout</button>
         <button class="sdkd-cust-tab" data-cust-tab="fields" type="button">Fields</button>
         <button class="sdkd-cust-tab" data-cust-tab="presets" type="button">Presets</button>
+        <button class="sdkd-cust-tab sdkd-tab-products" data-cust-tab="products" type="button" hidden>Add-ons</button>
       </div>
 
       <!-- Colors -->
@@ -12273,6 +12274,18 @@ await checkout.init();                              // async</code></pre></div>
           <button class="sdkd-preset" data-preset="forest" type="button">Forest</button>
           <button class="sdkd-preset" data-preset="sunset" type="button">Sunset</button>
           <button class="sdkd-preset" data-preset="minimal" type="button">Minimal</button>
+        </div>
+      </div>
+
+      <!-- Add-ons (Add-on variant only) -->
+      <div class="sdkd-cust-panel" data-cust-panel="products">
+        <p class="sdkd-cust-help">Add-ons live on your parent page, outside the iframe. Edit them here — the live preview cards above the checkout and the copy snippet both update in real time.</p>
+        <div class="sdkd-prod-section">
+          <div class="sdkd-prod-section-title">
+            Add-ons
+            <button class="sdkd-addon-add" id="sdkd-addon-add" type="button">+ Add</button>
+          </div>
+          <div class="sdkd-addons-list" id="sdkd-addons-list"></div>
         </div>
       </div>
 
