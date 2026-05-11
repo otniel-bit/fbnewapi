@@ -4128,6 +4128,75 @@
     cursor: pointer;
     color: var(--text);
   }
+
+  /* Live parent-page mock for the Add-on variant */
+  .sdkd-helper-product {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+  }
+  .sdkd-helper-product-meta {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 10px;
+  }
+  .sdkd-helper-product-name {
+    font-weight: 700; font-size: 14px;
+    color: var(--text);
+  }
+  .sdkd-helper-product-price {
+    font-weight: 700; font-size: 16px;
+    color: var(--accent);
+    font-feature-settings: 'tnum';
+  }
+  .sdkd-helper-product-note {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .sdkd-helper-addons {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .sdkd-helper-addon {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center; gap: 10px;
+    padding: 7px 12px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .sdkd-helper-addon:hover {
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background: rgba(var(--accent-rgb), 0.04);
+  }
+  .sdkd-helper-addon input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 15px; height: 15px;
+    cursor: pointer;
+  }
+  .sdkd-helper-addon-name {
+    font-size: 13px; font-weight: 600;
+    color: var(--text);
+  }
+  .sdkd-helper-addon-price {
+    font-size: 13px; font-weight: 700;
+    color: var(--accent);
+    font-feature-settings: 'tnum';
+  }
+  .sdkd-helper-empty {
+    padding: 8px 12px;
+    font-size: 12px; font-style: italic;
+    color: var(--text-muted);
+  }
+  [data-theme="dark"] .sdkd-helper-product,
+  [data-theme="dark"] .sdkd-helper-addon {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+  }
   .sdkd-checkout-mount {
     flex: 1;
     position: relative;
@@ -12008,7 +12077,6 @@ await checkout.init();                              // async</code></pre></div>
       <option value="programmatic">Programmatic API</option>
       <option value="addon">Add-on selection</option>
       <option value="qa">QA / sandbox</option>
-      <option value="iframev2">iFrame v2 (custom product page)</option>
     </select>
     <span class="sdkd-toolbar-desc" id="sdkd-variant-desc">Default checkout with full theme + field customization.</span>
   </div>
@@ -16392,12 +16460,12 @@ function copyClaudeMCPConfig() {
             '<div style="margin-top:8px;"><button type="button" id="sdkd-prog-submit">Submit checkout</button></div>'
         },
         addon: {
-          desc: 'Drive add-on selection from the parent page using addAddon / removeAddon.',
+          desc: 'Products + addons live on your custom page. The SDK iframe handles billing only — toggle addons here to see them speak to it via addAddon / removeAddon.',
           previewEnvironment: 'sandbox',
-          snippetEnvironment: 'production',
-          helperHTML:
-            '<strong>Add-on flow.</strong> Toggle the checkbox to add an order bump from outside the iframe.' +
-            '<label class="sdkd-addon-row"><input type="checkbox" id="sdkd-addon-toggle"> Extended warranty (+$50)</label>'
+          snippetEnvironment: 'sandbox',
+          // helperHTML is rendered dynamically from state.product + state.addons.
+          // See renderAddonHelper().
+          helperHTML: ''
         },
         qa: {
           desc: 'Sandbox / test environment. Use the sandbox API key + test card numbers; no real charges.',
@@ -16405,13 +16473,6 @@ function copyClaudeMCPConfig() {
           snippetEnvironment: 'sandbox',
           helperHTML:
             '<strong>QA / Sandbox.</strong> Test cards: 4242 4242 4242 4242 (Visa) · 5555 5555 5555 4444 (Mastercard). Any future expiry, any CVV.'
-        },
-        iframev2: {
-          desc: 'Host the product yourself — wrap the SDK checkout in your own page chrome (product hero, addon cards, summary).',
-          previewEnvironment: 'sandbox',
-          snippetEnvironment: 'sandbox',
-          helperHTML:
-            '<strong>iFrame v2 — custom-hosted product page.</strong> The preview still shows the SDK form; the copy snippet below is the full HTML page that wraps it with your own product hero + addon cards + order summary. Theme settings from the Colors / Layout / Fields tabs are baked into the generated code.'
         }
       };
 
@@ -16477,6 +16538,11 @@ function copyClaudeMCPConfig() {
       function buildConfig() {
         var variant = VARIANTS[state.variant] || VARIANTS.main;
         var fieldsCsv = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',');
+        // Addon variant: products + addons live on the parent page, so the SDK
+        // iframe shows ONLY billing/payment. Force the two flags that hide the
+        // SDK's own product display regardless of what the user picked in the
+        // Layout tab.
+        var addonMode = state.variant === 'addon';
         // The SDK nests all theme/layout/color/billing fields under `theme`.
         return {
           creatorId: DEMO_CREDS.creator_id,
@@ -16485,8 +16551,8 @@ function copyClaudeMCPConfig() {
           environment: variant.previewEnvironment,
           theme: {
             theme: state.theme,
-            show_product_info: state.show_product_info,
-            product_layout: state.product_layout,
+            show_product_info: addonMode ? false : state.show_product_info,
+            product_layout: addonMode ? 'none' : state.product_layout,
             show_coupon_row: state.show_coupon_row,
             accent_color: state.accent_color,
             background_color: state.background_color,
@@ -16572,7 +16638,7 @@ function copyClaudeMCPConfig() {
 
       // ─── Snippet generation ───
       function generateSnippet() {
-        if (state.variant === 'iframev2') return generateIframeV2Snippet();
+        if (state.variant === 'addon') return generateAddonPageSnippet();
         var variant = VARIANTS[state.variant] || VARIANTS.main;
         var fields = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',') ||
                      'first_name,last_name,email,country,address';
@@ -16609,21 +16675,11 @@ function copyClaudeMCPConfig() {
             "  });\n" +
             "  checkout.on('form:validation', function (d) { console.log('validation', d); });\n" +
             "  checkout.on('payment:success', function (d) { console.log('success', d); });";
-        } else if (state.variant === 'addon') {
-          extras =
-            '\n\n  // Toggle order bumps from the parent page\n' +
-            "  document.querySelector('[data-addon-id]').addEventListener('change', function (e) {\n" +
-            "    var id = e.target.dataset.addonId;\n" +
-            "    if (e.target.checked) checkout.addAddon(id);\n" +
-            "    else checkout.removeAddon(id);\n" +
-            "  });";
         }
 
         var extraMarkup = '';
         if (state.variant === 'programmatic') {
           extraMarkup = '\n<button id="external-submit">Pay now</button>';
-        } else if (state.variant === 'addon') {
-          extraMarkup = '\n<label><input type="checkbox" data-addon-id="bump-product-id"> Extended warranty (+$50)</label>';
         }
 
         return '<div id="checkout-container"><\/div>' + extraMarkup + '\n\n' +
@@ -16638,12 +16694,12 @@ function copyClaudeMCPConfig() {
                '<\/script>';
       }
 
-      // iFrame v2 — full custom-hosted product page (glassmorphism wrapper
-      // + addon cards + order summary + SDK checkout). Generates a complete
-      // standalone HTML doc with the user's Customize state baked into the
-      // theme config. Mirrors the user-supplied AddonsExampleBoolerscom.html
-      // template; user just swaps the three credential placeholders.
-      function generateIframeV2Snippet() {
+      // Addon variant — products + addons live on the parent page, the SDK
+      // iframe only handles billing/payment. Generates a complete standalone
+      // HTML doc with the user's Customize + Products state baked in.
+      // SDK config forces show_product_info:false and product_layout:'none'
+      // since the wrapper page owns product display.
+      function generateAddonPageSnippet() {
         var variant = VARIANTS[state.variant] || VARIANTS.main;
         var fields = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',') ||
                      'first_name,last_name,email,country,address';
@@ -16971,22 +17027,59 @@ function copyClaudeMCPConfig() {
         if (v === 'programmatic') $eventLog.removeAttribute('hidden');
         else $eventLog.setAttribute('hidden', '');
         $eventBody.innerHTML = '';
-        // Products tab is iframe-v2 only
+        // Products tab + dynamic helper are for the Add-on variant only
         var prodTab = section.querySelector('.sdkd-tab-products');
         if (prodTab) {
-          if (v === 'iframev2') prodTab.removeAttribute('hidden');
+          if (v === 'addon') prodTab.removeAttribute('hidden');
           else {
             prodTab.setAttribute('hidden', '');
-            // If user was on Products tab when they switched off iframev2, reset to Colors
+            // If user was on Products tab when they switched off addon, reset to Colors
             if (prodTab.classList.contains('active')) {
               section.querySelectorAll('.sdkd-cust-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.custTab === 'colors'); });
               section.querySelectorAll('.sdkd-cust-panel').forEach(function(p) { p.classList.toggle('active', p.dataset.custPanel === 'colors'); });
             }
           }
         }
+        if (v === 'addon') renderAddonHelper();
         refreshSnippet();
         scheduleMount();
       }
+
+      // Renders the live parent-page UI (product summary + addon checkboxes)
+      // above the SDK iframe when the Add-on variant is active. Each addon
+      // checkbox is wired to checkout.addAddon / removeAddon so users see the
+      // SDK iframe respond to their selections.
+      function renderAddonHelper() {
+        if (state.variant !== 'addon') return;
+        var pricePretty = '$' + (Number(state.product.price) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        var addonRows = state.addons.map(function(a, i) {
+          var p = '$' + (Number(a.price) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          return '<label class="sdkd-helper-addon"><input type="checkbox" data-helper-addon-idx="' + i + '" data-helper-addon-id="' + escAttr(a.id) + '"><span class="sdkd-helper-addon-name">' + escHtml(a.name) + '</span><span class="sdkd-helper-addon-price">+' + p + '</span></label>';
+        }).join('');
+        $helper.innerHTML =
+          '<div class="sdkd-helper-product">' +
+            '<div class="sdkd-helper-product-meta">' +
+              '<div class="sdkd-helper-product-name">' + escHtml(state.product.name) + '</div>' +
+              '<div class="sdkd-helper-product-price">' + pricePretty + '</div>' +
+            '</div>' +
+            '<div class="sdkd-helper-product-note">Live preview of your parent-page UI. Toggle addons to see the SDK iframe respond.</div>' +
+          '</div>' +
+          (addonRows ? '<div class="sdkd-helper-addons">' + addonRows + '</div>'
+                     : '<div class="sdkd-helper-empty">No addons yet — open the Products tab to add some.</div>');
+        // Wire checkboxes to the live SDK instance
+        $helper.querySelectorAll('[data-helper-addon-id]').forEach(function(cb) {
+          cb.addEventListener('change', function() {
+            var id = cb.dataset.helperAddonId;
+            if (!id || !checkoutInstance) return;
+            try {
+              if (cb.checked) { checkoutInstance.addAddon(id); logEvent('addAddon()', id); }
+              else            { checkoutInstance.removeAddon(id); logEvent('removeAddon()', id); }
+            } catch (e) { console.error('[addon helper] toggle failed', e); }
+          });
+        });
+      }
+      function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+      function escAttr(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
       // ─── iFrame v2: addon list editor ───
       function renderAddons() {
@@ -17016,6 +17109,7 @@ function copyClaudeMCPConfig() {
             var field = inp.dataset.addonField;
             if (!state.addons[idx]) return;
             state.addons[idx][field] = field === 'price' ? parseFloat(inp.value) || 0 : inp.value;
+            renderAddonHelper();
             refreshSnippet();
           });
         });
@@ -17024,6 +17118,7 @@ function copyClaudeMCPConfig() {
             var idx = parseInt(btn.dataset.addonRm, 10);
             state.addons.splice(idx, 1);
             renderAddons();
+            renderAddonHelper();
             refreshSnippet();
           });
         });
@@ -17124,11 +17219,12 @@ function copyClaudeMCPConfig() {
       section.querySelectorAll('.sdkd-preset').forEach(function(btn) {
         btn.addEventListener('click', function() { applyPreset(btn.dataset.preset); });
       });
-      // Product field inputs (iFrame v2 only)
+      // Product field inputs (Add-on variant)
       section.querySelectorAll('input[data-prod-field], textarea[data-prod-field]').forEach(function(el) {
         el.addEventListener('input', function() {
           var k = el.dataset.prodField;
           state.product[k] = (k === 'price') ? (parseFloat(el.value) || 0) : el.value;
+          renderAddonHelper();
           refreshSnippet();
         });
       });
@@ -17143,6 +17239,7 @@ function copyClaudeMCPConfig() {
             desc: 'Describe what this addon includes.'
           });
           renderAddons();
+          renderAddonHelper();
           refreshSnippet();
         });
       }
