@@ -3852,10 +3852,21 @@
     box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
   }
 
+  /* Break #sdk-demo out of the docs' default section cap so the checkout
+     iframe has room to render at its natural width. Use !important to
+     beat the global TOC-aware caps (`.main > section { max-width: 780px !important }`). */
+  .main > section#sdk-demo { max-width: 1320px !important; }
+  @media (max-width: 1280px) {
+    .main > section#sdk-demo { max-width: 1100px !important; }
+  }
+  @media (max-width: 960px) {
+    .main > section#sdk-demo { max-width: 880px !important; }
+  }
+
   .sdkd-grid {
     display: grid;
-    grid-template-columns: minmax(280px, 340px) 1fr;
-    gap: 20px;
+    grid-template-columns: 280px 1fr;
+    gap: 18px;
     margin-top: 4px;
   }
   @media (max-width: 960px) {
