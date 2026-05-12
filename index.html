@@ -4040,6 +4040,10 @@
   .sdkd-prog-btn:hover  { background: var(--accent-dark); }
   .sdkd-prog-btn:active { transform: translateY(1px); }
   .sdkd-prog-hint { font-size: 12px; color: var(--text-muted); }
+  .sdkd-prefill-sublabel {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-muted); margin: 12px 0 4px;
+  }
 
   /* Generic control row */
   .sdkd-row {
@@ -12353,13 +12357,18 @@ await checkout.init();                              // async</code></pre></div>
 
       <!-- Prefill (shown only when Prefill feature is on) -->
       <div class="sdkd-cust-panel" data-cust-panel="prefill">
-        <p class="sdkd-cust-help">Values you provide here are passed to the SDK via <code class="inline">theme.prefill</code> so the form loads with the buyer's info already in place.</p>
+        <p class="sdkd-cust-help">Values you provide here are passed to the SDK via <code class="inline">theme.prefill</code> so the form loads with the buyer's info already in place. Address must use the nested <code class="inline">address</code> object (<code class="inline">line1</code>, <code class="inline">city</code>, etc.) — a flat string is ignored.</p>
         <div class="sdkd-row"><label>First name</label><input type="text" data-prefill-field="first_name" placeholder="Jane"></div>
         <div class="sdkd-row"><label>Last name</label><input type="text" data-prefill-field="last_name" placeholder="Doe"></div>
         <div class="sdkd-row"><label>Email</label><input type="email" data-prefill-field="email" placeholder="jane@example.com"></div>
         <div class="sdkd-row"><label>Phone <span class="sdkd-hint">(only sent if Phone is enabled in Fields)</span></label><input type="text" data-prefill-field="phone" placeholder="+15551234567"></div>
-        <div class="sdkd-row"><label>Country <span class="sdkd-hint">(ISO-2)</span></label><input type="text" data-prefill-field="country" maxlength="2" placeholder="US"></div>
-        <div class="sdkd-row"><label>Address</label><input type="text" data-prefill-field="address" placeholder="123 Main St"></div>
+        <div class="sdkd-prefill-sublabel">Address</div>
+        <div class="sdkd-row"><label>Line 1</label><input type="text" data-prefill-address-field="line1" placeholder="123 Main St"></div>
+        <div class="sdkd-row"><label>Line 2 <span class="sdkd-hint">(optional)</span></label><input type="text" data-prefill-address-field="line2" placeholder="Apt 4B"></div>
+        <div class="sdkd-row"><label>City</label><input type="text" data-prefill-address-field="city" placeholder="Austin"></div>
+        <div class="sdkd-row"><label>State / region</label><input type="text" data-prefill-address-field="state" placeholder="TX"></div>
+        <div class="sdkd-row"><label>Postal code</label><input type="text" data-prefill-address-field="postal_code" placeholder="78701"></div>
+        <div class="sdkd-row"><label>Country <span class="sdkd-hint">(ISO-2)</span></label><input type="text" data-prefill-address-field="country" maxlength="2" placeholder="US"></div>
       </div>
 
       <button class="sdkd-reset" id="sdkd-reset" type="button">↺ Reset to defaults</button>
@@ -16615,14 +16624,23 @@ function copyClaudeMCPConfig() {
         fields: { first_name: true, last_name: true, email: true, country: true, address: true },
         collectPhone: false
       };
-      // Sample prefill payload used by the Prefill variant (and snippet).
+      // Sample prefill payload used by the Prefill feature (and snippet).
+      // Matches the SDK's PrefillConfig shape: address is a nested object
+      // with line1/line2/city/state/postal_code/country. A flat
+      // address string is silently ignored by the SDK.
       var PREFILL_DEFAULT = {
         first_name: 'Jane',
         last_name: 'Doe',
         email: 'jane@example.com',
         phone: '+15551234567',
-        country: 'US',
-        address: '123 Main St'
+        address: {
+          country: 'US',
+          line1: '123 Main St',
+          line2: 'Apt 4B',
+          city: 'Austin',
+          state: 'TX',
+          postal_code: '78701'
+        }
       };
 
       // Feature toggles — composable on top of the Main checkout. The live
@@ -16719,7 +16737,10 @@ function copyClaudeMCPConfig() {
           billing_display_fields: fieldsCsv || 'first_name,last_name,email,country,address',
           billing_form_placement: state.billing_form_placement
         };
-        if (state.features.prefill) theme.prefill = Object.assign({}, state.prefill);
+        if (state.features.prefill) {
+          theme.prefill = Object.assign({}, state.prefill);
+          if (state.prefill.address) theme.prefill.address = Object.assign({}, state.prefill.address);
+        }
         return {
           creatorId: DEMO_CREDS.creator_id,
           productId: DEMO_CREDS.product_id,
@@ -16833,16 +16854,26 @@ function copyClaudeMCPConfig() {
         ];
         if (f.prefill) {
           themeLines[themeLines.length - 1] += ',';
+          var addr = state.prefill.address || {};
+          var addrLines = [
+            "        address: {",
+            "          country: '"     + esc(addr.country     || '') + "',",
+            "          line1: '"       + esc(addr.line1       || '') + "',",
+            (addr.line2 ? "          line2: '" + esc(addr.line2) + "'," : null),
+            "          city: '"        + esc(addr.city        || '') + "',",
+            "          state: '"       + esc(addr.state       || '') + "',",
+            "          postal_code: '" + esc(addr.postal_code || '') + "'",
+            "        }"
+          ].filter(function(l) { return l !== null; });
           themeLines.push(
             "      prefill: {",
             "        first_name: '" + esc(state.prefill.first_name) + "',",
             "        last_name: '"  + esc(state.prefill.last_name)  + "',",
             "        email: '"      + esc(state.prefill.email)      + "',",
-            (state.collectPhone ? "        phone: '" + esc(state.prefill.phone) + "'," : null),
-            "        country: '"    + esc(state.prefill.country)    + "',",
-            "        address: '"    + esc(state.prefill.address)    + "'",
-            "      }"
+            (state.collectPhone ? "        phone: '" + esc(state.prefill.phone) + "'," : null)
           );
+          themeLines = themeLines.concat(addrLines);
+          themeLines.push("      }");
         }
         themeLines.push("    }");
 
@@ -16953,9 +16984,13 @@ function copyClaudeMCPConfig() {
         section.querySelectorAll('input[data-feature]').forEach(function(cb) {
           cb.checked = !!state.features[cb.dataset.feature];
         });
-        // Prefill inputs
+        // Prefill inputs (top-level fields)
         section.querySelectorAll('input[data-prefill-field]').forEach(function(inp) {
           inp.value = state.prefill[inp.dataset.prefillField] || '';
+        });
+        // Prefill inputs (nested address fields)
+        section.querySelectorAll('input[data-prefill-address-field]').forEach(function(inp) {
+          inp.value = (state.prefill.address && state.prefill.address[inp.dataset.prefillAddressField]) || '';
         });
       }
 
@@ -17160,10 +17195,19 @@ function copyClaudeMCPConfig() {
           scheduleMount();
         });
       });
-      // Prefill field inputs
+      // Prefill field inputs (top-level)
       section.querySelectorAll('input[data-prefill-field]').forEach(function(inp) {
         inp.addEventListener('input', function() {
           state.prefill[inp.dataset.prefillField] = inp.value;
+          refreshSnippet();
+          scheduleMount();
+        });
+      });
+      // Prefill address inputs (nested address object)
+      section.querySelectorAll('input[data-prefill-address-field]').forEach(function(inp) {
+        inp.addEventListener('input', function() {
+          if (!state.prefill.address) state.prefill.address = {};
+          state.prefill.address[inp.dataset.prefillAddressField] = inp.value;
           refreshSnippet();
           scheduleMount();
         });
