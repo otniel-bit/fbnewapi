@@ -4183,35 +4183,6 @@
     background: rgba(220,38,38,0.04);
   }
 
-  /* iframe wrapper for the canonical SDK demo */
-  .sdkd-iframe-wrap {
-    width: 100%;
-    height: 1200px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--bg-alt);
-    margin-top: 18px;
-    box-shadow: var(--shadow-sm);
-  }
-  .sdkd-iframe-wrap iframe {
-    width: 100%; height: 100%;
-    border: 0; display: block;
-  }
-  .sdkd-open-new {
-    display: inline-block; margin: 10px 0 4px;
-    font-size: 13px; color: var(--accent);
-    text-decoration: none;
-  }
-  .sdkd-open-new:hover { text-decoration: underline; }
-  @media (max-width: 720px) {
-    .sdkd-iframe-wrap { height: 920px; }
-  }
-  [data-theme="dark"] .sdkd-iframe-wrap {
-    border-color: rgba(255,255,255,0.1);
-    background: #0d0d14;
-  }
-
   /* Preview pane */
   .sdkd-preview {
     border: 1px solid var(--border);
@@ -12222,50 +12193,146 @@ await checkout.init();                              // async</code></pre></div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
-     SDK DEMO — Iframe of the canonical demo at qa.dev-fan-basis.com
+     SDK DEMO — Native checkout mount + live customize + snippet
      ═══════════════════════════════════════════════════════ -->
 <section id="sdk-demo">
   <div class="section-head"><h1>SDK Demo</h1></div>
 
-  <p>The interactive SDK playground below is the canonical demo at <a href="https://embedded-checkout-demo.qa.dev-fan-basis.com/" target="_blank" rel="noopener">embedded-checkout-demo.qa.dev-fan-basis.com</a> — same code your prospects see. Use the nav buttons inside to switch between <strong>Documentation</strong>, <strong>QA Testing</strong>, <strong>Programmatic Demo</strong>, and <strong>Addon Demo</strong> flows. Click <strong>🎨 Customize</strong> on the right edge to tweak colors, layout, and fields in real time.</p>
+  <p>An interactive playground for the FanBasis Embedded Checkout SDK. The checkout below is the <strong>real SDK</strong> loaded from <code class="inline">cdn.embedded.fanbasis.io/embed/index.js</code>. Click <strong>🎨 Customize</strong> to tweak colors, layout, fields, or presets — the code snippet underneath updates in real time so you can copy exactly what you see.</p>
 
-  <div class="sdkd-iframe-wrap">
-    <iframe
-      src="https://embedded-checkout-demo.qa.dev-fan-basis.com/"
-      title="FanBasis Embedded Checkout SDK Demo"
-      loading="lazy"
-      allow="clipboard-write; payment"
-      referrerpolicy="no-referrer-when-downgrade"
-    ></iframe>
+  <div class="sdkd-toolbar">
+    <label class="sdkd-toolbar-label" for="sdkd-variant">Variant</label>
+    <select id="sdkd-variant" class="sdkd-select">
+      <option value="main">Main checkout</option>
+      <option value="programmatic">Programmatic API</option>
+      <option value="addon">Add-on selection</option>
+      <option value="qa">QA / sandbox</option>
+      <option value="prefill">Prefill (skip data entry)</option>
+    </select>
+    <span class="sdkd-toolbar-desc" id="sdkd-variant-desc">Default checkout with full theme + field customization.</span>
+    <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
   </div>
-  <a class="sdkd-open-new" href="https://embedded-checkout-demo.qa.dev-fan-basis.com/" target="_blank" rel="noopener">Open in new tab ↗</a>
 
-  <h3 class="subsection-title">Embed this on your page</h3>
-  <p>Once you've experimented with the demo above, drop this snippet into any HTML page and substitute your <code class="inline">creatorId</code>, <code class="inline">productId</code>, and a freshly created <a href="#embedded-checkout">checkout session secret</a>.</p>
+  <div class="sdkd-grid">
+    <!-- ─── Customize drawer (slides in from right edge) ─── -->
+    <div class="sdkd-drawer-backdrop" id="sdkd-drawer-backdrop"></div>
+    <aside class="sdkd-customize sdkd-drawer" id="sdkd-customize">
+      <div class="sdkd-drawer-head">
+        <span class="sdkd-drawer-title">🎨 Customize</span>
+        <button class="sdkd-drawer-close" id="sdkd-drawer-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="sdkd-cust-tabs" role="tablist">
+        <button class="sdkd-cust-tab active" data-cust-tab="colors" type="button">Colors</button>
+        <button class="sdkd-cust-tab" data-cust-tab="layout" type="button">Layout</button>
+        <button class="sdkd-cust-tab" data-cust-tab="fields" type="button">Fields</button>
+        <button class="sdkd-cust-tab" data-cust-tab="presets" type="button">Presets</button>
+        <button class="sdkd-cust-tab sdkd-tab-products" data-cust-tab="products" type="button" hidden>Add-ons</button>
+      </div>
+
+      <!-- Colors -->
+      <div class="sdkd-cust-panel active" data-cust-panel="colors">
+        <p class="sdkd-cust-help">Hex values are wired straight to the SDK's theme config.</p>
+        <div class="sdkd-color-grid">
+          <div class="sdkd-color-row"><label>Accent / primary</label><input type="color" data-cfg-color="accent_color"><input type="text" data-cfg-text="accent_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Background</label><input type="color" data-cfg-color="background_color"><input type="text" data-cfg-text="background_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Surface</label><input type="color" data-cfg-color="surface_color"><input type="text" data-cfg-text="surface_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Heading</label><input type="color" data-cfg-color="heading_color"><input type="text" data-cfg-text="heading_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Label</label><input type="color" data-cfg-color="label_color"><input type="text" data-cfg-text="label_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Product text</label><input type="color" data-cfg-color="product_text_color"><input type="text" data-cfg-text="product_text_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Secondary text</label><input type="color" data-cfg-color="secondary_color"><input type="text" data-cfg-text="secondary_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Input background</label><input type="color" data-cfg-color="input_background_color"><input type="text" data-cfg-text="input_background_color" maxlength="7"></div>
+          <div class="sdkd-color-row"><label>Border</label><input type="color" data-cfg-color="border_color"><input type="text" data-cfg-text="border_color" maxlength="7"></div>
+        </div>
+      </div>
+
+      <!-- Layout -->
+      <div class="sdkd-cust-panel" data-cust-panel="layout">
+        <p class="sdkd-cust-help">Structural options the SDK exposes on the checkout iframe.</p>
+        <div class="sdkd-addon-hint" hidden><strong>Add-on variant default:</strong> product info is hidden so your add-ons can live on the parent page and the Pay button shows the running total. Toggle <em>Show product info</em> below if you want the product hero inside the iframe instead.</div>
+        <div class="sdkd-row"><label>Theme mode</label>
+          <select data-cfg-select="theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <div class="sdkd-row"><label>Product info position</label>
+          <select data-cfg-select="product_layout">
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+            <option value="none">Hidden</option>
+          </select>
+        </div>
+        <div class="sdkd-row"><label>Billing form placement</label>
+          <select data-cfg-select="billing_form_placement">
+            <option value="above">Above payment</option>
+            <option value="below">Below payment</option>
+          </select>
+        </div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-bool="show_product_info" checked> Show product info</label></div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-bool="show_coupon_row"> Show coupon row</label></div>
+      </div>
+
+      <!-- Fields -->
+      <div class="sdkd-cust-panel" data-cust-panel="fields">
+        <p class="sdkd-cust-help">Choose which billing fields the buyer must complete.</p>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="first_name" checked> First name</label></div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="last_name" checked> Last name</label></div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="email" checked> Email</label></div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-bool="collectPhone"> Phone <span class="sdkd-hint">(SDK top-level <code class="inline">collectPhone</code> flag)</span></label></div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="country" checked> Country</label></div>
+        <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-field="address" checked> Address</label></div>
+      </div>
+
+      <!-- Presets -->
+      <div class="sdkd-cust-panel" data-cust-panel="presets">
+        <p class="sdkd-cust-help">One-click looks. Apply, then tweak in the Colors tab.</p>
+        <div class="sdkd-preset-grid">
+          <button class="sdkd-preset" data-preset="default" type="button">Default</button>
+          <button class="sdkd-preset" data-preset="fanbasis" type="button">FanBasis Red</button>
+          <button class="sdkd-preset" data-preset="midnight" type="button">Midnight</button>
+          <button class="sdkd-preset" data-preset="forest" type="button">Forest</button>
+          <button class="sdkd-preset" data-preset="sunset" type="button">Sunset</button>
+          <button class="sdkd-preset" data-preset="minimal" type="button">Minimal</button>
+        </div>
+      </div>
+
+      <!-- Add-ons (Add-on variant only) -->
+      <div class="sdkd-cust-panel" data-cust-panel="products">
+        <p class="sdkd-cust-help">Add-ons live on your parent page, outside the iframe. Edit them here — the live preview cards above the checkout and the copy snippet both update in real time.</p>
+        <div class="sdkd-prod-section">
+          <div class="sdkd-prod-section-title">
+            Add-ons
+            <button class="sdkd-addon-add" id="sdkd-addon-add" type="button">+ Add</button>
+          </div>
+          <div class="sdkd-addons-list" id="sdkd-addons-list"></div>
+        </div>
+      </div>
+
+      <button class="sdkd-reset" id="sdkd-reset" type="button">↺ Reset to defaults</button>
+    </aside>
+
+    <!-- ─── Preview panel ─── -->
+    <main class="sdkd-preview">
+      <div class="sdkd-variant-helper" id="sdkd-variant-helper"></div>
+      <div class="sdkd-checkout-mount" id="sdkd-checkout-mount">
+        <div class="sdkd-loading">Loading checkout SDK…</div>
+      </div>
+      <div class="sdkd-event-log" id="sdkd-event-log" hidden>
+        <div class="sdkd-event-log-head">
+          <span>Live events</span>
+          <button class="sdkd-event-clear" id="sdkd-event-clear" type="button">Clear</button>
+        </div>
+        <div class="sdkd-event-log-body" id="sdkd-event-log-body"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ─── Live snippet ─── -->
+  <h3 class="subsection-title">Embed this configuration on your page<span class="sdkd-live-badge">Live</span></h3>
+  <p>The snippet below reflects every customization above in real time. When you tweak a color, toggle a field, or switch variants, this code updates instantly. Substitute your <code class="inline">creatorId</code>, <code class="inline">productId</code>, and a freshly created <a href="#embedded-checkout">checkout session secret</a>, then drop it into any HTML page.</p>
   <div class="code-block">
     <div class="code-label plain">html</div>
-    <pre><code>&lt;!-- Add this where you want the checkout to appear --&gt;
-&lt;div id="checkout-container"&gt;&lt;/div&gt;
-
-&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
-&lt;script&gt;
-  const checkout = PaymentCheckout.create({
-    creatorId: 'YOUR_CREATOR_SLUG',
-    productId: 'YOUR_PRODUCT_ID',
-    checkoutSessionSecret: 'YOUR_SESSION_SECRET',
-    environment: 'production',
-    theme: {
-      theme: 'light',
-      accent_color: '#007bff',
-      show_product_info: true,
-      product_layout: 'left',
-      billing_display_fields: 'first_name,last_name,email,country,address',
-      billing_form_placement: 'above'
-    }
-  });
-  checkout.attachToElement(document.getElementById('checkout-container'));
-  checkout.init();
-&lt;/script&gt;</code></pre>
+    <pre><code id="sdkd-snippet">Loading snippet…</code></pre>
   </div>
 </section>
 
