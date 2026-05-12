@@ -11148,19 +11148,17 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
   overrideBaseUrl?: string;                // override embedded checkout host (rarely needed)
 }</code></pre></div>
 <div class="callout warning"><div class="callout-title">⚠ About bumpProductIds</div><p>This config option exists but should NOT be used for dashboard-configured bumps. See <a href="#sdk-addons">Addons &amp; order bumps</a> for why and what to do instead.</p></div>
-<h3 class="sub-title">Defaults &amp; helper utilities</h3>
-<p>The core SDK exports a few utilities for working with config objects:</p>
+<h3 class="sub-title">Runtime validation</h3>
+<p>The SDK runtime-validates the three required identifiers at <code class="inline">PaymentCheckout.create()</code> time and throws a <code class="inline">PaymentError</code> with the corresponding code if any are missing:</p>
 <table class="data-table">
-<thead><tr><th>Export</th><th>Purpose</th></tr></thead>
+<thead><tr><th>Missing field</th><th>Error code thrown</th></tr></thead>
 <tbody>
-<tr><td><code class="inline">DEFAULT_CONFIG</code></td><td>Partial default config object</td></tr>
-<tr><td><code class="inline">createMinimalConfig(creatorId, productId, secret, environment?)</code></td><td>Build a minimal valid config quickly</td></tr>
-<tr><td><code class="inline">validateConfig(config)</code></td><td>Returns <code class="inline">{ isValid, errors: string[] }</code> — fail fast in dev</td></tr>
-<tr><td><code class="inline">mergeConfig(partial)</code></td><td>Merge a partial config with sensible defaults</td></tr>
-<tr><td><code class="inline">isConfigComplete(config)</code></td><td>Type guard — is this <code class="inline">Partial&lt;CheckoutConfig&gt;</code> actually complete?</td></tr>
-<tr><td><code class="inline">getConfigSummary(config)</code></td><td>Debug helper — serialized summary</td></tr>
+<tr><td><code class="inline">creatorId</code></td><td><code class="inline">CREATOR_ID_REQUIRED</code></td></tr>
+<tr><td><code class="inline">productId</code></td><td><code class="inline">PRODUCT_ID_REQUIRED</code></td></tr>
+<tr><td><code class="inline">checkoutSessionSecret</code></td><td><code class="inline">CHECKOUT_SESSION_SECRET_REQUIRED</code></td></tr>
 </tbody>
 </table>
+<p>Other config fields are TypeScript-required (compile-time) but not runtime-validated — passing an unknown <code class="inline">product_layout</code> value, for example, will silently fall back to the default rather than throw.</p>
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -11301,9 +11299,10 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
 <tbody>
 <tr><td><code class="inline">success_redirect_url</code></td><td>string</td><td>URL to redirect to after successful payment</td></tr>
 <tr><td><code class="inline">failure_redirect_url</code></td><td>string</td><td>URL to redirect to after failed payment (optional)</td></tr>
-<tr><td><code class="inline">always_redirect</code></td><td>boolean</td><td><strong>Always set to <code class="inline">true</code></strong> for reliable redirects</td></tr>
+<tr><td><code class="inline">always_redirect</code></td><td>boolean</td><td><strong>Always set to <code class="inline">true</code></strong> for reliable redirects. Also <strong>required</strong> for the failure redirect to fire — see below.</td></tr>
 </tbody>
 </table>
+<div class="callout warning"><div class="callout-title">⚠ Failure redirect only fires when <code class="inline">always_redirect: true</code></div><p><code class="inline">failure_redirect_url</code> is silently ignored unless <code class="inline">always_redirect</code> is also set to <code class="inline">true</code>. The success URL is wired into the iframe directly; the failure URL is handled client-side by the SDK and gated by <code class="inline">always_redirect</code>. If you only set <code class="inline">failure_redirect_url</code> without <code class="inline">always_redirect: true</code>, failed payments will stay on the checkout page.</p></div>
 <h3 class="sub-title">Best practice</h3>
 <p>Always configure <strong>both</strong> <code class="inline">redirectSettings</code> and a <code class="inline">checkout:success</code> event handler as a fallback:</p>
 <div class="code-block"><div class="code-label plain">javascript</div><pre><code>// In config
@@ -11376,8 +11375,10 @@ checkout.on('checkout:success', function(data) {
 checkout.init();</code></pre></div>
 <p>All setters return Promises. They reject with <code class="inline">IFRAME_NOT_READY</code> if called before <code class="inline">form:ready</code>, or <code class="inline">FIELD_VALIDATION_ERROR</code> if the value fails validation.</p>
 
+<div class="callout warning"><div class="callout-title">⚠ <code class="inline">setAddress()</code> requires the address field to be hidden</div><p><code class="inline">setAddress()</code> only succeeds when <code class="inline">theme.fields.address.hide</code> is <code class="inline">true</code> — otherwise it rejects with <code class="inline">FIELD_NOT_SETTABLE</code>. The intent: inject the address from the parent page (e.g., from a logged-in user profile) without showing the address inputs to the buyer. If you want the buyer to see and edit the address, use the declarative <code class="inline">theme.prefill.address</code> instead.</p></div>
+
 <h3 class="sub-title">Reading current values</h3>
-<p>Symmetric getters return the current value (or <code class="inline">null</code> if unset):</p>
+<p>Symmetric getters return the current value (or <code class="inline">null</code> if unset). Each <code class="inline">get*()</code> call has a <strong>5-second timeout</strong> — if the iframe doesn't respond, the promise rejects with <code class="inline">UNKNOWN_ERROR</code>.</p>
 <div class="code-block"><div class="code-label plain">javascript</div><pre><code>const email     = await checkout.getEmail();
 const firstName = await checkout.getFirstName();
 const lastName  = await checkout.getLastName();
@@ -11461,7 +11462,12 @@ interface FieldControl {
 }</code></pre></div>
 
 <h3 class="sub-title">Phone number special case</h3>
-<p><code class="inline">collectPhone: true</code> at the top-level config is what enables the phone field with the country code selector. Setting <code class="inline">phone</code> in <code class="inline">prefill</code> or via <code class="inline">setPhone()</code> only works if <code class="inline">collectPhone</code> is true OR the field is otherwise visible per dashboard config.</p>
+<p>Phone visibility is gated by <strong>two independent toggles</strong>:</p>
+<ul>
+  <li><code class="inline">collectPhone: true</code> at the top-level config — enables the phone field with the country-code selector. Required for phone to appear at all.</li>
+  <li><code class="inline">theme.fields.phone.hide</code> — if set to <code class="inline">true</code>, hides the phone field even when <code class="inline">collectPhone: true</code>.</li>
+</ul>
+<p>The least surprising combination: set <code class="inline">collectPhone: true</code> and leave <code class="inline">fields.phone</code> unset. Setting <code class="inline">phone</code> in <code class="inline">prefill</code> or via <code class="inline">setPhone()</code> requires the field to be visible — i.e. <code class="inline">collectPhone: true</code> AND <code class="inline">fields.phone.hide</code> not set to <code class="inline">true</code>.</p>
 <div class="code-block"><div class="code-label plain">javascript</div><pre><code>const checkout = PaymentCheckout.create({
   // ... required config ...
   collectPhone: true,
@@ -11665,6 +11671,8 @@ interface AddonsChangedData {
   addons: Addon[];            // all available addons (full objects)
 }</code></pre></div>
 <p>Older docs and tutorials may reference <code class="inline">addon.name</code>, <code class="inline">addon.selected</code>, or <code class="inline">data.total</code> — those are wrong. Use the shape above. Determine selection state from <code class="inline">selectedAddons.includes(addon.id)</code>.</p>
+
+<div class="callout tip"><div class="callout-title">Debugging the iframe URL</div><p>If you're inspecting the iframe's <code class="inline">src</code> attribute, note that <code class="inline">bumpProductIds</code> is encoded as the URL param <code class="inline">addonIds</code> (CSV of IDs) — not <code class="inline">bump_product_ids</code>. The SDK renames it on the way to the iframe.</p></div>
 <h3 class="sub-title">Addon API methods</h3>
 <table class="data-table">
 <thead><tr><th>Method</th><th>Use</th><th>Notes</th></tr></thead>
@@ -12058,7 +12066,9 @@ enum PaymentErrorCode {
   getState(): CheckoutState;
   isFormReady(): boolean;
 
-  // Config
+  // Config — ⚠ both rewrite iframe.src and trigger a full reload,
+  // which destroys any partially-filled buyer input. Prefer setting
+  // the config correctly at create() time when possible.
   updateConfig(newConfig: Partial&lt;CheckoutConfig&gt;): void;
   updateTheme(newTheme: CustomizationParams): void;
 
