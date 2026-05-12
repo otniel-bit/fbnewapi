@@ -4000,6 +4000,44 @@
     border-color: rgba(var(--accent-rgb), 0.3);
   }
 
+  /* Features block at top of Layout tab */
+  .sdkd-features {
+    padding: 12px 14px;
+    margin: 0 0 12px;
+    background: rgba(var(--accent-rgb), 0.05);
+    border: 1px solid rgba(var(--accent-rgb), 0.15);
+    border-radius: 8px;
+  }
+  .sdkd-features-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .sdkd-features-sep {
+    border: none; border-top: 1px dashed var(--border);
+    margin: 4px 0 14px;
+  }
+  [data-theme="dark"] .sdkd-features {
+    background: rgba(var(--accent-rgb), 0.08);
+    border-color: rgba(var(--accent-rgb), 0.25);
+  }
+
+  /* Programmatic Pay button (below the iframe when toggle is on) */
+  .sdkd-prog-slot {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 14px; margin-top: 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  }
+  .sdkd-prog-btn {
+    appearance: none; cursor: pointer;
+    padding: 9px 18px; border: none; border-radius: 8px;
+    background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 600;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+  .sdkd-prog-btn:hover  { background: var(--accent-dark); }
+  .sdkd-prog-btn:active { transform: translateY(1px); }
+  .sdkd-prog-hint { font-size: 12px; color: var(--text-muted); }
+
   /* Generic control row */
   .sdkd-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -12201,15 +12239,7 @@ await checkout.init();                              // async</code></pre></div>
   <p>An interactive playground for the FanBasis Embedded Checkout SDK. The checkout below is the <strong>real SDK</strong> loaded from <code class="inline">cdn.embedded.fanbasis.io/embed/index.js</code>. Click <strong>🎨 Customize</strong> to tweak colors, layout, fields, or presets — the code snippet underneath updates in real time so you can copy exactly what you see.</p>
 
   <div class="sdkd-toolbar">
-    <label class="sdkd-toolbar-label" for="sdkd-variant">Variant</label>
-    <select id="sdkd-variant" class="sdkd-select">
-      <option value="main">Main checkout</option>
-      <option value="programmatic">Programmatic API</option>
-      <option value="addon">Add-on selection</option>
-      <option value="qa">QA / sandbox</option>
-      <option value="prefill">Prefill (skip data entry)</option>
-    </select>
-    <span class="sdkd-toolbar-desc" id="sdkd-variant-desc">Default checkout with full theme + field customization.</span>
+    <span class="sdkd-toolbar-desc">Default Main checkout. Open <strong>🎨 Customize</strong> to toggle features (Sandbox, Programmatic, Add-ons, Prefill) — the snippet below updates as you go.</span>
     <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
   </div>
 
@@ -12227,6 +12257,7 @@ await checkout.init();                              // async</code></pre></div>
         <button class="sdkd-cust-tab" data-cust-tab="fields" type="button">Fields</button>
         <button class="sdkd-cust-tab" data-cust-tab="presets" type="button">Presets</button>
         <button class="sdkd-cust-tab sdkd-tab-products" data-cust-tab="products" type="button" hidden>Add-ons</button>
+        <button class="sdkd-cust-tab sdkd-tab-prefill"  data-cust-tab="prefill"  type="button" hidden>Prefill</button>
       </div>
 
       <!-- Colors -->
@@ -12247,8 +12278,17 @@ await checkout.init();                              // async</code></pre></div>
 
       <!-- Layout -->
       <div class="sdkd-cust-panel" data-cust-panel="layout">
+        <div class="sdkd-features">
+          <div class="sdkd-features-title">Features</div>
+          <p class="sdkd-cust-help" style="margin:0 0 10px 0;">Compose your checkout. Each toggle adds behavior to the live demo and the snippet below.</p>
+          <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-feature="sandbox"> Sandbox mode <span class="sdkd-hint">sets <code class="inline">environment: 'sandbox'</code></span></label></div>
+          <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-feature="programmatic"> Programmatic submit <span class="sdkd-hint">external Pay button + event log</span></label></div>
+          <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-feature="addons"> Add-ons on parent page <span class="sdkd-hint">addAddon / removeAddon, hides iframe product info</span></label></div>
+          <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-feature="prefill"> Prefill billing fields <span class="sdkd-hint">populates <code class="inline">theme.prefill</code></span></label></div>
+        </div>
+        <hr class="sdkd-features-sep">
         <p class="sdkd-cust-help">Structural options the SDK exposes on the checkout iframe.</p>
-        <div class="sdkd-addon-hint" hidden><strong>Add-on variant default:</strong> product info is hidden so your add-ons can live on the parent page and the Pay button shows the running total. Toggle <em>Show product info</em> below if you want the product hero inside the iframe instead.</div>
+        <div class="sdkd-addon-hint" hidden><strong>Add-ons feature is on:</strong> product info is hidden inside the iframe so your add-ons live on the parent page. Turn off <em>Add-ons on parent page</em> above to re-enable the product hero inside the iframe.</div>
         <div class="sdkd-row"><label>Theme mode</label>
           <select data-cfg-select="theme">
             <option value="light">Light</option>
@@ -12296,7 +12336,7 @@ await checkout.init();                              // async</code></pre></div>
         </div>
       </div>
 
-      <!-- Add-ons (Add-on variant only) -->
+      <!-- Add-ons (shown only when Add-ons feature is on) -->
       <div class="sdkd-cust-panel" data-cust-panel="products">
         <p class="sdkd-cust-help">Add-ons live on your parent page, outside the iframe. Edit them here — the live preview cards above the checkout and the copy snippet both update in real time.</p>
         <div class="sdkd-prod-section">
@@ -12308,6 +12348,17 @@ await checkout.init();                              // async</code></pre></div>
         </div>
       </div>
 
+      <!-- Prefill (shown only when Prefill feature is on) -->
+      <div class="sdkd-cust-panel" data-cust-panel="prefill">
+        <p class="sdkd-cust-help">Values you provide here are passed to the SDK via <code class="inline">theme.prefill</code> so the form loads with the buyer's info already in place.</p>
+        <div class="sdkd-row"><label>First name</label><input type="text" data-prefill-field="first_name" placeholder="Jane"></div>
+        <div class="sdkd-row"><label>Last name</label><input type="text" data-prefill-field="last_name" placeholder="Doe"></div>
+        <div class="sdkd-row"><label>Email</label><input type="email" data-prefill-field="email" placeholder="jane@example.com"></div>
+        <div class="sdkd-row"><label>Phone <span class="sdkd-hint">(only sent if Phone is enabled in Fields)</span></label><input type="text" data-prefill-field="phone" placeholder="+15551234567"></div>
+        <div class="sdkd-row"><label>Country <span class="sdkd-hint">(ISO-2)</span></label><input type="text" data-prefill-field="country" maxlength="2" placeholder="US"></div>
+        <div class="sdkd-row"><label>Address</label><input type="text" data-prefill-field="address" placeholder="123 Main St"></div>
+      </div>
+
       <button class="sdkd-reset" id="sdkd-reset" type="button">↺ Reset to defaults</button>
     </aside>
 
@@ -12316,6 +12367,10 @@ await checkout.init();                              // async</code></pre></div>
       <div class="sdkd-variant-helper" id="sdkd-variant-helper"></div>
       <div class="sdkd-checkout-mount" id="sdkd-checkout-mount">
         <div class="sdkd-loading">Loading checkout SDK…</div>
+      </div>
+      <div class="sdkd-prog-slot" id="sdkd-prog-slot" hidden>
+        <button type="button" id="sdkd-prog-submit" class="sdkd-prog-btn">Pay now</button>
+        <span class="sdkd-prog-hint">Triggers <code class="inline">checkout.submit()</code> from outside the iframe.</span>
       </div>
       <div class="sdkd-event-log" id="sdkd-event-log" hidden>
         <div class="sdkd-event-log-head">
@@ -16567,48 +16622,15 @@ function copyClaudeMCPConfig() {
         address: '123 Main St'
       };
 
-      // Variant presets — additive overrides on top of DEFAULTS
-      // Note: the live preview always runs against the sandbox environment
-      // (our test creator exists only there). The snippet output respects
-      // the variant's `snippetEnvironment` so users see the right value to
-      // ship in production.
-      var VARIANTS = {
-        main: {
-          desc: 'Default checkout with full theme + field customization.',
-          previewEnvironment: 'sandbox',
-          snippetEnvironment: 'production',
-          helperHTML: ''
-        },
-        programmatic: {
-          desc: 'Drive the checkout from outside: submit via a parent-page button, listen for events.',
-          previewEnvironment: 'sandbox',
-          snippetEnvironment: 'production',
-          helperHTML:
-            '<strong>Programmatic API.</strong> Click below to trigger <code class="inline">checkout.submit()</code> from the parent page. Events stream into the panel underneath.' +
-            '<div style="margin-top:8px;"><button type="button" id="sdkd-prog-submit">Submit checkout</button></div>'
-        },
-        addon: {
-          desc: 'Products + addons live on your custom page. The SDK iframe handles billing only — toggle addons here to see them speak to it via addAddon / removeAddon.',
-          previewEnvironment: 'sandbox',
-          snippetEnvironment: 'sandbox',
-          // helperHTML is rendered dynamically from state.product + state.addons.
-          // See renderAddonHelper().
-          helperHTML: ''
-        },
-        qa: {
-          desc: 'Sandbox / test environment. Use the sandbox API key + test card numbers; no real charges.',
-          previewEnvironment: 'sandbox',
-          snippetEnvironment: 'sandbox',
-          helperHTML:
-            '<strong>QA / Sandbox.</strong> Test cards: 4242 4242 4242 4242 (Visa) · 5555 5555 5555 4444 (Mastercard). Any future expiry, any CVV.'
-        },
-        prefill: {
-          desc: 'Pre-populate billing fields when you already have the buyer’s info — name, email, phone, address. Skip data entry, speed up checkout.',
-          previewEnvironment: 'sandbox',
-          snippetEnvironment: 'production',
-          helperHTML:
-            '<strong>Prefill.</strong> The form below loads with sample buyer info already in place — the SDK reads <code class="inline">theme.prefill</code> on init. In your own app, populate it from your session/account record.'
-        }
+      // Feature toggles — composable on top of the Main checkout. The live
+      // preview always runs against the sandbox environment (our test
+      // creator only exists there). The Sandbox feature only flips the
+      // snippet's `environment` field — what users would ship in prod.
+      var FEATURE_DEFAULTS = {
+        sandbox: false,
+        programmatic: false,
+        addons: false,
+        prefill: false
       };
 
       // Theme presets — partial color overrides
@@ -16634,15 +16656,14 @@ function copyClaudeMCPConfig() {
       ];
 
       // ─── State ───
-      var state = Object.assign({ variant: 'main' }, DEFAULTS);
-      state.fields = Object.assign({}, DEFAULTS.fields);
-      state.product = Object.assign({}, PRODUCT_DEFAULTS);
-      state.addons = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
-      state.prefill = Object.assign({}, PREFILL_DEFAULT);
+      var state = Object.assign({}, DEFAULTS);
+      state.fields   = Object.assign({}, DEFAULTS.fields);
+      state.product  = Object.assign({}, PRODUCT_DEFAULTS);
+      state.addons   = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
+      state.prefill  = Object.assign({}, PREFILL_DEFAULT);
+      state.features = Object.assign({}, FEATURE_DEFAULTS);
 
       // ─── DOM refs ───
-      var $variant      = document.getElementById('sdkd-variant');
-      var $variantDesc  = document.getElementById('sdkd-variant-desc');
       var $helper       = document.getElementById('sdkd-variant-helper');
       var $mount        = document.getElementById('sdkd-checkout-mount');
       var $eventLog     = document.getElementById('sdkd-event-log');
@@ -16672,14 +16693,11 @@ function copyClaudeMCPConfig() {
       var mountTimer = null;
 
       function buildConfig() {
-        var variant = VARIANTS[state.variant] || VARIANTS.main;
         var fieldsCsv = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',');
-        // The SDK needs BOTH flags off to fully hide product info. If the user
-        // unchecks Show Product Info OR picks the Hidden layout, send both as
-        // off. No per-variant overrides — every variant respects the user's
-        // Customize-tab toggle. Variants set their preferred *defaults* in
-        // applyVariant() instead.
-        var hideProductInfo = !state.show_product_info || state.product_layout === 'none';
+        // The SDK needs BOTH flags off to fully hide product info. The Add-ons
+        // feature forces it off (parent page owns product display); otherwise
+        // respect the user's Customize-tab controls.
+        var hideProductInfo = state.features.addons || !state.show_product_info || state.product_layout === 'none';
         var theme = {
           theme: state.theme,
           show_product_info: !hideProductInfo,
@@ -16697,14 +16715,12 @@ function copyClaudeMCPConfig() {
           billing_display_fields: fieldsCsv || 'first_name,last_name,email,country,address',
           billing_form_placement: state.billing_form_placement
         };
-        // Prefill variant: bake the sample buyer info into theme.prefill so
-        // the live iframe loads with the form already populated.
-        if (state.variant === 'prefill') theme.prefill = Object.assign({}, state.prefill);
+        if (state.features.prefill) theme.prefill = Object.assign({}, state.prefill);
         return {
           creatorId: DEMO_CREDS.creator_id,
           productId: DEMO_CREDS.product_id,
           checkoutSessionSecret: DEMO_CREDS.session_secret,
-          environment: variant.previewEnvironment,
+          environment: 'sandbox',
           collectPhone: !!state.collectPhone,
           theme: theme
         };
@@ -16730,7 +16746,7 @@ function copyClaudeMCPConfig() {
               checkoutInstance.mount($mount);
             }
             if (typeof checkoutInstance.init === 'function') checkoutInstance.init();
-            attachVariantBehaviors();
+            attachFeatureBehaviors();
           } catch (err) {
             $mount.innerHTML = '<div class="sdkd-loading">Could not load the SDK. Check the console.</div>';
             console.error('[SDK Demo] mount failed', err);
@@ -16745,25 +16761,25 @@ function copyClaudeMCPConfig() {
         mountTimer = setTimeout(doMount, 280);
       }
 
-      // ─── Variant-specific behaviors ───
-      function attachVariantBehaviors() {
-        if (!checkoutInstance || typeof checkoutInstance.on !== 'function') return;
-        if (state.variant === 'programmatic') {
+      // ─── Feature-specific behaviors ───
+      // Wires the live checkout instance to whatever features are enabled.
+      // Add-on cards are bound separately in renderAddonHelper() since they
+      // re-render whenever the addon list changes.
+      function attachFeatureBehaviors() {
+        if (!checkoutInstance) return;
+        if (state.features.programmatic) {
           var submitBtn = document.getElementById('sdkd-prog-submit');
           if (submitBtn) submitBtn.onclick = function() {
             try { checkoutInstance.submit(); } catch (e) { logEvent('error', String(e)); }
           };
-          checkoutInstance.on && checkoutInstance.on('form:validation', function(d) { logEvent('form:validation', JSON.stringify(d).slice(0, 220)); });
-          checkoutInstance.on && checkoutInstance.on('payment:success',  function(d) { logEvent('payment:success',  '✓ paid'); });
-          checkoutInstance.on && checkoutInstance.on('payment:error',    function(d) { logEvent('payment:error',    JSON.stringify(d).slice(0, 220)); });
-        } else if (state.variant === 'addon') {
-          var toggle = document.getElementById('sdkd-addon-toggle');
-          if (toggle) toggle.onchange = function() {
-            try {
-              if (toggle.checked) checkoutInstance.addAddon('bump-product-id');
-              else checkoutInstance.removeAddon('bump-product-id');
-            } catch (e) { logEvent('error', String(e)); }
-          };
+          if (typeof checkoutInstance.on === 'function') {
+            checkoutInstance.on('form:validation', function(d) { logEvent('form:validation', JSON.stringify(d).slice(0, 220)); });
+            checkoutInstance.on('payment:success',  function()  { logEvent('payment:success',  '✓ paid'); });
+            checkoutInstance.on('payment:error',    function(d) { logEvent('payment:error',    JSON.stringify(d).slice(0, 220)); });
+          }
+        }
+        if (state.features.addons) {
+          renderAddonHelper();
         }
       }
 
@@ -16778,19 +16794,27 @@ function copyClaudeMCPConfig() {
       }
 
       // ─── Snippet generation ───
+      // One unified snippet that mirrors the live demo. Branches based on
+      // state.features: Sandbox flips environment, Programmatic adds an
+      // external Pay button + event listeners, Add-ons adds parent-page
+      // addon cards wired to addAddon/removeAddon, Prefill bakes the buyer
+      // info into theme.prefill.
       function generateSnippet() {
-        if (state.variant === 'addon') return generateAddonPageSnippet();
-        var variant = VARIANTS[state.variant] || VARIANTS.main;
+        var f = state.features;
         var fields = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',') ||
                      'first_name,last_name,email,country,address';
-        var hideProductInfo = state.product_layout === 'none';
-        var effShowProduct = hideProductInfo ? false : state.show_product_info;
-        // Build theme block; tack on `prefill` for the Prefill variant.
+        // Add-ons feature forces product info off (parent page owns display).
+        var hideProductInfo = f.addons || !state.show_product_info || state.product_layout === 'none';
+        var effShowProduct = !hideProductInfo;
+        var effLayout = hideProductInfo ? 'none' : state.product_layout;
+        function esc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+        // --- Theme block ---
         var themeLines = [
           "    theme: {",
           "      theme: '" + state.theme + "',",
           "      show_product_info: " + effShowProduct + ",",
-          "      product_layout: '" + state.product_layout + "',",
+          "      product_layout: '" + effLayout + "',",
           "      show_coupon_row: " + state.show_coupon_row + ",",
           "      accent_color: '" + state.accent_color + "',",
           "      background_color: '" + state.background_color + "',",
@@ -16804,45 +16828,72 @@ function copyClaudeMCPConfig() {
           "      billing_display_fields: '" + fields + "',",
           "      billing_form_placement: '" + state.billing_form_placement + "'"
         ];
-        if (state.variant === 'prefill') {
+        if (f.prefill) {
           themeLines[themeLines.length - 1] += ',';
           themeLines.push(
             "      prefill: {",
-            "        first_name: '" + state.prefill.first_name + "',",
-            "        last_name: '"  + state.prefill.last_name  + "',",
-            "        email: '"      + state.prefill.email      + "',",
-            (state.collectPhone ? "        phone: '" + state.prefill.phone + "'," : null),
-            "        country: '"    + state.prefill.country    + "',",
-            "        address: '"    + state.prefill.address    + "'",
+            "        first_name: '" + esc(state.prefill.first_name) + "',",
+            "        last_name: '"  + esc(state.prefill.last_name)  + "',",
+            "        email: '"      + esc(state.prefill.email)      + "',",
+            (state.collectPhone ? "        phone: '" + esc(state.prefill.phone) + "'," : null),
+            "        country: '"    + esc(state.prefill.country)    + "',",
+            "        address: '"    + esc(state.prefill.address)    + "'",
             "      }"
           );
         }
         themeLines.push("    }");
+
+        // --- Config block ---
         var configLines = [
           "    creatorId: 'YOUR_CREATOR_SLUG',",
           "    productId: 'YOUR_PRODUCT_ID',",
           "    checkoutSessionSecret: 'YOUR_SESSION_SECRET',",
-          "    environment: '" + variant.snippetEnvironment + "',",
+          "    environment: '" + (f.sandbox ? 'sandbox' : 'production') + "',",
           "    collectPhone: " + (!!state.collectPhone) + ","
         ].concat(themeLines).filter(function(l) { return l !== null; }).join('\n');
 
+        // --- HTML markup ---
+        var html = '';
+        if (f.addons) html += '<div id="addons-container"></div>\n';
+        html += '<div id="checkout-container"><\/div>';
+        if (f.programmatic) html += '\n<button id="external-submit">Pay now</button>';
+
+        // --- Behavior extras ---
         var extras = '';
-        if (state.variant === 'programmatic') {
-          extras =
-            '\n\n  // Drive the form from outside the iframe\n' +
+        if (f.programmatic) {
+          extras +=
+            '\n\n  // Drive submission from outside the iframe\n' +
             "  document.getElementById('external-submit').addEventListener('click', function () {\n" +
             "    checkout.submit();\n" +
             "  });\n" +
             "  checkout.on('form:validation', function (d) { console.log('validation', d); });\n" +
             "  checkout.on('payment:success', function (d) { console.log('success', d); });";
         }
-
-        var extraMarkup = '';
-        if (state.variant === 'programmatic') {
-          extraMarkup = '\n<button id="external-submit">Pay now</button>';
+        if (f.addons) {
+          var addonItems = state.addons.map(function(a) {
+            return "    { id: '" + esc(a.id) + "', name: '" + esc(a.name) + "', price: " + (Number(a.price) || 0).toFixed(2) + " }";
+          }).join(',\n');
+          extras +=
+            '\n\n  // Render addon cards on the parent page. Clicking a card\n' +
+            "  // calls addAddon/removeAddon on the SDK so the iframe's Pay\n" +
+            '  // button reflects the running total.\n' +
+            '  var ADDONS = [\n' +
+            (addonItems || "    // add { id, name, price } objects here") + '\n' +
+            '  ];\n' +
+            "  var listEl = document.getElementById('addons-container');\n" +
+            '  ADDONS.forEach(function (a) {\n' +
+            "    var card = document.createElement('label');\n" +
+            "    card.style.cssText = 'display:flex;gap:10px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;cursor:pointer;';\n" +
+            "    card.innerHTML = '<input type=\"checkbox\"> <strong>' + a.name + '</strong> <span style=\"margin-left:auto;\">$' + a.price.toFixed(2) + '</span>';\n" +
+            "    card.querySelector('input').addEventListener('change', function (e) {\n" +
+            '      if (e.target.checked) checkout.addAddon(a.id);\n' +
+            '      else                  checkout.removeAddon(a.id);\n' +
+            '    });\n' +
+            '    listEl.appendChild(card);\n' +
+            '  });';
         }
 
-        return '<div id="checkout-container"><\/div>' + extraMarkup + '\n\n' +
+        return html + '\n\n' +
                '<script src="https://cdn.embedded.fanbasis.io/embed/index.js"><\/script>\n' +
                '<script>\n' +
                '  const checkout = PaymentCheckout.create({\n' +
@@ -16852,247 +16903,6 @@ function copyClaudeMCPConfig() {
                '  checkout.init();' +
                extras + '\n' +
                '<\/script>';
-      }
-
-      // Addon variant — products + addons live on the parent page, the SDK
-      // iframe only handles billing/payment. Generates a complete standalone
-      // HTML doc with the user's Customize + Products state baked in.
-      // SDK config forces show_product_info:false and product_layout:'none'
-      // since the wrapper page owns product display.
-      function generateAddonPageSnippet() {
-        var variant = VARIANTS[state.variant] || VARIANTS.main;
-        var fields = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',') ||
-                     'first_name,last_name,email,country,address';
-        // The full document is assembled as an array of lines for readability.
-        // Note: closing-script-tag strings inside this builder are split as
-        // '<\\/script>' so the HTML parser doesn't close this script early.
-        function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-        function escJs(s)   { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/<\//g, '<\\/'); }
-        function fmtPrice(n) { var v = Number(n) || 0; return '$' + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-        function fmtPriceWhole(n) { var v = Number(n) || 0; return '$' + Math.round(v).toLocaleString(); }
-        var product = state.product;
-        var addons  = state.addons;
-        var featureList = (product.features || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-        var featureIcons = ['🎓','🎯','♾️','✨','🚀','⚡','💎','🏆','🔥','🎁'];
-        var featurePills = featureList.map(function(f, i) {
-          return '            <span class="feature-pill">' + featureIcons[i % featureIcons.length] + ' ' + escHtml(f) + '<\/span>';
-        }).join('\n');
-        var basePriceFmt  = fmtPrice(product.price);
-        var basePriceWhole = fmtPriceWhole(product.price);
-        var addonJsLines = addons.map(function(a) {
-          return "    { id: '" + escJs(a.id) + "', name: '" + escJs(a.name) + "', price: " + (Number(a.price) || 0).toFixed(2) + ", desc: '" + escJs(a.desc) + "' }";
-        }).join(',\n');
-        return [
-'<!DOCTYPE html>',
-'<html lang="en">',
-'<head>',
-'  <meta charset="UTF-8">',
-'  <meta name="viewport" content="width=device-width, initial-scale=1.0">',
-'  <title>Your Product — Checkout</title>',
-'  <link rel="preconnect" href="https://fonts.googleapis.com">',
-'  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-'  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Bricolage+Grotesque:wght@400;600;700;800&display=swap" rel="stylesheet">',
-'  <style>',
-'    :root {',
-'      --bg: ' + state.background_color + ';',
-'      --glass: rgba(255, 255, 255, 0.55);',
-'      --glass-hover: rgba(255, 255, 255, 0.7);',
-'      --glass-active: rgba(255, 255, 255, 0.8);',
-'      --glass-border: rgba(255, 255, 255, 0.6);',
-'      --blur: 20px;',
-'      --text: ' + state.heading_color + ';',
-'      --text-secondary: ' + state.label_color + ';',
-'      --text-muted: ' + state.secondary_color + ';',
-'      --accent: ' + state.accent_color + ';',
-'      --accent-soft: rgba(99, 102, 241, 0.08);',
-'      --accent-border: rgba(99, 102, 241, 0.25);',
-'      --green: #10b981; --pink: #ec4899; --orange: #f59e0b;',
-'      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);',
-'      --shadow-md: 0 8px 32px rgba(0,0,0,0.06);',
-'      --shadow-lg: 0 16px 48px rgba(0,0,0,0.08);',
-'    }',
-'    * { box-sizing: border-box; margin: 0; padding: 0; }',
-'    body { font-family: \'DM Sans\', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }',
-'    .bg-mesh { position: fixed; inset: 0; z-index: 0; background: var(--bg); overflow: hidden; }',
-'    .bg-mesh .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; }',
-'    .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%); top: -10%; left: -5%; animation: orbFloat1 18s ease-in-out infinite alternate; }',
-'    .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(236,72,153,0.2) 0%, transparent 70%); top: 30%; right: -10%; animation: orbFloat2 22s ease-in-out infinite alternate; }',
-'    .orb-3 { width: 450px; height: 450px; background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%); bottom: -5%; left: 30%; animation: orbFloat3 20s ease-in-out infinite alternate; }',
-'    @keyframes orbFloat1 { 0% { transform: translate(0,0); } 100% { transform: translate(40px,30px); } }',
-'    @keyframes orbFloat2 { 0% { transform: translate(0,0); } 100% { transform: translate(-50px,40px); } }',
-'    @keyframes orbFloat3 { 0% { transform: translate(0,0); } 100% { transform: translate(30px,-40px); } }',
-'    .page-wrapper { position: relative; z-index: 2; max-width: 1140px; margin: 0 auto; padding: 40px 24px 60px; }',
-'    .layout { display: grid; grid-template-columns: 420px 1fr; gap: 28px; align-items: start; }',
-'    @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }',
-'    .left-col { position: sticky; top: 24px; }',
-'    .glass-card { background: var(--glass); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border: 1px solid var(--glass-border); border-radius: 20px; box-shadow: var(--shadow-md); }',
-'    .product-hero { position: relative; overflow: hidden; margin-bottom: 20px; opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s forwards; }',
-'    .hero-shimmer { height: 3px; background: linear-gradient(90deg, var(--accent), var(--pink), var(--orange), var(--green), var(--accent)); background-size: 300% 100%; animation: shimmerSlide 4s ease-in-out infinite; border-radius: 20px 20px 0 0; }',
-'    @keyframes shimmerSlide { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }',
-'    .hero-body { padding: 26px 24px 24px; }',
-'    .hero-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 14px; }',
-'    .hero-eyebrow .dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px rgba(16,185,129,0.5); animation: dotPulse 2s ease-in-out infinite; }',
-'    @keyframes dotPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.7); opacity: 0.4; } }',
-'    .hero-title { font-family: \'Bricolage Grotesque\', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.8px; line-height: 1.15; color: var(--text); margin-bottom: 10px; }',
-'    .hero-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 20px; }',
-'    .hero-features { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 22px; }',
-'    .feature-pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; background: rgba(255,255,255,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.7); border-radius: 100px; font-size: 12px; font-weight: 500; color: var(--text-secondary); }',
-'    .hero-price-block { display: flex; align-items: baseline; gap: 10px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,0.05); }',
-'    .hero-price { font-family: \'Bricolage Grotesque\', sans-serif; font-size: 38px; font-weight: 800; letter-spacing: -1.5px; color: var(--text); }',
-'    .hero-price-note { font-size: 13px; color: var(--text-muted); }',
-'    .addon-section { opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s forwards; }',
-'    .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }',
-'    .addon-card { position: relative; background: var(--glass); backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; cursor: pointer; box-shadow: var(--shadow-sm); transition: all 0.4s cubic-bezier(0.16,1,0.3,1); overflow: hidden; }',
-'    .addon-card:hover { background: var(--glass-hover); transform: translateY(-3px) scale(1.01); box-shadow: var(--shadow-lg); }',
-'    .addon-card.selected { background: var(--glass-active); border-color: var(--accent-border); box-shadow: var(--shadow-md), inset 0 0 30px var(--accent-soft); }',
-'    .card-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }',
-'    .card-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }',
-'    .check-box { width: 24px; height: 24px; border-radius: 8px; border: 2px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); }',
-'    .addon-card.selected .check-box { background: var(--accent); border-color: var(--accent); }',
-'    .check-box svg { width: 13px; height: 13px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 16; transition: stroke-dashoffset 0.35s cubic-bezier(0.34,1.56,0.64,1) 0.05s; }',
-'    .addon-card.selected .check-box svg { stroke-dashoffset: 0; }',
-'    .card-name { font-family: \'Bricolage Grotesque\', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }',
-'    .addon-card.selected .card-name { color: var(--accent); }',
-'    .card-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.4; }',
-'    .card-price { font-family: \'Bricolage Grotesque\', sans-serif; font-size: 19px; font-weight: 800; color: var(--text-muted); white-space: nowrap; }',
-'    .addon-card.selected .card-price { color: var(--accent); }',
-'    .order-summary { margin-top: 16px; padding: 20px; opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.6s forwards; }',
-'    .summary-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 14px; }',
-'    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; }',
-'    .summary-row .label, .summary-row .value { color: var(--text-secondary); }',
-'    .addon-summary-item { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.35s cubic-bezier(0.16,1,0.3,1); padding: 0 0 0 12px; border-left: 2px solid transparent; }',
-'    .addon-summary-item.visible { max-height: 32px; opacity: 1; padding: 4px 0 4px 12px; border-left-color: rgba(99,102,241,0.2); }',
-'    .summary-divider { height: 1px; background: rgba(0,0,0,0.06); margin: 12px 0; }',
-'    .summary-row.grand .label { font-family: \'Bricolage Grotesque\', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }',
-'    .summary-row.grand .value { font-family: \'Bricolage Grotesque\', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; color: var(--accent); }',
-'    .checkout-col { opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.4s forwards; }',
-'    .checkout-col-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }',
-'    .checkout-glass-wrap { border-radius: 20px; padding: 3px; box-shadow: var(--shadow-lg); }',
-'    #checkout-container { width: 100%; height: 900px; }',
-'    #checkout-container iframe { width: 100% !important; height: 900px !important; border-radius: 18px; border: none; }',
-'    .sandbox-banner { display: flex; align-items: center; gap: 8px; padding: 10px 16px; margin-bottom: 12px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; font-size: 12px; color: #92400e; }',
-'    .sandbox-banner code { background: rgba(245,158,11,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 11px; }',
-'    .event-log { margin-top: 28px; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6); border-radius: 14px; padding: 16px; font-family: monospace; font-size: 11px; max-height: 130px; overflow-y: auto; }',
-'    .event-log h3 { font-family: \'DM Sans\', sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }',
-'    .event-log .entry { padding: 2px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }',
-'    .event-log .ts { color: var(--text-muted); margin-right: 8px; }',
-'    .event-log .evt { color: var(--green); }',
-'    .event-log .data { color: var(--accent); }',
-'    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }',
-'  <\/style>',
-'<\/head>',
-'<body>',
-'<div class="bg-mesh">',
-'  <div class="orb orb-1"><\/div>',
-'  <div class="orb orb-2"><\/div>',
-'  <div class="orb orb-3"><\/div>',
-'<\/div>',
-'<div class="page-wrapper">',
-'  <div class="layout">',
-'    <div class="left-col">',
-'      <div class="addon-section">',
-'        <div class="section-label">Enhance Your Order<\/div>',
-'        <div id="addon-list"><\/div>',
-'      <\/div>',
-'    <\/div>',
-'    <div class="checkout-col">',
-'      <div class="checkout-col-label">Payment<\/div>',
-(variant.snippetEnvironment === 'sandbox'
-  ? '      <div class="sandbox-banner">⚠️ <strong>Sandbox<\/strong> — Test card <code>4242 4242 4242 4242<\/code> · any future expiry · any CVV<\/div>'
-  : ''),
-'      <div id="error-banner-slot"><\/div>',
-'      <div class="checkout-glass-wrap glass-card"><div id="checkout-container"><\/div><\/div>',
-'    <\/div>',
-'  <\/div>',
-'  <div class="event-log" id="event-log"><h3>Event Log<\/h3><\/div>',
-'<\/div>',
-'<script src="https://cdn.embedded.fanbasis.io/embed/index.js"><\/script>',
-'<script>',
-'document.addEventListener(\'DOMContentLoaded\', async function () {',
-'  // Edit these (or add more) — the parent-page UI iterates this list',
-'  var ADDON_PRODUCTS = [',
-(addonJsLines || "    // add { id, name, price, desc } objects here"),
-'  ];',
-'  var BASE_PRICE = ' + (Number(product.price) || 0).toFixed(2) + ';',
-'',
-'  var config = {',
-'    creatorId: \'YOUR_CREATOR_SLUG\',',
-'    productId: \'YOUR_PRODUCT_ID\',',
-'    checkoutSessionSecret: \'YOUR_SESSION_SECRET\',',
-'    environment: \'' + variant.snippetEnvironment + '\',',
-'    collectPhone: ' + (!!state.collectPhone) + ',',
-'    redirectSettings: { success_redirect_url: \'https://your-site.com/thank-you\', always_redirect: true },',
-'    theme: {',
-'      theme: \'' + state.theme + '\',',
-'      accent_color: \'' + state.accent_color + '\',',
-'      background_color: \'' + state.background_color + '\',',
-'      input_background_color: \'' + state.input_background_color + '\',',
-'      border_color: \'' + state.border_color + '\',',
-'      label_color: \'' + state.label_color + '\',',
-'      heading_color: \'' + state.heading_color + '\',',
-'      secondary_color: \'' + state.secondary_color + '\',',
-'      surface_color: \'' + state.surface_color + '\',',
-'      product_text_color: \'' + state.product_text_color + '\',',
-'      show_product_info: ' + (state.show_product_info ? 'true' : 'false') + ',',
-'      product_layout: \'' + state.product_layout + '\',',
-'      show_coupon_row: ' + state.show_coupon_row + ',',
-'      billing_display_fields: \'' + fields + '\',',
-'      billing_form_placement: \'' + state.billing_form_placement + '\'',
-'    }',
-'  };',
-'',
-'  var logEl = document.getElementById(\'event-log\');',
-'  function log(event, data) {',
-'    var entry = document.createElement(\'div\');',
-'    entry.className = \'entry\';',
-'    entry.innerHTML = \'<span class="ts">\' + new Date().toLocaleTimeString() + \'<\/span>\' +',
-'      \'<span class="evt">\' + event + \'<\/span>\' +',
-'      (data ? \' <span class="data">\' + JSON.stringify(data) + \'<\/span>\' : \'\');',
-'    logEl.appendChild(entry);',
-'    logEl.scrollTop = logEl.scrollHeight;',
-'  }',
-'  function formatPrice(n) { return \'$\' + n.toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, \',\'); }',
-'',
-'  var checkout = await PaymentCheckout.create(config);',
-'  checkout.attachToElement(document.getElementById(\'checkout-container\'));',
-'',
-'  // Render addon cards on the parent page. Selection state is held locally',
-'  // and synced to the SDK via addAddon / removeAddon. The SDK iframe displays',
-'  // the main product + running total internally (show_product_info: true).',
-'  var addonListEl = document.getElementById(\'addon-list\');',
-'  var selectedAddons = {};',
-'  ADDON_PRODUCTS.forEach(function (a) { selectedAddons[a.id] = false; });',
-'',
-'  ADDON_PRODUCTS.forEach(function (addon) {',
-'    var card = document.createElement(\'div\');',
-'    card.className = \'addon-card\';',
-'    card.innerHTML =',
-'      \'<div class="card-row"><div class="card-left">\' +',
-'      \'<div class="check-box"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"\/><\/svg><\/div>\' +',
-'      \'<div><div class="card-name">\' + addon.name + \'<\/div><div class="card-desc">\' + addon.desc + \'<\/div><\/div>\' +',
-'      \'<\/div><div class="card-price">\' + formatPrice(addon.price) + \'<\/div><\/div>\';',
-'    card.addEventListener(\'click\', function () {',
-'      var isNow = !selectedAddons[addon.id];',
-'      selectedAddons[addon.id] = isNow;',
-'      card.classList.toggle(\'selected\', isNow);',
-'      if (isNow) { checkout.addAddon(addon.id);    log(\'addAddon()\',    { id: addon.id }); }',
-'      else       { checkout.removeAddon(addon.id); log(\'removeAddon()\', { id: addon.id }); }',
-'    });',
-'    addonListEl.appendChild(card);',
-'  });',
-'',
-'  checkout.on(\'addons:changed\', function (data) { log(\'addons:changed\', data); });',
-'  checkout.on(\'checkout:success\', function (d) { log(\'checkout:success\', d); });',
-'  checkout.on(\'checkout:error\',   function (e) { log(\'checkout:error\',   e); });',
-'  checkout.on(\'form:ready\',       function ()  { log(\'form:ready\'); });',
-'',
-'  checkout.init();',
-'  log(\'init()\', { creator: config.creatorId, product: config.productId });',
-'});',
-'<\/script>',
-'<\/body>',
-'<\/html>'
-        ].filter(function(l){ return l !== ''; }).join('\n');
       }
       var pulseTimer = null;
       function refreshSnippet() {
@@ -17136,59 +16946,65 @@ function copyClaudeMCPConfig() {
           var k = cb.dataset.cfgField;
           cb.checked = !!state.fields[k];
         });
+        // Feature toggles
+        section.querySelectorAll('input[data-feature]').forEach(function(cb) {
+          cb.checked = !!state.features[cb.dataset.feature];
+        });
+        // Prefill inputs
+        section.querySelectorAll('input[data-prefill-field]').forEach(function(inp) {
+          inp.value = state.prefill[inp.dataset.prefillField] || '';
+        });
       }
 
-      // ─── Variant switcher ───
-      function applyVariant(v) {
-        var prevVariant = state.variant;
-        state.variant = v;
-        var def = VARIANTS[v] || VARIANTS.main;
-        $variantDesc.textContent = def.desc;
-        $helper.innerHTML = def.helperHTML || '';
-        // Show event log only for programmatic
-        if (v === 'programmatic') $eventLog.removeAttribute('hidden');
-        else $eventLog.setAttribute('hidden', '');
-        $eventBody.innerHTML = '';
-        // Variant-specific defaults — only applied on a transition INTO or
-        // OUT OF the addon variant. The addon flow ships a billing-only
-        // iframe (matches AddonsExampleBoolerscom.html); other variants
-        // default to showing product info inside the iframe.
-        if (v === 'addon' && prevVariant !== 'addon') {
-          state.show_product_info = false;
-          state.product_layout = 'none';
-          syncControlsFromState();
-        } else if (v !== 'addon' && prevVariant === 'addon') {
-          state.show_product_info = DEFAULTS.show_product_info;
-          state.product_layout = DEFAULTS.product_layout;
-          syncControlsFromState();
-        }
-        // Add-on hint in the Layout tab
-        var addonHint = section.querySelector('.sdkd-addon-hint');
-        if (addonHint) addonHint.hidden = (v !== 'addon');
-        // Products tab + dynamic helper are for the Add-on variant only
+      // ─── Toggle reconciliation ───
+      // Reflects state.features in the UI: shows/hides the Add-ons + Prefill
+      // drawer tabs, the parent-page addon cards, the external Pay button,
+      // the event log, and disables product_info controls while Add-ons is
+      // on. Safe to call any time state.features changes.
+      function applyToggles() {
+        var f = state.features;
+        // Event log — only useful when programmatic is on
+        if (f.programmatic) $eventLog.removeAttribute('hidden');
+        else { $eventLog.setAttribute('hidden', ''); $eventBody.innerHTML = ''; }
+        // External Pay button slot below the iframe
+        var progSlot = document.getElementById('sdkd-prog-slot');
+        if (progSlot) progSlot.hidden = !f.programmatic;
+        // Add-ons drawer tab + helper cards above iframe
         var prodTab = section.querySelector('.sdkd-tab-products');
         if (prodTab) {
-          if (v === 'addon') prodTab.removeAttribute('hidden');
-          else {
-            prodTab.setAttribute('hidden', '');
-            // If user was on Products tab when they switched off addon, reset to Colors
-            if (prodTab.classList.contains('active')) {
-              section.querySelectorAll('.sdkd-cust-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.custTab === 'colors'); });
-              section.querySelectorAll('.sdkd-cust-panel').forEach(function(p) { p.classList.toggle('active', p.dataset.custPanel === 'colors'); });
-            }
-          }
+          if (f.addons) prodTab.removeAttribute('hidden');
+          else prodTab.setAttribute('hidden', '');
         }
-        if (v === 'addon') renderAddonHelper();
-        refreshSnippet();
-        scheduleMount();
+        if (f.addons) renderAddonHelper();
+        else $helper.innerHTML = '';
+        // Prefill drawer tab
+        var prefillTab = section.querySelector('.sdkd-tab-prefill');
+        if (prefillTab) {
+          if (f.prefill) prefillTab.removeAttribute('hidden');
+          else prefillTab.setAttribute('hidden', '');
+        }
+        // Disable product-info layout controls while Add-ons feature owns them
+        var pLayout = section.querySelector('select[data-cfg-select="product_layout"]');
+        var pShow   = section.querySelector('input[data-cfg-bool="show_product_info"]');
+        if (pLayout) pLayout.disabled = !!f.addons;
+        if (pShow)   pShow.disabled   = !!f.addons;
+        var addonHint = section.querySelector('.sdkd-addon-hint');
+        if (addonHint) addonHint.hidden = !f.addons;
+        // If the user was on a tab that just got hidden, fall back to Colors
+        var activeTab = section.querySelector('.sdkd-cust-tab.active');
+        if (activeTab && activeTab.hasAttribute('hidden')) activateCustTab('colors');
       }
 
-      // Renders the live parent-page UI (product summary + addon checkboxes)
-      // above the SDK iframe when the Add-on variant is active. Each addon
-      // checkbox is wired to checkout.addAddon / removeAddon so users see the
-      // SDK iframe respond to their selections.
+      function activateCustTab(name) {
+        section.querySelectorAll('.sdkd-cust-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.custTab === name); });
+        section.querySelectorAll('.sdkd-cust-panel').forEach(function(p) { p.classList.toggle('active', p.dataset.custPanel === name); });
+      }
+
+      // Renders the live parent-page UI (addon cards) above the SDK iframe
+      // when the Add-ons feature is on. Each card is wired to
+      // checkout.addAddon / removeAddon so users see the SDK iframe respond.
       function renderAddonHelper() {
-        if (state.variant !== 'addon') return;
+        if (!state.features.addons) return;
         var checkSvg = '<svg viewBox="0 0 12 12" aria-hidden="true"><polyline points="2 6 5 9 10 3"/></svg>';
         var addonCards = state.addons.map(function(a, i) {
           var p = '$' + (Number(a.price) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -17294,13 +17110,15 @@ function copyClaudeMCPConfig() {
       // ─── Reset ───
       function resetAll() {
         Object.assign(state, DEFAULTS);
-        state.fields = Object.assign({}, DEFAULTS.fields);
-        state.product = Object.assign({}, PRODUCT_DEFAULTS);
-        state.addons = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
-        state.prefill = Object.assign({}, PREFILL_DEFAULT);
+        state.fields   = Object.assign({}, DEFAULTS.fields);
+        state.product  = Object.assign({}, PRODUCT_DEFAULTS);
+        state.addons   = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
+        state.prefill  = Object.assign({}, PREFILL_DEFAULT);
+        state.features = Object.assign({}, FEATURE_DEFAULTS);
         syncControlsFromState();
         syncProductInputs();
         renderAddons();
+        applyToggles();
         refreshSnippet();
         scheduleMount();
       }
@@ -17317,8 +17135,23 @@ function copyClaudeMCPConfig() {
       });
 
       // ─── Wire all controls ───
-      // Variant dropdown
-      $variant.addEventListener('change', function() { applyVariant($variant.value); });
+      // Feature toggles
+      section.querySelectorAll('input[data-feature]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          state.features[cb.dataset.feature] = cb.checked;
+          applyToggles();
+          refreshSnippet();
+          scheduleMount();
+        });
+      });
+      // Prefill field inputs
+      section.querySelectorAll('input[data-prefill-field]').forEach(function(inp) {
+        inp.addEventListener('input', function() {
+          state.prefill[inp.dataset.prefillField] = inp.value;
+          refreshSnippet();
+          scheduleMount();
+        });
+      });
 
       // Color pickers + paired text inputs
       section.querySelectorAll('input[data-cfg-color]').forEach(function(inp) {
@@ -17475,7 +17308,8 @@ function copyClaudeMCPConfig() {
       syncControlsFromState();
       syncProductInputs();
       renderAddons();
-      applyVariant('main');
+      applyToggles();
+      refreshSnippet();
       attachSnippetCopy();
 
       // Lazy-mount once the section is near the viewport
