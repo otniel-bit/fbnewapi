@@ -10756,13 +10756,19 @@ document.addEventListener('DOMContentLoaded', async function () {
 <div class="code-block"><div class="code-label plain">pnpm · bash</div><pre><code>pnpm add @fanbasis/checkout-react</code></pre></div>
 <p>The React SDK internally depends on <code class="inline">@fanbasis/checkout-core</code>.</p>
 <h3 class="sub-title">Basic integration</h3>
-<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { CheckoutProvider, AutoCheckout } from '@fanbasis/checkout-react';
+<p>Minimum viable React integration — includes all the base requirements (redirectSettings with <code class="inline">always_redirect</code>, success/error handlers, and a gateway-error listener for card declines):</p>
+<div class="code-block"><div class="code-label plain">jsx</div><pre><code>import { useEffect, useState } from 'react';
+import {
+  CheckoutProvider, AutoCheckout, useCheckoutContext
+} from '@fanbasis/checkout-react';
 
 function App() {
+  const [error, setError] = useState(null);
+
   const config = {
-    creatorId: 'your-creator-slug',
-    productId: 'YOUR_PRODUCT_ID',
-    checkoutSessionSecret: 'your-session-secret',
+    creatorId: 'REPLACE_CREATOR_SLUG',
+    productId: 'REPLACE_PRODUCT_ID',
+    checkoutSessionSecret: 'REPLACE_SESSION_SECRET',
     environment: 'production',
     redirectSettings: {
       success_redirect_url: 'https://yoursite.com/thank-you',
@@ -10778,14 +10784,43 @@ function App() {
   };
 
   return (
-    &lt;CheckoutProvider config={config}&gt;
-      &lt;AutoCheckout
-        autoInit
-        onSuccess={(data) =&gt; console.log('Success:', data)}
-        onError={(error) =&gt; console.error('Error:', error)}
-      /&gt;
-    &lt;/CheckoutProvider&gt;
+    &lt;&gt;
+      {error &amp;&amp; (
+        &lt;div style={{ background: '#fee2e2', color: '#991b1b', padding: 12, borderRadius: 8, marginBottom: 12 }}&gt;
+          ⚠ {error}
+        &lt;/div&gt;
+      )}
+      &lt;CheckoutProvider config={config}&gt;
+        &lt;GatewayErrors onError={setError} /&gt;
+        &lt;AutoCheckout
+          autoInit
+          onSuccess={(data) =&gt; {
+            window.location.href = `https://yoursite.com/thank-you?tx=${data.transactionId}`;
+          }}
+          onError={(err) =&gt; {
+            // Integration error (config, iframe state) — log it
+            console.error('[checkout]', err.code, err.message);
+            setError(err.message || 'Could not load checkout.');
+          }}
+        /&gt;
+      &lt;/CheckoutProvider&gt;
+    &lt;/&gt;
   );
+}
+
+// Gateway errors (card_declined, insufficient_funds, etc.) come through
+// form:submission_error — not on AutoCheckout props. Attach a listener
+// inside the provider via useCheckoutContext.
+function GatewayErrors({ onError }) {
+  const { getCheckout } = useCheckoutContext();
+  useEffect(() =&gt; {
+    const c = getCheckout();
+    if (!c) return;
+    const handler = (d) =&gt; onError(d.data.errorMessage);
+    c.on('form:submission_error', handler);
+    return () =&gt; c.off('form:submission_error', handler);
+  }, [getCheckout, onError]);
+  return null;
 }</code></pre></div>
 <div class="callout warning"><p><strong>Heads-up:</strong> <code class="inline">CheckoutProvider</code> takes only <code class="inline">config</code> and <code class="inline">children</code>. Lifecycle callbacks like <code class="inline">onSuccess</code>, <code class="inline">onError</code>, <code class="inline">onLoad</code>, etc. live on <code class="inline">AutoCheckout</code> and <code class="inline">SubmitButton</code>, not on the provider. The prop is <code class="inline">autoInit</code> (not <code class="inline">autoOpen</code>).</p></div>
 <h3 class="sub-title">useCheckout hook</h3>
@@ -10849,21 +10884,64 @@ function CheckoutStatus() {
 </tbody>
 </table>
 <h3 class="sub-title">Next.js (App Router)</h3>
-<div class="code-block"><div class="code-label plain">jsx · app/checkout/page.js</div><pre><code>'use client'; // Required for Next.js App Router
+<p>Same base requirements apply — fetch the session secret server-side (so your API key never reaches the client), then mount with the full config:</p>
+<div class="code-block"><div class="code-label plain">jsx · app/checkout/page.tsx</div><pre><code>'use client'; // Required for Next.js App Router
 
-import { CheckoutProvider, AutoCheckout } from '@fanbasis/checkout-react';
+import { useEffect, useState } from 'react';
+import { CheckoutProvider, AutoCheckout, useCheckoutContext } from '@fanbasis/checkout-react';
 import { useRouter } from 'next/navigation';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const [secret, setSecret] = useState&lt;string | null&gt;(null);
+  const [error, setError] = useState&lt;string | null&gt;(null);
+
+  // Fetch the embedded session secret from a Next.js route handler
+  // that calls /public-api/checkout-sessions/embedded with your API key
+  useEffect(() =&gt; {
+    fetch('/api/embedded-session', { method: 'POST' })
+      .then(r =&gt; r.ok ? r.json() : Promise.reject(new Error('Session fetch failed')))
+      .then(d =&gt; setSecret(d.checkoutSessionSecret))
+      .catch(e =&gt; setError(e.message));
+  }, []);
+
+  if (error)  return &lt;p style={{ color: '#991b1b' }}&gt;⚠ {error}&lt;/p&gt;;
+  if (!secret) return &lt;p&gt;Loading…&lt;/p&gt;;
+
   return (
-    &lt;CheckoutProvider config={{ /* ... */ }}&gt;
+    &lt;CheckoutProvider
+      config={{
+        creatorId: 'REPLACE_CREATOR_SLUG',
+        productId: 'REPLACE_PRODUCT_ID',
+        checkoutSessionSecret: secret,
+        environment: 'production',
+        redirectSettings: {
+          success_redirect_url: `${window.location.origin}/thank-you`,
+          always_redirect: true
+        },
+        theme: { theme: 'light', accent_color: '#007BFF', show_product_info: true, product_layout: 'left', show_coupon_row: true }
+      }}
+    &gt;
+      &lt;GatewayErrors onError={setError} /&gt;
       &lt;AutoCheckout
         autoInit
-        onSuccess={() =&gt; router.push('/thank-you')}
+        onSuccess={(data) =&gt; router.push(`/thank-you?tx=${data.transactionId}`)}
+        onError={(err) =&gt; setError(err.message || 'Could not load checkout.')}
       /&gt;
     &lt;/CheckoutProvider&gt;
   );
+}
+
+function GatewayErrors({ onError }: { onError: (s: string) =&gt; void }) {
+  const { getCheckout } = useCheckoutContext();
+  useEffect(() =&gt; {
+    const c = getCheckout();
+    if (!c) return;
+    const h = (d: any) =&gt; onError(d.data.errorMessage);
+    c.on('form:submission_error', h);
+    return () =&gt; c.off('form:submission_error', h);
+  }, [getCheckout, onError]);
+  return null;
 }</code></pre></div>
 <h3 class="sub-title">Checkout (render props)</h3>
 <p>Lower-level component with a render-props API for full control over the checkout UI and lifecycle.</p>
@@ -11619,12 +11697,15 @@ checkout.on('form:submission_error', function (data) {
 <div class="callout tip"><div class="callout-title">✓ Prerequisite</div><p>Bump products <strong>must</strong> be associated with the main product in the FanBasis dashboard first. Without the dashboard association, <code class="inline">addAddon()</code> / <code class="inline">removeAddon()</code> have no effect.</p></div>
 <div class="code-block"><div class="code-label plain">javascript · correct addon pattern</div><pre><code>// Config — NO bumpProductIds
 var config = {
-  creatorId: 'your-creator-slug',
-  productId: 'your-main-product-id',
-  checkoutSessionSecret: 'your-session-secret',
+  creatorId: 'REPLACE_CREATOR_SLUG',
+  productId: 'REPLACE_MAIN_PRODUCT_ID',
+  checkoutSessionSecret: 'REPLACE_SESSION_SECRET',
   environment: 'production',
   // bumpProductIds: DO NOT INCLUDE THIS
-  redirectSettings: { success_redirect_url: '/thank-you', always_redirect: true }
+  redirectSettings: {
+    success_redirect_url: 'https://yoursite.com/thank-you',
+    always_redirect: true
+  }
 };
 
 var checkout = PaymentCheckout.create(config);
@@ -11633,22 +11714,33 @@ checkout.attachToElement(element);
 // Parent-page checkbox handler — use addAddon/removeAddon, NOT toggleAddon
 checkbox.addEventListener('change', function () {
   if (this.checked) {
-    checkout.addAddon('bump-product-id');
+    checkout.addAddon('REPLACE_BUMP_PRODUCT_ID');
   } else {
-    checkout.removeAddon('bump-product-id');
+    checkout.removeAddon('REPLACE_BUMP_PRODUCT_ID');
   }
 });
 
-// Sync UI from the addons:changed event
+// Sync parent-page UI from the addons:changed event
 checkout.on('addons:changed', function (data) {
   // data: { selectedAddons: string[], addons: Addon[] }
   // (no `total` field — compute it yourself from selectedAddons + addon prices)
   data.addons.forEach(function (addon) {
-    var checkbox = document.querySelector('[data-addon-id="' + addon.id + '"]');
-    if (checkbox) {
-      checkbox.checked = data.selectedAddons.indexOf(addon.id) !== -1;
-    }
+    var box = document.querySelector('[data-addon-id="' + addon.id + '"]');
+    if (box) box.checked = data.selectedAddons.indexOf(addon.id) !== -1;
   });
+});
+
+// The three base handlers — required to avoid "stuck on processing"
+// and invisible errors. See Examples for the full pattern.
+checkout.on('checkout:success', function (data) {
+  window.location.href = 'https://yoursite.com/thank-you?tx=' + data.transactionId;
+});
+checkout.on('checkout:error', function (err) {
+  console.error('[checkout]', err.code, err.message);
+});
+checkout.on('form:submission_error', function (d) {
+  // d.data.errorMessage is already buyer-friendly — surface it to the user
+  console.error('[gateway]', d.data.errorMessage);
 });
 
 checkout.init();</code></pre></div>
@@ -11697,11 +11789,27 @@ interface AddonsChangedData {
   CheckoutProvider, AutoCheckout, SubmitButton
 } from '@fanbasis/checkout-react';
 
+const config = {
+  creatorId: 'REPLACE_CREATOR_SLUG',
+  productId: 'REPLACE_PRODUCT_ID',
+  checkoutSessionSecret: 'REPLACE_SESSION_SECRET',
+  environment: 'production',
+  showSubmitButton: false,
+  redirectSettings: {
+    success_redirect_url: 'https://yoursite.com/thank-you',
+    always_redirect: true
+  }
+};
+
 function App() {
   return (
-    &lt;CheckoutProvider config={{ ...config, showSubmitButton: false }}&gt;
+    &lt;CheckoutProvider config={config}&gt;
       &lt;AutoCheckout autoInit /&gt;
-      &lt;SubmitButton onPaymentSuccess={() =&gt; (window.location.href = '/thank-you')}&gt;
+      &lt;SubmitButton
+        onPaymentSuccess={(data) =&gt; { window.location.href = `https://yoursite.com/thank-you?tx=${data.transactionId}`; }}
+        onError={(err) =&gt; { console.error('[checkout]', err.code, err.message); }}
+        onSubmissionError={(d) =&gt; { alert(d.data.errorMessage); /* gateway error, buyer-friendly */ }}
+      &gt;
         {({ submit, isSubmitting }) =&gt; (
           &lt;button onClick={submit} disabled={isSubmitting}&gt;
             {isSubmitting ? 'Processing…' : 'Complete Purchase'}
@@ -11712,16 +11820,21 @@ function App() {
   );
 }</code></pre></div>
 <div class="code-block"><div class="code-label plain">Vanilla JS · javascript</div><pre><code>var config = {
-  creatorId: 'your-creator-slug',
-  productId: 'YOUR_PRODUCT_ID',
-  checkoutSessionSecret: 'your-session-secret',
+  creatorId: 'REPLACE_CREATOR_SLUG',
+  productId: 'REPLACE_PRODUCT_ID',
+  checkoutSessionSecret: 'REPLACE_SESSION_SECRET',
   environment: 'production',
-  showSubmitButton: false
+  showSubmitButton: false,
+  redirectSettings: {
+    success_redirect_url: 'https://yoursite.com/thank-you',
+    always_redirect: true
+  }
 };
 
 var checkout = PaymentCheckout.create(config);
 checkout.attachToElement(document.getElementById('checkout-container'));
 
+// Enable the custom button when the form is interactive
 checkout.on('form:ready', function() {
   document.getElementById('custom-pay-btn').disabled = false;
 });
@@ -11732,8 +11845,18 @@ document.getElementById('custom-pay-btn').addEventListener('click', function() {
   }
 });
 
+// The three base handlers — required to avoid "stuck on processing"
+// and invisible errors. Register BEFORE init().
 checkout.on('checkout:success', function(data) {
-  window.location.href = '/thank-you';
+  window.location.href = 'https://yoursite.com/thank-you?tx=' + data.transactionId;
+});
+checkout.on('checkout:error', function(err) {
+  // Integration error (e.g. IFRAME_NOT_READY) — log it, don't show to buyer
+  console.error('[checkout]', err.code, err.message);
+});
+checkout.on('form:submission_error', function(d) {
+  // Gateway error (card_declined, insufficient_funds, etc.) — show to buyer
+  alert(d.data.errorMessage);
 });
 
 checkout.init();</code></pre></div>
@@ -11795,72 +11918,459 @@ checkout.init();</code></pre></div>
     <span class="section-num">DEVELOPER RESOURCES</span>
     <h1>Examples</h1>
   </div>
-<h3 class="sub-title">Custom checkout button (modal overlay)</h3>
-<div class="code-block"><div class="code-label plain">html</div><pre><code>&lt;button id="buy-now-btn" onclick="openCheckout()"&gt;Buy Now — $49&lt;/button&gt;
 
-&lt;div id="checkout-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999;"&gt;
-  &lt;div style="max-width:600px; margin:50px auto; background:white; border-radius:16px; padding:20px;"&gt;
-    &lt;button onclick="closeCheckout()"&gt;×&lt;/button&gt;
+<div class="callout warning"><div class="callout-title">⚠ Every example below is the full minimum viable code</div><p>Each example is a complete, copy-pasteable file that includes the <strong>five base requirements</strong> for a working embedded checkout. If you strip any of these out, you'll hit one of the known failure modes (stuck on processing, invisible errors, dead handlers):</p>
+<ol style="margin: 8px 0 4px 22px; line-height: 1.7;">
+  <li>SDK script loaded from <code class="inline">cdn.embedded.fanbasis.io/embed/index.js</code></li>
+  <li>A mount target <code class="inline">&lt;div id="checkout-container"&gt;&lt;/div&gt;</code></li>
+  <li><code class="inline">redirectSettings</code> with <strong><code class="inline">always_redirect: true</code></strong> — without this the iframe gets stuck on "processing" after a successful payment</li>
+  <li>All three event handlers registered <strong>before</strong> <code class="inline">init()</code>: <code class="inline">checkout:success</code> (fallback redirect), <code class="inline">checkout:error</code> (integration errors), <code class="inline">form:submission_error</code> (gateway/card errors shown to the buyer)</li>
+  <li><code class="inline">attachToElement()</code> → register events → <code class="inline">init()</code>, in that order</li>
+</ol>
+<p style="margin-top: 8px;">For the canonical CSS + error-banner template, see <a href="#sdk-quick-start-js">Quick Start — Battle-tested template</a>. Each example below uses the same pattern.</p></div>
+
+<h3 class="sub-title">1. Buy-Now button → modal overlay</h3>
+<p>Classic "Buy Now" pattern: a button on a marketing page opens an overlay containing the embedded checkout. The SDK instance is created on first click and torn down on close so revisits start clean.</p>
+<div class="code-block"><div class="code-label plain">html · buy-now-modal.html</div><pre><code>&lt;style&gt;
+  #buy-now-btn {
+    padding: 14px 28px; background: #007BFF; color: #fff;
+    border: none; border-radius: 8px; font-size: 16px;
+    font-weight: 600; cursor: pointer;
+  }
+  #checkout-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 9999;
+    align-items: center; justify-content: center;
+  }
+  #checkout-overlay.open { display: flex; }
+  #checkout-modal {
+    background: #fff; border-radius: 16px;
+    width: 92%; max-width: 720px; max-height: 92vh;
+    overflow-y: auto; position: relative; padding: 24px;
+  }
+  #modal-close {
+    position: absolute; top: 14px; right: 14px;
+    background: none; border: none; font-size: 24px;
+    cursor: pointer; color: #555;
+  }
+  #checkout-container { width: 100%; min-height: 800px; }
+  #checkout-container iframe { width: 100% !important; min-height: 800px !important; border-radius: 12px; }
+  .fb-err { background:#fee2e2;border:1px solid #ef4444;padding:12px 16px;border-radius:8px;margin-bottom:16px;color:#991b1b;font-size:14px; }
+&lt;/style&gt;
+
+&lt;button id="buy-now-btn"&gt;Buy Now — $49&lt;/button&gt;
+
+&lt;div id="checkout-overlay"&gt;
+  &lt;div id="checkout-modal"&gt;
+    &lt;button id="modal-close" aria-label="Close"&gt;×&lt;/button&gt;
+    &lt;div id="error-banner-slot"&gt;&lt;/div&gt;
     &lt;div id="checkout-container"&gt;&lt;/div&gt;
   &lt;/div&gt;
 &lt;/div&gt;
 
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
 &lt;script&gt;
-var checkout;
-async function openCheckout() {
-  document.getElementById('checkout-overlay').style.display = 'block';
-  if (!checkout) {
-    checkout = PaymentCheckout.create({ /* config */ });
-    checkout.attachToElement(document.getElementById('checkout-container'));
-    checkout.on('checkout:success', () =&gt; window.location.href = '/thank-you');
+var checkout = null;
+var overlay = document.getElementById('checkout-overlay');
+
+document.getElementById('buy-now-btn').addEventListener('click', openCheckout);
+document.getElementById('modal-close').addEventListener('click', closeCheckout);
+overlay.addEventListener('click', function(e) { if (e.target === overlay) closeCheckout(); });
+
+function showError(msg) {
+  document.getElementById('error-banner-slot').innerHTML =
+    '&lt;div class="fb-err"&gt;⚠ ' + msg + '&lt;/div&gt;';
+}
+
+function openCheckout() {
+  overlay.classList.add('open');
+  if (checkout) return;   // already initialized; reusing same instance
+
+  checkout = PaymentCheckout.create({
+    creatorId: 'REPLACE_CREATOR_SLUG',
+    productId: 'REPLACE_PRODUCT_ID',
+    checkoutSessionSecret: 'REPLACE_SESSION_SECRET',
+    environment: 'production',
+    redirectSettings: {
+      success_redirect_url: 'https://yoursite.com/thank-you',
+      always_redirect: true
+    },
+    theme: { theme: 'light', accent_color: '#007BFF', show_product_info: true, product_layout: 'left', show_coupon_row: true }
+  });
+
+  checkout.attachToElement(document.getElementById('checkout-container'));
+
+  checkout.on('checkout:success', function(data) {
+    window.location.href = 'https://yoursite.com/thank-you?tx=' + data.transactionId;
+  });
+  checkout.on('checkout:error', function(err) {
+    showError((err &amp;&amp; err.message) || 'Something went wrong. Please try again.');
+  });
+  checkout.on('form:submission_error', function(d) {
+    showError((d &amp;&amp; d.data &amp;&amp; d.data.errorMessage) || 'Payment failed. Please check your details.');
+  });
+
+  checkout.init();
+}
+
+function closeCheckout() {
+  overlay.classList.remove('open');
+  // Optional: fully destroy on close so the next open re-fetches a fresh session.
+  // if (checkout) { try { checkout.destroy(); } catch (e) {} checkout = null; }
+}
+&lt;/script&gt;</code></pre></div>
+
+<h3 class="sub-title">2. Multiple products on one page (pricing table)</h3>
+<p>Render several checkout iframes side-by-side — e.g. a pricing tier comparison. <strong>Each product needs its own session secret</strong>; you cannot share a single secret across multiple checkouts. Fetch one per product from your backend.</p>
+<div class="code-block"><div class="code-label plain">html · pricing-tiers.html</div><pre><code>&lt;style&gt;
+  .tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+  @media (max-width: 1000px) { .tier-grid { grid-template-columns: 1fr; } }
+  .tier { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }
+  .tier h3 { font-size: 18px; margin-bottom: 6px; }
+  .tier .price { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .tier .mount { min-height: 900px; }
+  .tier .mount iframe { width: 100% !important; min-height: 900px !important; border-radius: 10px; }
+  .tier .err { background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:6px;margin-bottom:12px;font-size:13px;display:none; }
+&lt;/style&gt;
+
+&lt;div class="tier-grid"&gt;
+  &lt;div class="tier"&gt;
+    &lt;h3&gt;Basic&lt;/h3&gt;&lt;p class="price"&gt;$9.99 / mo&lt;/p&gt;
+    &lt;div class="err" id="err-basic"&gt;&lt;/div&gt;
+    &lt;div class="mount" id="mount-basic"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="tier"&gt;
+    &lt;h3&gt;Pro&lt;/h3&gt;&lt;p class="price"&gt;$29.99 / mo&lt;/p&gt;
+    &lt;div class="err" id="err-pro"&gt;&lt;/div&gt;
+    &lt;div class="mount" id="mount-pro"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="tier"&gt;
+    &lt;h3&gt;Enterprise&lt;/h3&gt;&lt;p class="price"&gt;$99.99 / mo&lt;/p&gt;
+    &lt;div class="err" id="err-enterprise"&gt;&lt;/div&gt;
+    &lt;div class="mount" id="mount-enterprise"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+var TIERS = [
+  { id: 'basic',      productId: 'REPLACE_BASIC_PRODUCT_ID',      mount: 'mount-basic',      errSlot: 'err-basic' },
+  { id: 'pro',        productId: 'REPLACE_PRO_PRODUCT_ID',        mount: 'mount-pro',        errSlot: 'err-pro' },
+  { id: 'enterprise', productId: 'REPLACE_ENTERPRISE_PRODUCT_ID', mount: 'mount-enterprise', errSlot: 'err-enterprise' }
+];
+
+document.addEventListener('DOMContentLoaded', function() {
+  TIERS.forEach(initTier);
+});
+
+async function initTier(tier) {
+  function showError(msg) {
+    var el = document.getElementById(tier.errSlot);
+    el.textContent = '⚠ ' + msg;
+    el.style.display = 'block';
+  }
+
+  try {
+    // Fetch a session secret for THIS product from your backend.
+    // Your backend should call POST /public-api/checkout-sessions/embedded
+    // and return { checkoutSessionSecret } — never expose your API key client-side.
+    var res = await fetch('/api/embedded-session?productId=' + tier.productId);
+    if (!res.ok) throw new Error('session fetch failed');
+    var sessionSecret = (await res.json()).checkoutSessionSecret;
+
+    var checkout = PaymentCheckout.create({
+      creatorId: 'REPLACE_CREATOR_SLUG',
+      productId: tier.productId,
+      checkoutSessionSecret: sessionSecret,
+      environment: 'production',
+      redirectSettings: {
+        success_redirect_url: 'https://yoursite.com/thank-you?plan=' + tier.id,
+        always_redirect: true
+      },
+      theme: { theme: 'light', accent_color: '#007BFF', show_product_info: true, product_layout: 'left', show_coupon_row: false }
+    });
+
+    checkout.attachToElement(document.getElementById(tier.mount));
+
+    checkout.on('checkout:success', function(data) {
+      window.location.href = 'https://yoursite.com/thank-you?plan=' + tier.id + '&amp;tx=' + data.transactionId;
+    });
+    checkout.on('checkout:error', function(err) {
+      showError((err &amp;&amp; err.message) || 'Could not load checkout.');
+    });
+    checkout.on('form:submission_error', function(d) {
+      showError((d &amp;&amp; d.data &amp;&amp; d.data.errorMessage) || 'Payment failed.');
+    });
+
     checkout.init();
+  } catch (err) {
+    showError(err.message || 'Failed to initialize.');
   }
 }
 &lt;/script&gt;</code></pre></div>
-<h3 class="sub-title">Multiple products on one page</h3>
-<div class="code-block"><div class="code-label plain">javascript</div><pre><code>var products = [
-  { id: 'PROD_A', container: 'checkout-a' },
-  { id: 'PROD_B', container: 'checkout-b' },
-  { id: 'PROD_C', container: 'checkout-c' }
+
+<h3 class="sub-title">3. Plan selector — switch between subscriptions (React)</h3>
+<p>Render one checkout that re-mounts with a different <code class="inline">productId</code> when the buyer picks a different plan. Uses the React SDK's <code class="inline">CheckoutProvider</code> + <code class="inline">AutoCheckout</code> with a per-plan session fetched from the backend.</p>
+<div class="code-block"><div class="code-label plain">jsx · PlanSelector.tsx</div><pre><code>import { useState, useEffect } from 'react';
+import {
+  CheckoutProvider, AutoCheckout, useCheckoutContext
+} from '@fanbasis/checkout-react';
+
+const PLANS = [
+  { id: 'basic',      productId: 'REPLACE_BASIC_PRODUCT_ID',      label: 'Basic',      price: '$9.99/mo' },
+  { id: 'pro',        productId: 'REPLACE_PRO_PRODUCT_ID',        label: 'Pro',        price: '$29.99/mo' },
+  { id: 'enterprise', productId: 'REPLACE_ENTERPRISE_PRODUCT_ID', label: 'Enterprise', price: '$99.99/mo' }
 ];
 
-products.forEach(async function(product) {
-  var checkout = PaymentCheckout.create({
-    creatorId: 'your-creator-slug',
-    productId: product.id,
-    checkoutSessionSecret: 'your-session-secret',
-    environment: 'production',
-    redirectSettings: {
-      success_redirect_url: '/thank-you?product=' + product.id,
-      always_redirect: true
-    }
-  });
-  checkout.attachToElement(document.getElementById(product.container));
-  checkout.init();
-});</code></pre></div>
-<h3 class="sub-title">Subscription plans (React)</h3>
-<div class="code-block"><div class="code-label plain">jsx</div><pre><code>function SubscriptionPlans() {
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const plans = [
-    { id: 'basic', name: 'Basic', price: '$9.99/mo' },
-    { id: 'pro', name: 'Pro', price: '$19.99/mo' },
-    { id: 'enterprise', name: 'Enterprise', price: '$49.99/mo' }
-  ];
+export function PlanSelector() {
+  const [plan, setPlan] = useState(PLANS[1]);    // default to Pro
+  const [secret, setSecret] = useState&lt;string | null&gt;(null);
+  const [error, setError] = useState&lt;string | null&gt;(null);
+
+  // Fetch a fresh session secret whenever the plan changes
+  useEffect(() =&gt; {
+    setSecret(null);
+    setError(null);
+    fetch(`/api/embedded-session?productId=${plan.productId}`)
+      .then(r =&gt; r.ok ? r.json() : Promise.reject(new Error('Session fetch failed')))
+      .then(d =&gt; setSecret(d.checkoutSessionSecret))
+      .catch(e =&gt; setError(e.message));
+  }, [plan.productId]);
+
   return (
-    &lt;div&gt;
-      {plans.map(plan =&gt; (
-        &lt;button key={plan.id} onClick={() =&gt; setSelectedPlan(plan)}&gt;
-          {plan.name} — {plan.price}
-        &lt;/button&gt;
-      ))}
-      {selectedPlan &amp;&amp; (
-        &lt;CheckoutProvider config={{ /* ... */, productId: `subscription_${selectedPlan.id}` }}&gt;
+    &lt;div style={{ maxWidth: 1100, margin: '0 auto', padding: 24 }}&gt;
+      &lt;div style={{ display: 'flex', gap: 12, marginBottom: 20 }}&gt;
+        {PLANS.map(p =&gt; (
+          &lt;button
+            key={p.id}
+            onClick={() =&gt; setPlan(p)}
+            style={{
+              flex: 1, padding: '14px 20px', borderRadius: 8,
+              border: p.id === plan.id ? '2px solid #007BFF' : '1px solid #e5e7eb',
+              background: p.id === plan.id ? '#eff6ff' : '#fff',
+              cursor: 'pointer', fontWeight: 600
+            }}
+          &gt;
+            {p.label} — {p.price}
+          &lt;/button&gt;
+        ))}
+      &lt;/div&gt;
+
+      {error &amp;&amp; (
+        &lt;div style={{ background: '#fee2e2', color: '#991b1b', padding: 12, borderRadius: 8, marginBottom: 16 }}&gt;
+          ⚠ {error}
+        &lt;/div&gt;
+      )}
+
+      {secret &amp;&amp; (
+        &lt;CheckoutProvider
+          key={plan.id}   /* re-mount when plan changes */
+          config={{
+            creatorId: 'REPLACE_CREATOR_SLUG',
+            productId: plan.productId,
+            checkoutSessionSecret: secret,
+            environment: 'production',
+            redirectSettings: {
+              success_redirect_url: `https://yoursite.com/thank-you?plan=${plan.id}`,
+              always_redirect: true
+            },
+            theme: { theme: 'light', accent_color: '#007BFF', show_product_info: true, product_layout: 'left', show_coupon_row: false }
+          }}
+        &gt;
+          &lt;CheckoutEvents onError={setError} /&gt;
           &lt;AutoCheckout autoInit /&gt;
         &lt;/CheckoutProvider&gt;
       )}
     &lt;/div&gt;
   );
+}
+
+// Helper component to wire all 3 required event handlers
+function CheckoutEvents({ onError }: { onError: (msg: string) =&gt; void }) {
+  const { checkout } = useCheckoutContext();
+
+  useEffect(() =&gt; {
+    if (!checkout) return;
+    const onSuccess = (data: any) =&gt; { window.location.href = `https://yoursite.com/thank-you?tx=${data.transactionId}`; };
+    const onCheckoutError = (err: any) =&gt; onError((err &amp;&amp; err.message) || 'Something went wrong.');
+    const onSubmissionError = (d: any) =&gt; onError((d &amp;&amp; d.data &amp;&amp; d.data.errorMessage) || 'Payment failed.');
+
+    checkout.on('checkout:success', onSuccess);
+    checkout.on('checkout:error', onCheckoutError);
+    checkout.on('form:submission_error', onSubmissionError);
+
+    return () =&gt; {
+      checkout.off('checkout:success', onSuccess);
+      checkout.off('checkout:error', onCheckoutError);
+      checkout.off('form:submission_error', onSubmissionError);
+    };
+  }, [checkout, onError]);
+
+  return null;
 }</code></pre></div>
+
+<h3 class="sub-title">4. Dynamic product creation — create product + session on the fly</h3>
+<p>"Name your price" / one-off bookings / custom invoices: the product doesn't exist before the buyer clicks. Your backend creates it on demand, returns a fresh session, and the frontend mounts the embed. Useful for coaching sessions, custom quotes, donation amounts, etc.</p>
+<div class="code-block"><div class="code-label plain">html · dynamic-checkout.html  (frontend)</div><pre><code>&lt;style&gt;
+  .form-row { margin-bottom: 14px; }
+  .form-row label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 4px; }
+  .form-row input, .form-row textarea { width: 100%; padding: 8px 12px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; }
+  #load-btn { padding: 12px 24px; background: #007BFF; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+  #load-btn:disabled { background: #999; cursor: not-allowed; }
+  #checkout-container { width: 100%; min-height: 800px; margin-top: 24px; display: none; }
+  #checkout-container iframe { width: 100% !important; min-height: 800px !important; border-radius: 12px; }
+  .err { background:#fee2e2;color:#991b1b;padding:12px 16px;border-radius:8px;margin:12px 0;display:none; }
+&lt;/style&gt;
+
+&lt;div style="max-width: 760px; margin: 0 auto; padding: 40px 20px;"&gt;
+  &lt;h1&gt;Book a Coaching Call&lt;/h1&gt;
+  &lt;div class="form-row"&gt;&lt;label&gt;Topic&lt;/label&gt;&lt;input id="title" placeholder="What do you want to discuss?" /&gt;&lt;/div&gt;
+  &lt;div class="form-row"&gt;&lt;label&gt;Price (USD)&lt;/label&gt;&lt;input id="amount" type="number" min="0.50" step="0.01" placeholder="49.99" /&gt;&lt;/div&gt;
+  &lt;button id="load-btn"&gt;Continue to Payment&lt;/button&gt;
+
+  &lt;div class="err" id="err"&gt;&lt;/div&gt;
+  &lt;div id="checkout-container"&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script src="https://cdn.embedded.fanbasis.io/embed/index.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+var checkout = null;
+document.getElementById('load-btn').addEventListener('click', loadCheckout);
+
+function showError(msg) {
+  var el = document.getElementById('err');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+async function loadCheckout() {
+  var btn = document.getElementById('load-btn');
+  var title = document.getElementById('title').value.trim();
+  var amount = parseFloat(document.getElementById('amount').value);
+
+  if (!title) return showError('Please enter a topic.');
+  if (!amount || amount &lt; 0.50) return showError('Price must be at least $0.50.');
+
+  // Tear down previous checkout if any
+  if (checkout) { try { checkout.destroy(); } catch (e) {} checkout = null; }
+
+  btn.disabled = true;
+  document.getElementById('err').style.display = 'none';
+
+  try {
+    // Backend creates the product + checkout session and returns everything we need
+    var res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, amount_cents: Math.round(amount * 100) })
+    });
+    if (!res.ok) {
+      var errBody = await res.json().catch(function() { return {}; });
+      throw new Error(errBody.error || ('Server error: ' + res.status));
+    }
+    var data = await res.json();
+
+    var container = document.getElementById('checkout-container');
+    container.style.display = 'block';
+
+    checkout = PaymentCheckout.create({
+      creatorId: data.creatorId,
+      productId: data.productId,
+      checkoutSessionSecret: data.checkoutSessionSecret,
+      environment: 'production',
+      redirectSettings: {
+        success_redirect_url: 'https://yoursite.com/thank-you',
+        always_redirect: true
+      },
+      theme: { theme: 'light', accent_color: '#007BFF', show_product_info: true, product_layout: 'left', show_coupon_row: false }
+    });
+
+    checkout.attachToElement(container);
+
+    checkout.on('checkout:success', function(d) {
+      window.location.href = 'https://yoursite.com/thank-you?tx=' + d.transactionId;
+    });
+    checkout.on('checkout:error', function(err) {
+      showError((err &amp;&amp; err.message) || 'Could not load checkout.');
+    });
+    checkout.on('form:submission_error', function(d) {
+      showError((d &amp;&amp; d.data &amp;&amp; d.data.errorMessage) || 'Payment failed.');
+    });
+
+    checkout.init();
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+&lt;/script&gt;</code></pre></div>
+
+<p>Backend pairing (Node / Express) that the frontend above calls:</p>
+<div class="code-block"><div class="code-label plain">javascript · server.js  (Node 18+)</div><pre><code>// Required env vars (NEVER expose these to the browser):
+//   FANBASIS_API_KEY      = your secret API key from the dashboard
+//   FANBASIS_CREATOR_ID   = your creator slug
+
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+const FANBASIS_API = 'https://www.fanbasis.com/public-api';
+
+async function fb(method, path, body) {
+  const res = await fetch(`${FANBASIS_API}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.FANBASIS_API_KEY
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `FanBasis API ${res.status}`);
+  return data;
+}
+
+app.post('/api/create-checkout', async (req, res) =&gt; {
+  try {
+    const { title, amount_cents } = req.body;
+    if (!title || !amount_cents) {
+      return res.status(400).json({ error: 'title and amount_cents required' });
+    }
+
+    // 1. Create a checkout session (this also creates the underlying product)
+    const session = await fb('POST', '/checkout-sessions', {
+      product: { title },
+      amount_cents,
+      type: 'onetime_reusable'
+    });
+
+    // 2. Create an embedded session secret tied to this creator
+    const embed = await fb('POST', '/checkout-sessions/embedded', {
+      creatorId: process.env.FANBASIS_CREATOR_ID
+    });
+
+    // 3. Fetch the session to get the product ID (for the SDK config)
+    const details = await fb('GET', `/checkout-sessions/${session.data.checkout_session_id}`);
+
+    res.json({
+      creatorId: process.env.FANBASIS_CREATOR_ID,
+      productId: details.data.product.id,
+      checkoutSessionSecret: embed.data.checkout_session_secret
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(3000);</code></pre></div>
+
+<div class="callout tip"><div class="callout-title">✓ Common variations</div><ul style="margin: 4px 0 0 16px; line-height: 1.7;">
+<li><strong>Subscription:</strong> pass <code class="inline">type: 'subscription'</code> plus <code class="inline">subscription: { frequency_days: 30 }</code> in the <code class="inline">/checkout-sessions</code> POST body.</li>
+<li><strong>Per-buyer metadata:</strong> add <code class="inline">metadata: { source: 'landing-page', utm: '...' }</code> to the SDK config — it's stored on the transaction and surfaced in <code class="inline">checkout:success.metadata</code> and webhook payloads.</li>
+<li><strong>Webhooks for fulfillment:</strong> pass a <code class="inline">webhook_url</code> on the <code class="inline">/checkout-sessions</code> POST body so your backend gets notified server-side too — don't rely on <code class="inline">checkout:success</code> alone for fulfillment.</li>
+</ul></div>
+
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
