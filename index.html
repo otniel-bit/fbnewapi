@@ -4212,6 +4212,80 @@
     background: #0d0d14;
   }
 
+  /* Prefill example */
+  .sdkd-prefill-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+    margin: 18px 0;
+    padding: 18px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .sdkd-prefill-full { grid-column: 1 / -1; }
+  .sdkd-prefill-row {
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .sdkd-prefill-row label {
+    font-size: 11.5px; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .sdkd-prefill-hint {
+    font-weight: 400; text-transform: none;
+    letter-spacing: 0; font-size: 11px;
+    color: var(--text-muted); opacity: 0.85;
+  }
+  .sdkd-prefill-row input {
+    padding: 8px 11px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+  }
+  .sdkd-prefill-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+  }
+  .sdkd-prefill-iframe-wrap {
+    position: relative;
+    width: 100%;
+    height: 820px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg-alt);
+    margin-top: 8px;
+  }
+  .sdkd-prefill-iframe-wrap iframe {
+    width: 100%; height: 100%;
+    border: 0; display: block;
+  }
+  .sdkd-prefill-loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 13px;
+    pointer-events: none;
+  }
+  @media (max-width: 720px) {
+    .sdkd-prefill-grid { grid-template-columns: 1fr; }
+    .sdkd-prefill-iframe-wrap { height: 720px; }
+  }
+  [data-theme="dark"] .sdkd-prefill-grid,
+  [data-theme="dark"] .sdkd-prefill-iframe-wrap {
+    background: rgba(255,255,255,0.02);
+    border-color: rgba(255,255,255,0.08);
+  }
+  [data-theme="dark"] .sdkd-prefill-row input {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.12);
+    color: var(--text);
+  }
+
   /* Preview pane */
   .sdkd-preview {
     border: 1px solid var(--border);
@@ -12267,6 +12341,29 @@ await checkout.init();                              // async</code></pre></div>
   checkout.init();
 &lt;/script&gt;</code></pre>
   </div>
+
+  <!-- ─── Prefill example ─── -->
+  <h3 class="subsection-title">Prefill billing fields<span class="sdkd-live-badge">Live</span></h3>
+  <p>When you already have the buyer's info — from a previous step, a logged-in session, or an account record — prefill the SDK's billing form so they don't have to retype. Edit the values below to see the iframe render with those fields pre-populated. The copy snippet underneath updates in real time.</p>
+
+  <div class="sdkd-prefill-grid">
+    <div class="sdkd-prefill-row"><label>First name</label><input type="text" data-prefill="first_name" value="Jane"></div>
+    <div class="sdkd-prefill-row"><label>Last name</label><input type="text" data-prefill="last_name" value="Doe"></div>
+    <div class="sdkd-prefill-row"><label>Email</label><input type="email" data-prefill="email" value="jane@example.com"></div>
+    <div class="sdkd-prefill-row"><label>Country</label><input type="text" data-prefill="country" value="US" maxlength="2"></div>
+    <div class="sdkd-prefill-row sdkd-prefill-full"><label>Address</label><input type="text" data-prefill="address" value="123 Main St"></div>
+    <div class="sdkd-prefill-row sdkd-prefill-full"><label>Phone <span class="sdkd-prefill-hint">(optional — requires <code class="inline">collectPhone: true</code>)</span></label><input type="text" data-prefill="phone" placeholder="+15551234567"></div>
+  </div>
+
+  <div class="sdkd-prefill-iframe-wrap">
+    <div class="sdkd-prefill-loading">Loading preview…</div>
+    <iframe id="sdkd-prefill-iframe" title="Prefill preview" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allow="payment"></iframe>
+  </div>
+
+  <div class="code-block">
+    <div class="code-label plain">html</div>
+    <pre><code id="sdkd-prefill-snippet">Loading…</code></pre>
+  </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -17422,6 +17519,151 @@ function copyClaudeMCPConfig() {
       } else {
         doMount();
       }
+    });
+  })();
+</script>
+
+<script>
+  // ── SDK Demo: Prefill example (live iframe + dynamic snippet) ──────────
+  (function() {
+    function ready(fn) {
+      if (document.readyState !== 'loading') fn();
+      else document.addEventListener('DOMContentLoaded', fn);
+    }
+    ready(function() {
+      var section = document.getElementById('sdk-demo');
+      if (!section) return;
+      var inputs = section.querySelectorAll('input[data-prefill]');
+      if (!inputs.length) return;
+      var $iframe  = document.getElementById('sdkd-prefill-iframe');
+      var $loading = section.querySelector('.sdkd-prefill-loading');
+      var $snippet = document.getElementById('sdkd-prefill-snippet');
+      if (!$iframe || !$snippet) return;
+
+      // QA demo creds — same triple the iframed demo above uses, so the
+      // prefill preview lands on a real live session.
+      var EMBED_HOST = 'https://embedded-checkout.qa.dev-fan-basis.com';
+      var CREATOR    = 'ap21aug';
+      var PRODUCT    = 'PZQqA';
+      var SECRET     = '227b5d46-fd9b-4fb5-97ea-b4315f9a43bb';
+
+      function readState() {
+        var s = {};
+        inputs.forEach(function(inp) {
+          var v = (inp.value || '').trim();
+          if (v) s[inp.dataset.prefill] = v;
+        });
+        return s;
+      }
+
+      function buildIframeUrl(prefill) {
+        var hasPhone = !!prefill.phone;
+        var fields = 'first_name,last_name,email,country,address';
+        var params = new URLSearchParams({
+          theme: 'light',
+          show_product_info: 'true',
+          product_layout: 'left',
+          accent_color: '#007bff',
+          background_color: '#ffffff',
+          billing_display_fields: fields,
+          billing_form_placement: 'above'
+        });
+        params.set('prefill', JSON.stringify(prefill));
+        if (hasPhone) params.set('collect_phone', 'true');
+        return EMBED_HOST + '/session/' + CREATOR + '/' + PRODUCT + '/' + SECRET + '?' + params.toString();
+      }
+
+      function buildSnippet(prefill) {
+        var hasPhone = !!prefill.phone;
+        var keys = ['first_name','last_name','email','country','address'];
+        if (hasPhone) keys.push('phone');
+        var prefillLines = keys
+          .filter(function(k) { return prefill[k]; })
+          .map(function(k, i, arr) {
+            var comma = i === arr.length - 1 ? '' : ',';
+            return "        " + k + ": '" + String(prefill[k]).replace(/'/g, "\\'") + "'" + comma;
+          })
+          .join('\n');
+        return [
+          '<div id="checkout-container"><\/div>',
+          '',
+          '<script src="https://cdn.embedded.fanbasis.io/embed/index.js"><\/script>',
+          '<script>',
+          '  const checkout = PaymentCheckout.create({',
+          "    creatorId: 'YOUR_CREATOR_SLUG',",
+          "    productId: 'YOUR_PRODUCT_ID',",
+          "    checkoutSessionSecret: 'YOUR_SESSION_SECRET',",
+          "    environment: 'production',",
+          (hasPhone ? '    collectPhone: true,' : null),
+          '    theme: {',
+          "      theme: 'light',",
+          '      prefill: {',
+          prefillLines,
+          '      }',
+          '    }',
+          '  });',
+          "  checkout.attachToElement(document.getElementById('checkout-container'));",
+          '  checkout.init();',
+          '<\/script>'
+        ].filter(function(l) { return l !== null; }).join('\n');
+      }
+
+      var iframeTimer = null;
+      function update() {
+        var state = readState();
+        $snippet.textContent = buildSnippet(state);
+        // Debounce the iframe rebuild — typing shouldn't reload on every keystroke
+        clearTimeout(iframeTimer);
+        iframeTimer = setTimeout(function() {
+          if ($loading) $loading.style.display = '';
+          $iframe.src = buildIframeUrl(state);
+          $iframe.addEventListener('load', function() {
+            if ($loading) $loading.style.display = 'none';
+          }, { once: true });
+        }, 350);
+      }
+
+      // Wire inputs
+      inputs.forEach(function(inp) { inp.addEventListener('input', update); });
+
+      // Attach a copy button to the prefill snippet
+      var snippetBlock = $snippet.closest('.code-block');
+      if (snippetBlock && !snippetBlock.querySelector('.demo-copy-btn')) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'demo-copy-btn';
+        btn.textContent = 'Copy';
+        btn.addEventListener('click', function() {
+          var text = ($snippet.innerText || $snippet.textContent).trim();
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function() {
+              var ta = document.createElement('textarea');
+              ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+              document.body.appendChild(ta); ta.select();
+              try { document.execCommand('copy'); } catch (e) {}
+              document.body.removeChild(ta);
+            });
+          }
+        });
+        snippetBlock.appendChild(btn);
+      }
+
+      // Lazy: only mount the iframe once the prefill section enters viewport
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) { update(); io.disconnect(); }
+          });
+        }, { rootMargin: '200px' });
+        io.observe(section.querySelector('.sdkd-prefill-iframe-wrap'));
+      } else {
+        update();
+      }
+      // Always render the snippet immediately so users see it even before scrolling
+      $snippet.textContent = buildSnippet(readState());
     });
   })();
 </script>
