@@ -3820,18 +3820,58 @@
 
   /* ── SDK DEMO (native rebuild) ─────────────────────────────── */
   .sdkd-toolbar {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    display: flex; flex-direction: column; gap: 12px;
     margin: 22px 0 18px;
     padding: 14px 16px;
     background: var(--bg-alt);
     border: 1px solid var(--border);
     border-radius: var(--radius);
   }
+  .sdkd-toolbar-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
   .sdkd-toolbar-label {
     font-size: 12px; font-weight: 700; color: var(--text);
     text-transform: uppercase; letter-spacing: 0.07em;
   }
   .sdkd-toolbar-desc { font-size: 13px; color: var(--text-muted); flex: 1; }
+
+  /* Feature pill chips — surfaced copy of the Layout-tab toggles for
+     discoverability. Both checkboxes share the same data-feature
+     attribute so they auto-sync via syncControlsFromState. */
+  .sdkd-feature-pills {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border);
+  }
+  .sdkd-feature-pills-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-muted); padding-top: 7px; margin-right: 4px;
+  }
+  .sdkd-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12.5px; font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer; user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .sdkd-pill:hover { color: var(--text); border-color: var(--border-dark); }
+  .sdkd-pill:has(input:checked) {
+    background: rgba(var(--accent-rgb), 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.15) inset;
+    font-weight: 600;
+  }
+  .sdkd-pill input { position: absolute; opacity: 0; pointer-events: none; }
+  .sdkd-pill-icon { font-size: 13px; line-height: 1; }
+  [data-theme="dark"] .sdkd-pill:has(input:checked) {
+    background: rgba(var(--accent-rgb), 0.18);
+  }
   .sdkd-select {
     padding: 7px 30px 7px 12px;
     border: 1px solid var(--border-dark);
@@ -12262,8 +12302,17 @@ await checkout.init();                              // async</code></pre></div>
   <p>An interactive playground for the FanBasis Embedded Checkout SDK. The checkout below is the <strong>real SDK</strong> loaded from <code class="inline">cdn.embedded.fanbasis.io/embed/index.js</code>. Click <strong>🎨 Customize</strong> to tweak colors, layout, fields, or presets — the code snippet underneath updates in real time so you can copy exactly what you see.</p>
 
   <div class="sdkd-toolbar">
-    <span class="sdkd-toolbar-desc">Default Main checkout. Open <strong>🎨 Customize</strong> to toggle features (Sandbox, Programmatic, Add-ons, Prefill) — the snippet below updates as you go.</span>
-    <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
+    <div class="sdkd-toolbar-row">
+      <span class="sdkd-toolbar-desc">Default Main checkout. Toggle features below or open <strong>🎨 Customize</strong> for full control — the snippet updates as you go.</span>
+      <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
+    </div>
+    <div class="sdkd-feature-pills">
+      <span class="sdkd-feature-pills-label">Features</span>
+      <label class="sdkd-pill"><input type="checkbox" data-feature="sandbox"><span class="sdkd-pill-icon">⚡</span> Sandbox</label>
+      <label class="sdkd-pill"><input type="checkbox" data-feature="programmatic"><span class="sdkd-pill-icon">🎯</span> Programmatic</label>
+      <label class="sdkd-pill"><input type="checkbox" data-feature="addons"><span class="sdkd-pill-icon">➕</span> Add-ons</label>
+      <label class="sdkd-pill"><input type="checkbox" data-feature="prefill"><span class="sdkd-pill-icon">📝</span> Prefill</label>
+    </div>
   </div>
 
   <div class="sdkd-grid">
@@ -17281,7 +17330,9 @@ function copyClaudeMCPConfig() {
       });
 
       // ─── Wire all controls ───
-      // Feature toggles
+      // Feature toggles — wired on every input[data-feature], which covers
+      // both the toolbar pill chips AND the drawer Layout-tab checkboxes.
+      // syncControlsFromState() at the end keeps the two surfaces in lockstep.
       section.querySelectorAll('input[data-feature]').forEach(function(cb) {
         cb.addEventListener('change', function() {
           var key = cb.dataset.feature;
@@ -17294,12 +17345,11 @@ function copyClaudeMCPConfig() {
           if (key === 'addons' && cb.checked && !wasOn) {
             state.show_product_info = false;
             state.product_layout = 'none';
-            syncControlsFromState();
           } else if (key === 'addons' && !cb.checked && wasOn) {
             state.show_product_info = DEFAULTS.show_product_info;
             state.product_layout = DEFAULTS.product_layout;
-            syncControlsFromState();
           }
+          syncControlsFromState();
           applyToggles();
           refreshSnippet();
           scheduleMount();
