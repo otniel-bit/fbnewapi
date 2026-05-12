@@ -4041,9 +4041,25 @@
   .sdkd-prog-btn:active { transform: translateY(1px); }
   .sdkd-prog-hint { font-size: 12px; color: var(--text-muted); }
   .sdkd-prefill-sublabel {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
-    color: var(--text-muted); margin: 12px 0 4px;
+    color: var(--text-muted); margin: 14px 0 4px;
   }
+  .sdkd-prefill-field {
+    margin-bottom: 4px;
+  }
+  .sdkd-field-flags {
+    display: flex; gap: 14px; padding: 0 2px 6px;
+  }
+  .sdkd-field-flags-inline {
+    padding: 0; text-transform: none; letter-spacing: 0;
+  }
+  .sdkd-mini-check {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--text-muted); cursor: pointer;
+    text-transform: none; letter-spacing: 0; font-weight: 500;
+  }
+  .sdkd-mini-check input { margin: 0; cursor: pointer; }
 
   /* Generic control row */
   .sdkd-row {
@@ -12357,12 +12373,42 @@ await checkout.init();                              // async</code></pre></div>
 
       <!-- Prefill (shown only when Prefill feature is on) -->
       <div class="sdkd-cust-panel" data-cust-panel="prefill">
-        <p class="sdkd-cust-help">Values you provide here are passed to the SDK via <code class="inline">theme.prefill</code> so the form loads with the buyer's info already in place. Address must use the nested <code class="inline">address</code> object (<code class="inline">line1</code>, <code class="inline">city</code>, etc.) — a flat string is ignored.</p>
-        <div class="sdkd-row"><label>First name</label><input type="text" data-prefill-field="first_name" placeholder="Jane"></div>
-        <div class="sdkd-row"><label>Last name</label><input type="text" data-prefill-field="last_name" placeholder="Doe"></div>
-        <div class="sdkd-row"><label>Email</label><input type="email" data-prefill-field="email" placeholder="jane@example.com"></div>
-        <div class="sdkd-row"><label>Phone <span class="sdkd-hint">(only sent if Phone is enabled in Fields)</span></label><input type="text" data-prefill-field="phone" placeholder="+15551234567"></div>
-        <div class="sdkd-prefill-sublabel">Address</div>
+        <p class="sdkd-cust-help">Values you provide here are passed to the SDK via <code class="inline">theme.prefill</code>. The <strong>Visible</strong> + <strong>Editable</strong> toggles on each field map to <code class="inline">theme.fields.{x}.{hide, disable}</code> — uncheck <em>Visible</em> to remove a field entirely, uncheck <em>Editable</em> to lock its value (useful for already-known data like a logged-in email).</p>
+        <div class="sdkd-prefill-field">
+          <div class="sdkd-row"><label>First name</label><input type="text" data-prefill-field="first_name" placeholder="Jane"></div>
+          <div class="sdkd-field-flags">
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-visible="first_name" checked> Visible</label>
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-editable="first_name" checked> Editable</label>
+          </div>
+        </div>
+        <div class="sdkd-prefill-field">
+          <div class="sdkd-row"><label>Last name</label><input type="text" data-prefill-field="last_name" placeholder="Doe"></div>
+          <div class="sdkd-field-flags">
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-visible="last_name" checked> Visible</label>
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-editable="last_name" checked> Editable</label>
+          </div>
+        </div>
+        <div class="sdkd-prefill-field">
+          <div class="sdkd-row"><label>Email</label><input type="email" data-prefill-field="email" placeholder="jane@example.com"></div>
+          <div class="sdkd-field-flags">
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-visible="email" checked> Visible</label>
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-editable="email" checked> Editable</label>
+          </div>
+        </div>
+        <div class="sdkd-prefill-field">
+          <div class="sdkd-row"><label>Phone <span class="sdkd-hint">(only sent if Phone is enabled in Fields)</span></label><input type="text" data-prefill-field="phone" placeholder="+15551234567"></div>
+          <div class="sdkd-field-flags">
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-visible="phone" checked> Visible</label>
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-editable="phone" checked> Editable</label>
+          </div>
+        </div>
+        <div class="sdkd-prefill-sublabel">
+          Address
+          <span class="sdkd-field-flags sdkd-field-flags-inline">
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-visible="address" checked> Visible</label>
+            <label class="sdkd-mini-check"><input type="checkbox" data-field-editable="address" checked> Editable</label>
+          </span>
+        </div>
         <div class="sdkd-row"><label>Line 1</label><input type="text" data-prefill-address-field="line1" placeholder="123 Main St"></div>
         <div class="sdkd-row"><label>Line 2 <span class="sdkd-hint">(optional)</span></label><input type="text" data-prefill-address-field="line2" placeholder="Apt 4B"></div>
         <div class="sdkd-row"><label>City</label><input type="text" data-prefill-address-field="city" placeholder="Austin"></div>
@@ -16654,6 +16700,16 @@ function copyClaudeMCPConfig() {
         prefill: false
       };
 
+      // Per-field visibility + editability — maps to theme.fields.{x}.{hide,disable}
+      // per the modern SDK API. Default: every field visible + editable.
+      var FIELD_CONTROL_DEFAULTS = {
+        email:      { hide: false, disable: false },
+        first_name: { hide: false, disable: false },
+        last_name:  { hide: false, disable: false },
+        phone:      { hide: false, disable: false },
+        address:    { hide: false, disable: false }
+      };
+
       // Theme presets — partial color overrides
       var PRESETS = {
         'default':  { theme:'light', accent_color:'#007bff', background_color:'#ffffff', surface_color:'#f9fafb', heading_color:'#111827', label_color:'#374151', product_text_color:'#111827', secondary_color:'#6b7280', input_background_color:'#f9fafb', border_color:'#d1d5db' },
@@ -16683,6 +16739,10 @@ function copyClaudeMCPConfig() {
       state.addons   = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
       state.prefill  = Object.assign({}, PREFILL_DEFAULT);
       state.features = Object.assign({}, FEATURE_DEFAULTS);
+      state.fieldControl = {};
+      Object.keys(FIELD_CONTROL_DEFAULTS).forEach(function(k) {
+        state.fieldControl[k] = Object.assign({}, FIELD_CONTROL_DEFAULTS[k]);
+      });
 
       // ─── DOM refs ───
       var $helper       = document.getElementById('sdkd-variant-helper');
@@ -16713,6 +16773,21 @@ function copyClaudeMCPConfig() {
       var checkoutInstance = null;
       var mountTimer = null;
 
+      // Build the theme.fields object from state.fieldControl, omitting
+      // any field whose flags are both at their SDK defaults (no hide,
+      // no disable). Returns {} when nothing diverges from default.
+      function buildFieldsConfig() {
+        var out = {};
+        Object.keys(state.fieldControl).forEach(function(key) {
+          var fc = state.fieldControl[key];
+          var entry = {};
+          if (fc.hide)    entry.hide = true;
+          if (fc.disable) entry.disable = true;
+          if (Object.keys(entry).length) out[key] = entry;
+        });
+        return out;
+      }
+
       function buildConfig() {
         var fieldsCsv = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',');
         // The SDK needs BOTH flags off to fully hide product info. Respect
@@ -16741,6 +16816,10 @@ function copyClaudeMCPConfig() {
           theme.prefill = Object.assign({}, state.prefill);
           if (state.prefill.address) theme.prefill.address = Object.assign({}, state.prefill.address);
         }
+        // theme.fields — only emit per-field entries that diverge from the
+        // SDK default (visible + editable). Keeps the config + snippet clean.
+        var fieldsCfg = buildFieldsConfig();
+        if (Object.keys(fieldsCfg).length) theme.fields = fieldsCfg;
         return {
           creatorId: DEMO_CREDS.creator_id,
           productId: DEMO_CREDS.product_id,
@@ -16875,6 +16954,22 @@ function copyClaudeMCPConfig() {
           themeLines = themeLines.concat(addrLines);
           themeLines.push("      }");
         }
+        // theme.fields — only emit fields that diverge from SDK default.
+        var fieldsCfg = buildFieldsConfig();
+        var fieldKeys = Object.keys(fieldsCfg);
+        if (fieldKeys.length) {
+          themeLines[themeLines.length - 1] += ',';
+          themeLines.push("      fields: {");
+          fieldKeys.forEach(function(k, i) {
+            var parts = [];
+            if (fieldsCfg[k].hide)    parts.push('hide: true');
+            if (fieldsCfg[k].disable) parts.push('disable: true');
+            var line = "        " + k + ": { " + parts.join(', ') + " }";
+            if (i < fieldKeys.length - 1) line += ',';
+            themeLines.push(line);
+          });
+          themeLines.push("      }");
+        }
         themeLines.push("    }");
 
         // --- Config block ---
@@ -16991,6 +17086,17 @@ function copyClaudeMCPConfig() {
         // Prefill inputs (nested address fields)
         section.querySelectorAll('input[data-prefill-address-field]').forEach(function(inp) {
           inp.value = (state.prefill.address && state.prefill.address[inp.dataset.prefillAddressField]) || '';
+        });
+        // Field-control visibility/editability checkboxes — UI labels are
+        // affirmative ("Visible" / "Editable") so the *unchecked* state
+        // maps to the SDK's hide/disable flags.
+        section.querySelectorAll('input[data-field-visible]').forEach(function(cb) {
+          var fc = state.fieldControl[cb.dataset.fieldVisible];
+          cb.checked = !(fc && fc.hide);
+        });
+        section.querySelectorAll('input[data-field-editable]').forEach(function(cb) {
+          var fc = state.fieldControl[cb.dataset.fieldEditable];
+          cb.checked = !(fc && fc.disable);
         });
       }
 
@@ -17151,6 +17257,10 @@ function copyClaudeMCPConfig() {
         state.addons   = ADDON_DEFAULTS.map(function(a) { return Object.assign({}, a); });
         state.prefill  = Object.assign({}, PREFILL_DEFAULT);
         state.features = Object.assign({}, FEATURE_DEFAULTS);
+        state.fieldControl = {};
+        Object.keys(FIELD_CONTROL_DEFAULTS).forEach(function(k) {
+          state.fieldControl[k] = Object.assign({}, FIELD_CONTROL_DEFAULTS[k]);
+        });
         syncControlsFromState();
         syncProductInputs();
         renderAddons();
@@ -17208,6 +17318,25 @@ function copyClaudeMCPConfig() {
         inp.addEventListener('input', function() {
           if (!state.prefill.address) state.prefill.address = {};
           state.prefill.address[inp.dataset.prefillAddressField] = inp.value;
+          refreshSnippet();
+          scheduleMount();
+        });
+      });
+      // Per-field Visible / Editable toggles — drive theme.fields.{x}
+      section.querySelectorAll('input[data-field-visible]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          var k = cb.dataset.fieldVisible;
+          if (!state.fieldControl[k]) state.fieldControl[k] = { hide: false, disable: false };
+          state.fieldControl[k].hide = !cb.checked;
+          refreshSnippet();
+          scheduleMount();
+        });
+      });
+      section.querySelectorAll('input[data-field-editable]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+          var k = cb.dataset.fieldEditable;
+          if (!state.fieldControl[k]) state.fieldControl[k] = { hide: false, disable: false };
+          state.fieldControl[k].disable = !cb.checked;
           refreshSnippet();
           scheduleMount();
         });
