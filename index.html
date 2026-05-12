@@ -11177,7 +11177,7 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
   // ─── REQUIRED when theme is provided ───
   theme: 'light',                 // 'light' | 'dark' (no other presets)
   show_product_info: true,
-  product_layout: 'left',         // 'left' | 'right' | 'above' | 'below' | 'none'
+  product_layout: 'left',         // 'left' | 'above'  (to hide product info entirely, set show_product_info: false)
   show_coupon_row: true,
   accent_color: '#007BFF',        // primary button/accent color (hex)
 
@@ -11196,14 +11196,14 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
   coupon_row_disclaimer: 'Discount applied at checkout',
   show_headings: true,
   show_powered_by: true,                // toggle "Powered by FanBasis" footer
-  billing_form_placement: 'default',    // 'default' | 'above_payment' | 'below_payment'
+  billing_form_placement: 'above',      // 'above' | 'left'  ('above' = billing form above payment, 'left' = side-by-side)
 
   // ─── OPTIONAL field control (see Prefill & Field Control section) ───
   prefill: { /* ... */ },
   fields:  { /* ... */ },
 
   // ─── DEPRECATED — use `fields` instead ───
-  billing_display_fields: ['name', 'email']
+  billing_display_fields: 'first_name,last_name,email'   // CSV string, not an array
 }</code></pre></div>
 <h3 class="sub-title">Color properties</h3>
 <table class="data-table">
@@ -11224,14 +11224,11 @@ app.post('/api/create-checkout-session', async (req, res) =&gt; {
 <table class="data-table">
 <thead><tr><th>Value</th><th>Description</th></tr></thead>
 <tbody>
-<tr><td><code class="inline">'left'</code></td><td>Product info on the left, form on the right</td></tr>
-<tr><td><code class="inline">'right'</code></td><td>Product info on the right, form on the left</td></tr>
-<tr><td><code class="inline">'above'</code></td><td>Product info above the form (stacked)</td></tr>
-<tr><td><code class="inline">'below'</code></td><td>Product info below the form</td></tr>
-<tr><td><code class="inline">'none'</code></td><td>Hide product info entirely</td></tr>
+<tr><td><code class="inline">'left'</code></td><td>Product info on the left, form on the right (default for desktop widths)</td></tr>
+<tr><td><code class="inline">'above'</code></td><td>Product info stacked above the form</td></tr>
 </tbody>
 </table>
-<div class="callout warning"><div class="callout-title">⚠ Known bug</div><p><code class="inline">product_layout: 'above'</code> may render products <em>below</em> the form when the container width is narrow (under ~600px). Workarounds: use <code class="inline">'left'</code> or <code class="inline">'right'</code>, ensure the container is wider than 600px, or use <code class="inline">'none'</code> and display product info yourself in the parent page.</p></div>
+<div class="callout tip"><div class="callout-title">Hiding product info entirely</div><p>There's no <code class="inline">'none'</code> value — set <code class="inline">show_product_info: false</code> on the theme config to hide the product hero. Useful when you want to render product info yourself on the parent page and use the iframe for billing/payment only.</p></div>
 <h3 class="sub-title">Container &amp; iframe styling</h3>
 <p>Set iframe dimensions via config or via CSS (preferred for page builders):</p>
 <div class="code-block"><div class="code-label plain">css</div><pre><code>#checkout-container {
@@ -11895,7 +11892,7 @@ products.forEach(async function(product) {
   // REQUIRED when theme is provided
   theme: 'light' | 'dark';
   show_product_info: boolean;
-  product_layout: 'left' | 'right' | 'above' | 'below' | 'none';
+  product_layout: 'left' | 'above';
   show_coupon_row: boolean;
   accent_color: string;
 
@@ -11914,14 +11911,14 @@ products.forEach(async function(product) {
   coupon_row_disclaimer?: string;
   show_headings?: boolean;
   show_powered_by?: boolean;
-  billing_form_placement?: 'default' | 'above_payment' | 'below_payment';
+  billing_form_placement?: 'above' | 'left';
 
   // Optional field control (0.4.0+)
   prefill?: PrefillConfig;
   fields?: FieldsConfig;
 
-  /** @deprecated Use `fields` for per-field visibility instead */
-  billing_display_fields?: string[];
+  /** @deprecated CSV of field names. Use `fields` for per-field visibility/disable instead. */
+  billing_display_fields?: string;
 }</code></pre></div>
 
 <h3 class="sub-title">PrefillConfig & FieldsConfig</h3>
@@ -12145,12 +12142,11 @@ export type {
 <p><strong>Requirements:</strong> JavaScript enabled, third-party cookies allowed (for iframe communication), <code class="inline">postMessage</code> API support.</p>
 <h3 class="sub-title">Security</h3>
 <p>The checkout iframe uses these sandbox attributes:</p>
-<div class="code-block"><div class="code-label plain">html</div><pre><code>allow-scripts
-allow-same-origin
-allow-forms
-allow-popups
-allow-top-navigation-by-user-activation</code></pre></div>
-<p>All payment data (card numbers, CVV) stays within the iframe and is <strong>never exposed to the parent page</strong>. The parent page only receives event data via <code class="inline">postMessage</code>.</p>
+<div class="code-block"><div class="code-label plain">html</div><pre><code>sandbox="allow-scripts allow-same-origin allow-forms allow-popups
+         allow-modals allow-downloads
+         allow-top-navigation-by-user-activation"
+allow="payment"</code></pre></div>
+<p>The separate <code class="inline">allow="payment"</code> permission policy is required by browsers for the Payment Request API to work inside the iframe (Apple Pay, Google Pay, etc.). All payment data (card numbers, CVV) stays within the iframe and is <strong>never exposed to the parent page</strong>. The parent page only receives event data via <code class="inline">postMessage</code>.</p>
 </section>
 
 <!-- ═══════════════════════════════════════════ -->
