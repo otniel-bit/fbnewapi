@@ -12291,7 +12291,7 @@ await checkout.init();                              // async</code></pre></div>
         </div>
         <hr class="sdkd-features-sep">
         <p class="sdkd-cust-help">Structural options the SDK exposes on the checkout iframe.</p>
-        <div class="sdkd-addon-hint" hidden><strong>Add-ons feature is on:</strong> product info is hidden inside the iframe so your add-ons live on the parent page. Turn off <em>Add-ons on parent page</em> above to re-enable the product hero inside the iframe.</div>
+        <div class="sdkd-addon-hint" hidden><strong>Add-ons feature is on:</strong> product info inside the iframe is hidden by default so your addon cards on the parent page own the product display. If you'd rather show both, toggle <em>Show product info</em> below — the iframe hero comes back without affecting the parent-page cards.</div>
         <div class="sdkd-row"><label>Theme mode</label>
           <select data-cfg-select="theme">
             <option value="light">Light</option>
@@ -16697,10 +16697,11 @@ function copyClaudeMCPConfig() {
 
       function buildConfig() {
         var fieldsCsv = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',');
-        // The SDK needs BOTH flags off to fully hide product info. The Add-ons
-        // feature forces it off (parent page owns product display); otherwise
-        // respect the user's Customize-tab controls.
-        var hideProductInfo = state.features.addons || !state.show_product_info || state.product_layout === 'none';
+        // The SDK needs BOTH flags off to fully hide product info. Respect
+        // the user's Customize-tab controls — turning the Add-ons feature on
+        // *defaults* them to hidden (see applyToggles), but the user can
+        // re-enable product info on top of add-ons if they want both.
+        var hideProductInfo = !state.show_product_info || state.product_layout === 'none';
         var theme = {
           theme: state.theme,
           show_product_info: !hideProductInfo,
@@ -16806,8 +16807,7 @@ function copyClaudeMCPConfig() {
         var f = state.features;
         var fields = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',') ||
                      'first_name,last_name,email,country,address';
-        // Add-ons feature forces product info off (parent page owns display).
-        var hideProductInfo = f.addons || !state.show_product_info || state.product_layout === 'none';
+        var hideProductInfo = !state.show_product_info || state.product_layout === 'none';
         var effShowProduct = !hideProductInfo;
         var effLayout = hideProductInfo ? 'none' : state.product_layout;
         function esc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
@@ -16986,11 +16986,9 @@ function copyClaudeMCPConfig() {
           if (f.prefill) prefillTab.removeAttribute('hidden');
           else prefillTab.setAttribute('hidden', '');
         }
-        // Disable product-info layout controls while Add-ons feature owns them
-        var pLayout = section.querySelector('select[data-cfg-select="product_layout"]');
-        var pShow   = section.querySelector('input[data-cfg-bool="show_product_info"]');
-        if (pLayout) pLayout.disabled = !!f.addons;
-        if (pShow)   pShow.disabled   = !!f.addons;
+        // Note: product_info layout controls stay editable when Add-ons is
+        // on — the user can re-enable the iframe product hero on top of the
+        // parent-page addon cards if they want both.
         var addonHint = section.querySelector('.sdkd-addon-hint');
         if (addonHint) addonHint.hidden = !f.addons;
         // If the user was on a tab that just got hidden, fall back to Colors
@@ -17141,7 +17139,22 @@ function copyClaudeMCPConfig() {
       // Feature toggles
       section.querySelectorAll('input[data-feature]').forEach(function(cb) {
         cb.addEventListener('change', function() {
-          state.features[cb.dataset.feature] = cb.checked;
+          var key = cb.dataset.feature;
+          var wasOn = !!state.features[key];
+          state.features[key] = cb.checked;
+          // Add-ons: turning ON defaults product info to hidden (parent page
+          // owns the product hero). Turning OFF restores the original
+          // show/layout defaults. The Layout controls stay live in both
+          // cases, so the user can override either default.
+          if (key === 'addons' && cb.checked && !wasOn) {
+            state.show_product_info = false;
+            state.product_layout = 'none';
+            syncControlsFromState();
+          } else if (key === 'addons' && !cb.checked && wasOn) {
+            state.show_product_info = DEFAULTS.show_product_info;
+            state.product_layout = DEFAULTS.product_layout;
+            syncControlsFromState();
+          }
           applyToggles();
           refreshSnippet();
           scheduleMount();
