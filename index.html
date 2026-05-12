@@ -4448,22 +4448,77 @@
     pointer-events: none;
   }
 
-  /* Event log (programmatic variant) */
+  /* Recipes — one-click starting points (a coherent bundle of features +
+     preset + field controls). Placed in the toolbar as a third row. */
+  .sdkd-recipes {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border);
+  }
+  .sdkd-recipes-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-muted); padding-top: 7px; margin-right: 4px;
+  }
+  .sdkd-recipe {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12.5px; font-weight: 500;
+    color: var(--text);
+    cursor: pointer; user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+  }
+  .sdkd-recipe:hover { border-color: var(--accent); color: var(--accent); }
+  .sdkd-recipe:active { transform: translateY(1px); }
+  .sdkd-recipe-icon { font-size: 14px; line-height: 1; }
+
+  /* Live event log — always-on, collapsible. */
   .sdkd-event-log {
     border-top: 1px solid var(--border);
     background: var(--bg-alt);
-    max-height: 200px;
     display: flex; flex-direction: column;
+    transition: max-height 0.25s ease;
   }
+  .sdkd-event-log:not(.collapsed) { max-height: 220px; }
+  .sdkd-event-log.collapsed { max-height: 36px; }
+  .sdkd-event-log.collapsed .sdkd-event-log-body { display: none; }
   .sdkd-event-log[hidden] { display: none; }
   .sdkd-event-log-head {
     padding: 8px 14px;
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
     font-size: 11px; font-weight: 700;
     color: var(--text);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .sdkd-event-log.collapsed .sdkd-event-log-head { border-bottom: none; }
+  .sdkd-event-log-head-left { display: inline-flex; align-items: center; gap: 8px; }
+  .sdkd-event-log-chevron {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+    display: inline-block;
+  }
+  .sdkd-event-log.collapsed .sdkd-event-log-chevron { transform: rotate(-90deg); }
+  .sdkd-event-log-pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.6);
+    animation: sdkd-pulse 2s ease-in-out infinite;
+  }
+  @keyframes sdkd-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.5); }
+    50%      { box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0); }
+  }
+  .sdkd-event-log-count {
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
   }
   .sdkd-event-clear {
     padding: 3px 9px;
@@ -12317,6 +12372,14 @@ await checkout.init();                              // async</code></pre></div>
       <label class="sdkd-pill"><input type="checkbox" data-feature="addons"><span class="sdkd-pill-icon">➕</span> Add-ons</label>
       <label class="sdkd-pill"><input type="checkbox" data-feature="prefill"><span class="sdkd-pill-icon">📝</span> Prefill</label>
     </div>
+    <div class="sdkd-recipes">
+      <span class="sdkd-recipes-label">Recipes</span>
+      <button class="sdkd-recipe" type="button" data-recipe="logged-in"    title="Email locked, name editable. Hi-Res Blue accent."><span class="sdkd-recipe-icon">🪪</span> Logged-in user</button>
+      <button class="sdkd-recipe" type="button" data-recipe="digital"      title="No shipping — address hidden entirely. Stone Sage accent."><span class="sdkd-recipe-icon">💾</span> Digital product</button>
+      <button class="sdkd-recipe" type="button" data-recipe="subscription" title="Dark theme + sandbox-tested recurring billing."><span class="sdkd-recipe-icon">💎</span> Subscription</button>
+      <button class="sdkd-recipe" type="button" data-recipe="power-user"   title="External submit button + event listeners on every action."><span class="sdkd-recipe-icon">⚡</span> Power user</button>
+      <button class="sdkd-recipe" type="button" data-recipe="cross-sell"   title="Parent-page addon cards with running total."><span class="sdkd-recipe-icon">➕</span> Cross-sell</button>
+    </div>
   </div>
 
   <div class="sdkd-grid">
@@ -12487,9 +12550,14 @@ await checkout.init();                              // async</code></pre></div>
         <button type="button" id="sdkd-prog-submit" class="sdkd-prog-btn">Pay now</button>
         <span class="sdkd-prog-hint">Triggers <code class="inline">checkout.submit()</code> from outside the iframe.</span>
       </div>
-      <div class="sdkd-event-log" id="sdkd-event-log" hidden>
-        <div class="sdkd-event-log-head">
-          <span>Live events</span>
+      <div class="sdkd-event-log collapsed" id="sdkd-event-log">
+        <div class="sdkd-event-log-head" id="sdkd-event-log-toggle" role="button" tabindex="0" aria-expanded="false">
+          <span class="sdkd-event-log-head-left">
+            <span class="sdkd-event-log-chevron">▼</span>
+            <span class="sdkd-event-log-pulse" aria-hidden="true"></span>
+            <span>Live events</span>
+            <span class="sdkd-event-log-count" id="sdkd-event-log-count">0</span>
+          </span>
           <button class="sdkd-event-clear" id="sdkd-event-clear" type="button">Clear</button>
         </div>
         <div class="sdkd-event-log-body" id="sdkd-event-log-body"></div>
@@ -16783,6 +16851,52 @@ function copyClaudeMCPConfig() {
         'cinder':       { theme:'dark',  accent_color:'#D97706', background_color:'#1C1917', surface_color:'#292524', heading_color:'#FAFAF9', label_color:'#A8A29E', product_text_color:'#FAFAF9', secondary_color:'#78716C', input_background_color:'#292524', border_color:'#44403C' }
       };
 
+      // Recipes — coherent bundles of features + preset + field controls.
+      // Each `apply` runs AFTER resetTransientState() so it only needs to
+      // declare what's different from defaults. One-shot starting points;
+      // user can keep tweaking after clicking.
+      var RECIPES = {
+        'logged-in': {
+          apply: function() {
+            applyPresetState('hires-blue');
+            state.features.prefill = true;
+            state.fieldControl.email = { hide: false, disable: true };
+            state.prefill.first_name = 'Sarah';
+            state.prefill.last_name  = 'Chen';
+            state.prefill.email      = 'sarah.chen@example.com';
+          }
+        },
+        'digital': {
+          apply: function() {
+            applyPresetState('stone-sage');
+            state.fieldControl.address = { hide: true, disable: false };
+          }
+        },
+        'subscription': {
+          apply: function() {
+            applyPresetState('vanta');
+            state.features.sandbox = true;
+          }
+        },
+        'power-user': {
+          apply: function() {
+            applyPresetState('cinder');
+            state.features.sandbox = true;
+            state.features.programmatic = true;
+          }
+        },
+        'cross-sell': {
+          apply: function() {
+            applyPresetState('legacy-red');
+            state.features.addons = true;
+            // Add-ons recipe should default the iframe to billing-only
+            // (matches the Add-ons toggle's own default behavior).
+            state.show_product_info = false;
+            state.product_layout = 'none';
+          }
+        }
+      };
+
       // ─── iFrame v2: product + addons defaults ───
       var PRODUCT_DEFAULTS = {
         name: 'Your Product Name',
@@ -16934,22 +17048,38 @@ function copyClaudeMCPConfig() {
       // re-render whenever the addon list changes.
       function attachFeatureBehaviors() {
         if (!checkoutInstance) return;
+        // Programmatic feature: wire the external Pay button.
         if (state.features.programmatic) {
           var submitBtn = document.getElementById('sdkd-prog-submit');
           if (submitBtn) submitBtn.onclick = function() {
             try { checkoutInstance.submit(); } catch (e) { logEvent('error', String(e)); }
           };
-          if (typeof checkoutInstance.on === 'function') {
-            checkoutInstance.on('form:validation', function(d) { logEvent('form:validation', JSON.stringify(d).slice(0, 220)); });
-            checkoutInstance.on('payment:success',  function()  { logEvent('payment:success',  '✓ paid'); });
-            checkoutInstance.on('payment:error',    function(d) { logEvent('payment:error',    JSON.stringify(d).slice(0, 220)); });
-          }
+        }
+        // Always-on event log — listens to every SDK event regardless of
+        // which features are enabled. Lets devs watch the SDK come alive
+        // as they interact with the iframe. The log itself is collapsible
+        // in the UI so it never gets in the way.
+        if (typeof checkoutInstance.on === 'function') {
+          var safe = function(d) {
+            try { return typeof d === 'object' ? JSON.stringify(d).slice(0, 220) : String(d).slice(0, 220); }
+            catch (e) { return '[unserializable]'; }
+          };
+          checkoutInstance.on('form:ready',       function()  { logEvent('form:ready',       'iframe form mounted'); });
+          checkoutInstance.on('form:validation',  function(d) { logEvent('form:validation',  safe(d)); });
+          checkoutInstance.on('field:value',      function(d) { logEvent('field:value',      safe(d)); });
+          checkoutInstance.on('addons:changed',   function(d) { logEvent('addons:changed',   safe(d)); });
+          checkoutInstance.on('payment:success',  function()  { logEvent('payment:success',  '✓ paid'); });
+          checkoutInstance.on('payment:error',    function(d) { logEvent('payment:error',    safe(d)); });
+          checkoutInstance.on('checkout:success', function(d) { logEvent('checkout:success', safe(d)); });
+          checkoutInstance.on('checkout:error',   function(d) { logEvent('checkout:error',   safe(d)); });
         }
         if (state.features.addons) {
           renderAddonHelper();
         }
       }
 
+      // Running tally so the collapsed event-log header can show a count.
+      var eventCount = 0;
       function logEvent(name, data) {
         if (!$eventBody) return;
         var row = document.createElement('div');
@@ -16958,6 +17088,9 @@ function copyClaudeMCPConfig() {
                         '<span class="sdkd-evt-data">' + (data || '').replace(/</g, '&lt;') + '</span>';
         $eventBody.insertBefore(row, $eventBody.firstChild);
         while ($eventBody.children.length > 30) $eventBody.removeChild($eventBody.lastChild);
+        eventCount++;
+        var $count = document.getElementById('sdkd-event-log-count');
+        if ($count) $count.textContent = eventCount + (eventCount === 1 ? ' event' : ' events');
       }
 
       // ─── Snippet generation ───
@@ -17166,13 +17299,10 @@ function copyClaudeMCPConfig() {
       // ─── Toggle reconciliation ───
       // Reflects state.features in the UI: shows/hides the Add-ons + Prefill
       // drawer tabs, the parent-page addon cards, the external Pay button,
-      // the event log, and disables product_info controls while Add-ons is
-      // on. Safe to call any time state.features changes.
+      // and reconciles the layout hint. The event log is always visible
+      // (collapsible) — it's no longer gated by the programmatic feature.
       function applyToggles() {
         var f = state.features;
-        // Event log — only useful when programmatic is on
-        if (f.programmatic) $eventLog.removeAttribute('hidden');
-        else { $eventLog.setAttribute('hidden', ''); $eventBody.innerHTML = ''; }
         // External Pay button slot below the iframe
         var progSlot = document.getElementById('sdkd-prog-slot');
         if (progSlot) progSlot.hidden = !f.programmatic;
@@ -17303,11 +17433,44 @@ function copyClaudeMCPConfig() {
       }
 
       // ─── Preset application ───
-      function applyPreset(name) {
+      // applyPresetState: pure state mutator (no UI/scheduling side effects)
+      // so recipes can compose presets with extra state changes and run the
+      // UI pipeline once at the end.
+      function applyPresetState(name) {
         var p = PRESETS[name];
         if (!p) return;
         Object.keys(p).forEach(function(k) { state[k] = p[k]; });
+      }
+      function applyPreset(name) {
+        applyPresetState(name);
         syncControlsFromState();
+        refreshSnippet();
+        scheduleMount();
+      }
+
+      // resetTransientState: returns features + field controls + prefill +
+      // product_info display back to DEFAULTS. Used by applyRecipe so each
+      // recipe starts from a clean baseline rather than inheriting whatever
+      // the previous recipe set.
+      function resetTransientState() {
+        state.features = Object.assign({}, FEATURE_DEFAULTS);
+        Object.keys(FIELD_CONTROL_DEFAULTS).forEach(function(k) {
+          state.fieldControl[k] = Object.assign({}, FIELD_CONTROL_DEFAULTS[k]);
+        });
+        state.prefill = Object.assign({}, PREFILL_DEFAULT);
+        if (PREFILL_DEFAULT.address) state.prefill.address = Object.assign({}, PREFILL_DEFAULT.address);
+        state.show_product_info = DEFAULTS.show_product_info;
+        state.product_layout    = DEFAULTS.product_layout;
+        state.collectPhone      = DEFAULTS.collectPhone;
+      }
+
+      function applyRecipe(id) {
+        var r = RECIPES[id];
+        if (!r) return;
+        resetTransientState();
+        r.apply();
+        syncControlsFromState();
+        applyToggles();
         refreshSnippet();
         scheduleMount();
       }
@@ -17474,6 +17637,10 @@ function copyClaudeMCPConfig() {
       section.querySelectorAll('.sdkd-preset').forEach(function(btn) {
         btn.addEventListener('click', function() { applyPreset(btn.dataset.preset); });
       });
+      // Recipes (toolbar chips) — bundle of features + preset + field controls
+      section.querySelectorAll('.sdkd-recipe').forEach(function(btn) {
+        btn.addEventListener('click', function() { applyRecipe(btn.dataset.recipe); });
+      });
       // Product field inputs (Add-on variant)
       section.querySelectorAll('input[data-prod-field], textarea[data-prod-field]').forEach(function(el) {
         el.addEventListener('input', function() {
@@ -17500,8 +17667,39 @@ function copyClaudeMCPConfig() {
       }
       // Reset
       $resetBtn.addEventListener('click', resetAll);
-      // Event-log clear
-      if ($eventClear) $eventClear.addEventListener('click', function() { $eventBody.innerHTML = ''; });
+      // Event-log clear (stop propagation so the click doesn't also toggle
+      // the collapse on the parent header).
+      if ($eventClear) $eventClear.addEventListener('click', function(e) {
+        e.stopPropagation();
+        $eventBody.innerHTML = '';
+        eventCount = 0;
+        var $c = document.getElementById('sdkd-event-log-count');
+        if ($c) $c.textContent = '0 events';
+      });
+      // Event-log collapse — click the header (or Enter/Space) to toggle.
+      // Persists in localStorage so the user's choice survives reloads.
+      var $eventToggle = document.getElementById('sdkd-event-log-toggle');
+      function setEventLogCollapsed(collapsed) {
+        $eventLog.classList.toggle('collapsed', collapsed);
+        if ($eventToggle) $eventToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        try { localStorage.setItem('sdkd-eventlog-collapsed', collapsed ? '1' : '0'); } catch (e) {}
+      }
+      if ($eventToggle) {
+        $eventToggle.addEventListener('click', function() {
+          setEventLogCollapsed(!$eventLog.classList.contains('collapsed'));
+        });
+        $eventToggle.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setEventLogCollapsed(!$eventLog.classList.contains('collapsed'));
+          }
+        });
+      }
+      // Restore previous collapse state on first load
+      try {
+        var stored = localStorage.getItem('sdkd-eventlog-collapsed');
+        if (stored === '0') setEventLogCollapsed(false);
+      } catch (e) {}
 
       // Customize drawer open/close
       var $custToggle   = document.getElementById('sdkd-cust-toggle');
