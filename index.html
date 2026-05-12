@@ -4021,8 +4021,11 @@
     border-color: rgba(var(--accent-rgb), 0.25);
   }
 
-  /* Programmatic Pay button (below the iframe when toggle is on) */
-  .sdkd-prog-slot {
+  /* Programmatic Pay button (below the iframe when toggle is on).
+     Scoped to :not([hidden]) so the `hidden` attribute can switch the
+     slot off without being overridden by display:flex. */
+  .sdkd-prog-slot[hidden] { display: none; }
+  .sdkd-prog-slot:not([hidden]) {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     padding: 12px 14px; margin-top: 12px;
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
