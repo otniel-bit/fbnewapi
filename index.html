@@ -3983,6 +3983,22 @@
     margin: 0 0 14px;
     line-height: 1.5;
   }
+  .sdkd-addon-hint {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    background: rgba(var(--accent-rgb), 0.06);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-left-width: 3px;
+    border-radius: 6px;
+    font-size: 12px; line-height: 1.5;
+    color: var(--text);
+  }
+  .sdkd-addon-hint strong { color: var(--accent); }
+  .sdkd-addon-hint em     { font-style: normal; font-weight: 600; }
+  [data-theme="dark"] .sdkd-addon-hint {
+    background: rgba(var(--accent-rgb), 0.1);
+    border-color: rgba(var(--accent-rgb), 0.3);
+  }
 
   /* Generic control row */
   .sdkd-row {
@@ -12232,6 +12248,7 @@ await checkout.init();                              // async</code></pre></div>
       <!-- Layout -->
       <div class="sdkd-cust-panel" data-cust-panel="layout">
         <p class="sdkd-cust-help">Structural options the SDK exposes on the checkout iframe.</p>
+        <div class="sdkd-addon-hint" hidden><strong>Add-on variant default:</strong> product info is hidden so your add-ons can live on the parent page and the Pay button shows the running total. Toggle <em>Show product info</em> below if you want the product hero inside the iframe instead.</div>
         <div class="sdkd-row"><label>Theme mode</label>
           <select data-cfg-select="theme">
             <option value="light">Light</option>
@@ -16657,18 +16674,16 @@ function copyClaudeMCPConfig() {
       function buildConfig() {
         var variant = VARIANTS[state.variant] || VARIANTS.main;
         var fieldsCsv = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',');
-        // Addon variant: addons live on the parent page; the main product +
-        // total are displayed INSIDE the SDK iframe (no parent-page hero).
-        // Force show_product_info ON so the iframe shows the product/price.
-        var addonMode = state.variant === 'addon';
-        // 'Hidden' position in the Layout tab means: don't render the product
-        // info at all. The SDK needs both flags (product_layout:'none' AND
-        // show_product_info:false) for it to actually disappear.
-        var hideProductInfo = state.product_layout === 'none';
+        // The SDK needs BOTH flags off to fully hide product info. If the user
+        // unchecks Show Product Info OR picks the Hidden layout, send both as
+        // off. No per-variant overrides — every variant respects the user's
+        // Customize-tab toggle. Variants set their preferred *defaults* in
+        // applyVariant() instead.
+        var hideProductInfo = !state.show_product_info || state.product_layout === 'none';
         var theme = {
           theme: state.theme,
-          show_product_info: addonMode ? true : (hideProductInfo ? false : state.show_product_info),
-          product_layout: addonMode ? 'left' : state.product_layout,
+          show_product_info: !hideProductInfo,
+          product_layout: hideProductInfo ? 'none' : state.product_layout,
           show_coupon_row: state.show_coupon_row,
           accent_color: state.accent_color,
           background_color: state.background_color,
@@ -17018,8 +17033,8 @@ function copyClaudeMCPConfig() {
 '      secondary_color: \'' + state.secondary_color + '\',',
 '      surface_color: \'' + state.surface_color + '\',',
 '      product_text_color: \'' + state.product_text_color + '\',',
-'      show_product_info: true,',
-'      product_layout: \'left\',',
+'      show_product_info: ' + (state.show_product_info ? 'true' : 'false') + ',',
+'      product_layout: \'' + state.product_layout + '\',',
 '      show_coupon_row: ' + state.show_coupon_row + ',',
 '      billing_display_fields: \'' + fields + '\',',
 '      billing_form_placement: \'' + state.billing_form_placement + '\'',
@@ -17125,6 +17140,7 @@ function copyClaudeMCPConfig() {
 
       // ─── Variant switcher ───
       function applyVariant(v) {
+        var prevVariant = state.variant;
         state.variant = v;
         var def = VARIANTS[v] || VARIANTS.main;
         $variantDesc.textContent = def.desc;
@@ -17133,6 +17149,22 @@ function copyClaudeMCPConfig() {
         if (v === 'programmatic') $eventLog.removeAttribute('hidden');
         else $eventLog.setAttribute('hidden', '');
         $eventBody.innerHTML = '';
+        // Variant-specific defaults — only applied on a transition INTO or
+        // OUT OF the addon variant. The addon flow ships a billing-only
+        // iframe (matches AddonsExampleBoolerscom.html); other variants
+        // default to showing product info inside the iframe.
+        if (v === 'addon' && prevVariant !== 'addon') {
+          state.show_product_info = false;
+          state.product_layout = 'none';
+          syncControlsFromState();
+        } else if (v !== 'addon' && prevVariant === 'addon') {
+          state.show_product_info = DEFAULTS.show_product_info;
+          state.product_layout = DEFAULTS.product_layout;
+          syncControlsFromState();
+        }
+        // Add-on hint in the Layout tab
+        var addonHint = section.querySelector('.sdkd-addon-hint');
+        if (addonHint) addonHint.hidden = (v !== 'addon');
         // Products tab + dynamic helper are for the Add-on variant only
         var prodTab = section.querySelector('.sdkd-tab-products');
         if (prodTab) {
@@ -17314,7 +17346,15 @@ function copyClaudeMCPConfig() {
       // Layout selects
       section.querySelectorAll('select[data-cfg-select]').forEach(function(sel) {
         sel.addEventListener('change', function() {
-          state[sel.dataset.cfgSelect] = sel.value;
+          var key = sel.dataset.cfgSelect;
+          state[key] = sel.value;
+          // Couple the product info controls: picking 'none' for layout
+          // implicitly turns off Show Product Info; picking left/right
+          // implicitly turns it on. Keeps the two controls in sync.
+          if (key === 'product_layout') {
+            state.show_product_info = (sel.value !== 'none');
+            syncControlsFromState();
+          }
           refreshSnippet();
           scheduleMount();
         });
@@ -17322,7 +17362,16 @@ function copyClaudeMCPConfig() {
       // Boolean checkboxes
       section.querySelectorAll('input[data-cfg-bool]').forEach(function(cb) {
         cb.addEventListener('change', function() {
-          state[cb.dataset.cfgBool] = cb.checked;
+          var key = cb.dataset.cfgBool;
+          state[key] = cb.checked;
+          // Couple Show Product Info ↔ product_layout. Checking it while the
+          // layout is 'none' bumps the layout back to 'left' (most common
+          // default). Unchecking leaves the layout alone — the dual-off
+          // logic in buildConfig handles the actual hide.
+          if (key === 'show_product_info' && cb.checked && state.product_layout === 'none') {
+            state.product_layout = 'left';
+            syncControlsFromState();
+          }
           refreshSnippet();
           scheduleMount();
         });
