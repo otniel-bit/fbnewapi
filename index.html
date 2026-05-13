@@ -12963,12 +12963,10 @@ await checkout.init();                              // async</code></pre></div>
       <span class="sdkd-recipes-label">Recipes</span>
       <button class="sdkd-recipe" type="button" data-recipe="logged-in"    title="Email locked, name editable. Hi-Res Blue accent."><span class="sdkd-recipe-icon">🪪</span> Logged-in user</button>
       <button class="sdkd-recipe" type="button" data-recipe="digital"      title="No shipping — address hidden entirely. Stone Sage accent."><span class="sdkd-recipe-icon">💾</span> Digital product</button>
-      <button class="sdkd-recipe" type="button" data-recipe="subscription" title="Dark theme + sandbox-tested recurring billing."><span class="sdkd-recipe-icon">💎</span> Subscription</button>
       <button class="sdkd-recipe" type="button" data-recipe="power-user"   title="External submit button + event listeners on every action."><span class="sdkd-recipe-icon">⚡</span> Power user</button>
       <button class="sdkd-recipe" type="button" data-recipe="cross-sell"   title="Parent-page addon cards with running total."><span class="sdkd-recipe-icon">➕</span> Cross-sell</button>
       <button class="sdkd-recipe" type="button" data-recipe="b2b"          title="Formal layout: billing form below payment, full prefill, no phone. Mineral Blue."><span class="sdkd-recipe-icon">🏢</span> B2B / Invoice</button>
       <button class="sdkd-recipe" type="button" data-recipe="repeat"       title="Returning customer — every field prefilled AND locked. Just confirm and pay."><span class="sdkd-recipe-icon">🔁</span> One-click repeat</button>
-      <button class="sdkd-recipe" type="button" data-recipe="international" title="Non-US flow with a UK address prefilled."><span class="sdkd-recipe-icon">🌍</span> International</button>
       <button class="sdkd-recipe" type="button" data-recipe="event-ticket" title="Digital + add-ons + email-only prefill (VIP upgrades, no shipping). Vanta dark."><span class="sdkd-recipe-icon">🎟</span> Event ticket</button>
     </div>
   </div>
@@ -17463,12 +17461,6 @@ function copyClaudeMCPConfig() {
             state.fieldControl.address = { hide: true, disable: false };
           }
         },
-        'subscription': {
-          apply: function() {
-            applyPresetState('vanta');
-            state.features.sandbox = true;
-          }
-        },
         'power-user': {
           apply: function() {
             applyPresetState('cinder');
@@ -17518,21 +17510,6 @@ function copyClaudeMCPConfig() {
             state.prefill.address = {
               country: 'US', line1: '123 Main St', line2: 'Apt 4B',
               city: 'Austin', state: 'TX', postal_code: '78701'
-            };
-          }
-        },
-        'international': {
-          apply: function() {
-            applyPresetState('hires-blue');
-            state.features.prefill = true;
-            state.collectPhone = true;
-            state.prefill.first_name = 'Emily';
-            state.prefill.last_name  = 'Hartley';
-            state.prefill.email      = 'emily.hartley@example.co.uk';
-            state.prefill.phone      = '+442079460000';
-            state.prefill.address = {
-              country: 'GB', line1: '10 Downing Street', line2: '',
-              city: 'London', state: 'England', postal_code: 'SW1A 2AA'
             };
           }
         },
