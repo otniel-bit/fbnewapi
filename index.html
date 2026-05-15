@@ -10608,7 +10608,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 });
 &lt;/script&gt;</code></pre></div>
 <h4>Method B · Data attributes</h4>
-<p>Good for simple, declarative embeds. Set config via <code class="inline">data-*</code> attributes and initialize the element with <code class="inline">PaymentCheckout.fromElement()</code>. The SDK reads the attributes, builds the config, attaches the iframe, and runs <code class="inline">init()</code> for you.</p>
+<p>Good for declarative config. Set every config field as a <code class="inline">data-*</code> attribute on a mount element. <code class="inline">PaymentCheckout.fromElement()</code> reads the attributes, builds the config, and attaches the iframe — but it does <strong>not</strong> call <code class="inline">init()</code>. Lifecycle (events + init) still goes through the returned instance the same way as Method A.</p>
 <div class="code-block"><div class="code-label plain">html</div><pre><code>&lt;div
   id="fanbasis-checkout"
   data-creator-id="your-creator-slug"
@@ -10628,10 +10628,28 @@ document.addEventListener('DOMContentLoaded', async function () {
 &lt;script&gt;
   document.addEventListener('DOMContentLoaded', function () {
     var el = document.getElementById('fanbasis-checkout');
-    PaymentCheckout.fromElement(el);
+
+    // fromElement reads the data-* attributes, builds the config, and
+    // attaches the iframe to the element — but it does NOT call init().
+    // Capture the instance, register your handlers, then init() yourself.
+    var checkout = PaymentCheckout.fromElement(el);
+
+    checkout.on('checkout:success', function (data) {
+      window.location.href = 'https://yoursite.com/thank-you?tx=' + data.transactionId;
+    });
+    checkout.on('checkout:error', function (err) {
+      // Integration error (config / iframe state) — log it, don't show to buyer
+      console.error('[checkout]', err.code, err.message);
+    });
+    checkout.on('form:submission_error', function (d) {
+      // Gateway error (card_declined, insufficient_funds, etc.) — show to buyer
+      alert(d.data.errorMessage);
+    });
+
+    checkout.init();
   });
 &lt;/script&gt;</code></pre></div>
-<p>Required attributes: <code class="inline">data-creator-id</code>, <code class="inline">data-product-id</code>, <code class="inline">data-checkout-session-secret</code>. Missing any of these throws an error. Need to react to events? Get the instance back from <code class="inline">fromElement</code> and register handlers before it auto-initializes — or use Method A or Method C instead.</p>
+<p>Required attributes: <code class="inline">data-creator-id</code>, <code class="inline">data-product-id</code>, <code class="inline">data-checkout-session-secret</code>. Missing any of these throws an error. Method B is purely a config-via-attributes pattern; event handling + lifecycle still happen on the returned instance, exactly as in Method A.</p>
 
 <h4>Method C · Fluent builder</h4>
 <p>Chainable API for programmatic setup. Call <code class="inline">PaymentCheckout.create()</code> with no arguments to get a builder, then chain configuration methods and finish with <code class="inline">.build()</code>.</p>
@@ -10656,10 +10674,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 checkout.attachToElement(document.getElementById('checkout-container'));
 
 checkout.on('checkout:success', function (data) {
-  window.location.href = 'https://yoursite.com/thank-you';
+  window.location.href = 'https://yoursite.com/thank-you?tx=' + data.transactionId;
 });
 checkout.on('checkout:error', function (err) {
-  console.error('Payment error:', err.message);
+  // Integration error (config / iframe state) — log it, don't show to buyer
+  console.error('[checkout]', err.code, err.message);
+});
+checkout.on('form:submission_error', function (d) {
+  // Gateway error (card_declined, insufficient_funds, etc.) — show to buyer
+  alert(d.data.errorMessage);
 });
 
 checkout.init();</code></pre></div>
