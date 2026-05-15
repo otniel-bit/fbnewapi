@@ -17824,12 +17824,18 @@ function copyClaudeMCPConfig() {
         themeLines.push("    }");
 
         // --- Config block ---
+        // redirectSettings is REQUIRED with always_redirect:true — without it
+        // a successful payment leaves the buyer stuck on "processing".
         var configLines = [
           "    creatorId: 'YOUR_CREATOR_SLUG',",
           "    productId: 'YOUR_PRODUCT_ID',",
           "    checkoutSessionSecret: 'YOUR_SESSION_SECRET',",
           "    environment: '" + (f.sandbox ? 'sandbox' : 'production') + "',",
-          "    collectPhone: " + (!!state.collectPhone) + ","
+          "    collectPhone: " + (!!state.collectPhone) + ",",
+          "    redirectSettings: {",
+          "      success_redirect_url: 'https://your-site.com/thank-you',",
+          "      always_redirect: true",
+          "    },"
         ].concat(themeLines).filter(function(l) { return l !== null; }).join('\n');
 
         // --- HTML markup ---
@@ -17838,22 +17844,47 @@ function copyClaudeMCPConfig() {
         html += '<div id="checkout-container"><\/div>';
         if (f.programmatic) html += '\n<button id="external-submit">Pay now</button>';
 
-        // --- Behavior extras ---
-        var extras = '';
+        // --- Base event handlers (always emitted) ---
+        // These three handlers are the production-minimum set. They must
+        // be registered AFTER attachToElement but BEFORE init() so they
+        // pick up early events (form:ready, etc.).
+        var baseHandlers =
+          "\n\n  // Required handlers — register BEFORE init() so no events are missed.\n" +
+          "  checkout.on('checkout:success', function (data) {\n" +
+          "    // Fallback redirect (in case redirectSettings doesn't fire)\n" +
+          "    window.location.href = 'https://your-site.com/thank-you?tx=' + data.transactionId;\n" +
+          "  });\n" +
+          "  checkout.on('checkout:error', function (err) {\n" +
+          "    // Integration error (config / iframe state) — log it, don't show to the buyer\n" +
+          "    console.error('[checkout]', err.code, err.message);\n" +
+          "  });\n" +
+          "  checkout.on('form:submission_error', function (d) {\n" +
+          "    // Gateway error (card_declined, insufficient_funds, etc.) — show to the buyer\n" +
+          "    alert(d.data.errorMessage);\n" +
+          "  });";
+
+        // --- Optional pre-init extras (event listeners that compose with the base) ---
+        var preInitExtras = '';
         if (f.programmatic) {
-          extras +=
+          preInitExtras +=
+            "\n\n  // Log per-field validation status (useful while debugging programmatic submit)\n" +
+            "  checkout.on('form:validation', function (d) { console.log('[validation]', d); });";
+        }
+
+        // --- Post-init extras (DOM wiring that doesn't need to precede init) ---
+        var postInitExtras = '';
+        if (f.programmatic) {
+          postInitExtras +=
             '\n\n  // Drive submission from outside the iframe\n' +
             "  document.getElementById('external-submit').addEventListener('click', function () {\n" +
-            "    checkout.submit();\n" +
-            "  });\n" +
-            "  checkout.on('form:validation', function (d) { console.log('validation', d); });\n" +
-            "  checkout.on('payment:success', function (d) { console.log('success', d); });";
+            "    checkout.submitForm();\n" +
+            "  });";
         }
         if (f.addons) {
           var addonItems = state.addons.map(function(a) {
             return "    { id: '" + esc(a.id) + "', name: '" + esc(a.name) + "', price: " + (Number(a.price) || 0).toFixed(2) + " }";
           }).join(',\n');
-          extras +=
+          postInitExtras +=
             '\n\n  // Render addon cards on the parent page. Clicking a card\n' +
             "  // calls addAddon/removeAddon on the SDK so the iframe's Pay\n" +
             '  // button reflects the running total.\n' +
@@ -17879,9 +17910,11 @@ function copyClaudeMCPConfig() {
                '  const checkout = PaymentCheckout.create({\n' +
                configLines + '\n' +
                '  });\n' +
-               "  checkout.attachToElement(document.getElementById('checkout-container'));\n" +
-               '  checkout.init();' +
-               extras + '\n' +
+               "  checkout.attachToElement(document.getElementById('checkout-container'));" +
+               baseHandlers +
+               preInitExtras +
+               '\n\n  checkout.init();' +
+               postInitExtras + '\n' +
                '<\/script>';
       }
       var pulseTimer = null;
