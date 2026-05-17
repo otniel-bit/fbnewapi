@@ -4692,6 +4692,28 @@
     box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.35), 0 1px 3px rgba(0,0,0,0.3);
   }
 
+  /* ── SDK Demo: share button ───────────────────────────────────
+     Lives in the toolbar next to Customize. Click → copies a URL
+     that recreates the current config in another tab. */
+  .sdkd-share-btn {
+    appearance: none; cursor: pointer;
+    padding: 9px 18px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border-dark);
+    border-radius: 999px;
+    font-size: 13.5px; font-weight: 600;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    margin-left: auto;
+  }
+  .sdkd-share-btn + .sdkd-cust-toggle { margin-left: 0; }
+  .sdkd-share-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sdkd-share-btn.copied {
+    background: rgba(34,197,94,0.12);
+    border-color: #16a34a;
+    color: #16a34a;
+  }
+
   /* ── SDK Demo: test cards disclosure ──────────────────────────
      Collapsible panel below the iframe. Click a card → its PAN is
      copied to the clipboard so the user can paste it into the card
@@ -13140,6 +13162,7 @@ await checkout.init();                              // async</code></pre></div>
   <div class="sdkd-toolbar">
     <div class="sdkd-toolbar-row">
       <span class="sdkd-toolbar-desc">Default Main checkout. Toggle features below or open <strong>🎨 Customize</strong> for full control — the snippet updates as you go.</span>
+      <button class="sdkd-share-btn" id="sdkd-share-btn" type="button" title="Copy a link that recreates this exact configuration">🔗 Share</button>
       <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
     </div>
     <div class="sdkd-feature-pills">
@@ -17576,6 +17599,16 @@ function copyClaudeMCPConfig() {
 <script>
   // ── SDK DEMO (native): load SDK, mount checkout, wire customize, live snippet ──
   (function() {
+    // Capture `?cfg=` from the URL SYNCHRONOUSLY at script-load time.
+    // We use a real query parameter (not a hash fragment) so the existing
+    // tab/section router that parses location.hash isn't confused.
+    var __pendingCfg = (function() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        return params.get('cfg');
+      } catch (e) { return null; }
+    })();
+
     function ready(fn) {
       if (document.readyState !== 'loading') fn();
       else document.addEventListener('DOMContentLoaded', fn);
@@ -18636,6 +18669,124 @@ function copyClaudeMCPConfig() {
       section.querySelectorAll('.sdkd-testcard').forEach(function(btn) {
         btn.addEventListener('click', function() { copyPan(btn); });
       });
+
+      // ─── Shareable URLs ───
+      // Encode current state into the URL hash so a recipient opening
+      // the link sees the exact same SDK Demo configuration.
+      // Hash format: #sdk-demo?cfg=<base64-of-json-state-subset>
+      function getSerializableState() {
+        return {
+          v: 1,                                  // schema version
+          theme: state.theme,
+          accent_color: state.accent_color,
+          background_color: state.background_color,
+          surface_color: state.surface_color,
+          heading_color: state.heading_color,
+          label_color: state.label_color,
+          product_text_color: state.product_text_color,
+          secondary_color: state.secondary_color,
+          input_background_color: state.input_background_color,
+          border_color: state.border_color,
+          product_layout: state.product_layout,
+          billing_form_placement: state.billing_form_placement,
+          show_product_info: state.show_product_info,
+          show_coupon_row: state.show_coupon_row,
+          fields: Object.assign({}, state.fields),
+          collectPhone: state.collectPhone,
+          features: Object.assign({}, state.features),
+          fieldControl: JSON.parse(JSON.stringify(state.fieldControl)),
+          prefill: JSON.parse(JSON.stringify(state.prefill)),
+          addons: state.addons.map(function(a) { return Object.assign({}, a); })
+        };
+      }
+      function encodeState() {
+        try {
+          var json = JSON.stringify(getSerializableState());
+          // URL-safe base64
+          return btoa(unescape(encodeURIComponent(json)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        } catch (e) { return ''; }
+      }
+      function decodeState(b64) {
+        try {
+          var raw = b64.replace(/-/g, '+').replace(/_/g, '/');
+          var pad = raw.length % 4; if (pad) raw += '===='.slice(pad);
+          return JSON.parse(decodeURIComponent(escape(atob(raw))));
+        } catch (e) { return null; }
+      }
+      function applyDecodedState(s) {
+        if (!s || s.v !== 1) return false;
+        // Shallow-apply top-level scalar fields
+        ['theme','accent_color','background_color','surface_color','heading_color',
+         'label_color','product_text_color','secondary_color','input_background_color',
+         'border_color','product_layout','billing_form_placement','show_product_info',
+         'show_coupon_row','collectPhone'].forEach(function(k) {
+          if (s[k] !== undefined) state[k] = s[k];
+        });
+        if (s.fields)       state.fields       = Object.assign({}, state.fields, s.fields);
+        if (s.features)     state.features     = Object.assign({}, state.features, s.features);
+        if (s.fieldControl) {
+          Object.keys(s.fieldControl).forEach(function(k) {
+            state.fieldControl[k] = Object.assign({}, state.fieldControl[k], s.fieldControl[k]);
+          });
+        }
+        if (s.prefill) {
+          state.prefill = Object.assign({}, state.prefill, s.prefill);
+          if (s.prefill.address) state.prefill.address = Object.assign({}, state.prefill.address, s.prefill.address);
+        }
+        if (Array.isArray(s.addons) && s.addons.length) {
+          state.addons = s.addons.map(function(a) { return Object.assign({}, a); });
+          renderAddons();
+        }
+        syncControlsFromState();
+        applyToggles();
+        refreshSnippet();
+        scheduleMount();
+        return true;
+      }
+
+      // Wire the Share button
+      var $shareBtn = document.getElementById('sdkd-share-btn');
+      if ($shareBtn) {
+        $shareBtn.addEventListener('click', function() {
+          var url = window.location.origin + window.location.pathname +
+                    '?cfg=' + encodeState() + '#sdk-demo';
+          var done = function() {
+            $shareBtn.classList.add('copied');
+            var orig = $shareBtn.textContent;
+            $shareBtn.textContent = '✓ Link copied!';
+            setTimeout(function() {
+              $shareBtn.classList.remove('copied');
+              $shareBtn.textContent = orig;
+            }, 2000);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(done).catch(function() {
+              fallbackCopy(url); done();
+            });
+          } else {
+            fallbackCopy(url); done();
+          }
+        });
+      }
+
+      // Hydrate from URL on first load. Uses the cfg captured at IIFE-top
+      // (before any DOMContentLoaded handlers could mess with the URL).
+      if (__pendingCfg) {
+        var decoded = decodeState(__pendingCfg);
+        if (decoded) {
+          applyDecodedState(decoded);
+          // Strip ?cfg= from the URL but keep the #sdk-demo anchor so
+          // the page still scrolls here and subsequent Share clicks
+          // produce a clean link.
+          try {
+            history.replaceState(
+              null, '',
+              window.location.pathname + (window.location.hash || '#sdk-demo')
+            );
+          } catch (e) {}
+        }
+      }
 
       // Customize drawer open/close
       var $custToggle   = document.getElementById('sdkd-cust-toggle');
