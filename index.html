@@ -4692,6 +4692,37 @@
     box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.35), 0 1px 3px rgba(0,0,0,0.3);
   }
 
+  /* ── SDK Demo: language tabs for the snippet ──────────────────
+     Sit above the code block. Picking a tab re-renders the snippet
+     in that language's idiom — same underlying config, just wrapped
+     differently. Selection persists in localStorage. */
+  .sdkd-lang-tabs {
+    display: flex; gap: 2px;
+    margin: 8px 0 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .sdkd-lang-tab {
+    appearance: none; cursor: pointer;
+    padding: 8px 16px;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 13px; font-weight: 600;
+    font-family: inherit;
+    margin-bottom: -1px;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .sdkd-lang-tab:hover { color: var(--text); }
+  .sdkd-lang-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .sdkd-lang-tabs + .code-block {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
   /* ── SDK Demo: share button ───────────────────────────────────
      Lives in the toolbar next to Customize. Click → copies a URL
      that recreates the current config in another tab. */
@@ -13407,9 +13438,16 @@ await checkout.init();                              // async</code></pre></div>
 
   <!-- ─── Live snippet ─── -->
   <h3 class="subsection-title">Embed this configuration on your page<span class="sdkd-live-badge">Live</span></h3>
-  <p>The snippet below reflects every customization above in real time. When you tweak a color, toggle a field, or switch variants, this code updates instantly. Substitute your <code class="inline">creatorId</code>, <code class="inline">productId</code>, and a freshly created <a href="#embedded-checkout">checkout session secret</a>, then drop it into any HTML page.</p>
+  <p>The snippet below reflects every customization above in real time. When you tweak a color, toggle a field, or switch a recipe, this code updates instantly. Pick your stack with the tabs — same config, language-appropriate idiom. Substitute your <code class="inline">creatorId</code>, <code class="inline">productId</code>, and a freshly created <a href="#embedded-checkout">checkout session secret</a>, then drop it into your codebase.</p>
+  <div class="sdkd-lang-tabs" role="tablist" aria-label="Snippet language">
+    <button type="button" class="sdkd-lang-tab active" data-lang="html"  role="tab" aria-selected="true">HTML</button>
+    <button type="button" class="sdkd-lang-tab"        data-lang="react" role="tab" aria-selected="false">React</button>
+    <button type="button" class="sdkd-lang-tab"        data-lang="vue"   role="tab" aria-selected="false">Vue</button>
+    <button type="button" class="sdkd-lang-tab"        data-lang="next"  role="tab" aria-selected="false">Next.js</button>
+    <button type="button" class="sdkd-lang-tab"        data-lang="curl"  role="tab" aria-selected="false">cURL</button>
+  </div>
   <div class="code-block">
-    <div class="code-label plain">html</div>
+    <div class="code-label plain" id="sdkd-lang-label">html</div>
     <pre><code id="sdkd-snippet">Loading snippet…</code></pre>
   </div>
 </section>
@@ -17992,16 +18030,24 @@ function copyClaudeMCPConfig() {
       // external Pay button + event listeners, Add-ons adds parent-page
       // addon cards wired to addAddon/removeAddon, Prefill bakes the buyer
       // info into theme.prefill.
-      function generateSnippet() {
+      // Active snippet language ('html' | 'react' | 'vue' | 'next' | 'curl').
+      // Default = html (vanilla JS). Persists via localStorage.
+      var activeLanguage = 'html';
+      try {
+        var storedLang = localStorage.getItem('sdkd-lang');
+        if (['html','react','vue','next','curl'].indexOf(storedLang) >= 0) activeLanguage = storedLang;
+      } catch (e) {}
+
+      // ─── Shared helpers used by every language generator ───
+      function snippetEsc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+      function snippetConfigLines() {
         var f = state.features;
         var fields = Object.keys(state.fields).filter(function(k) { return state.fields[k]; }).join(',') ||
                      'first_name,last_name,email,country,address';
         var hideProductInfo = !state.show_product_info || state.product_layout === 'none';
         var effShowProduct = !hideProductInfo;
         var effLayout = hideProductInfo ? 'none' : state.product_layout;
-        function esc(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 
-        // --- Theme block ---
         var themeLines = [
           "    theme: {",
           "      theme: '" + state.theme + "',",
@@ -18025,25 +18071,24 @@ function copyClaudeMCPConfig() {
           var addr = state.prefill.address || {};
           var addrLines = [
             "        address: {",
-            "          country: '"     + esc(addr.country     || '') + "',",
-            "          line1: '"       + esc(addr.line1       || '') + "',",
-            (addr.line2 ? "          line2: '" + esc(addr.line2) + "'," : null),
-            "          city: '"        + esc(addr.city        || '') + "',",
-            "          state: '"       + esc(addr.state       || '') + "',",
-            "          postal_code: '" + esc(addr.postal_code || '') + "'",
+            "          country: '"     + snippetEsc(addr.country     || '') + "',",
+            "          line1: '"       + snippetEsc(addr.line1       || '') + "',",
+            (addr.line2 ? "          line2: '" + snippetEsc(addr.line2) + "'," : null),
+            "          city: '"        + snippetEsc(addr.city        || '') + "',",
+            "          state: '"       + snippetEsc(addr.state       || '') + "',",
+            "          postal_code: '" + snippetEsc(addr.postal_code || '') + "'",
             "        }"
           ].filter(function(l) { return l !== null; });
           themeLines.push(
             "      prefill: {",
-            "        first_name: '" + esc(state.prefill.first_name) + "',",
-            "        last_name: '"  + esc(state.prefill.last_name)  + "',",
-            "        email: '"      + esc(state.prefill.email)      + "',",
-            (state.collectPhone ? "        phone: '" + esc(state.prefill.phone) + "'," : null)
+            "        first_name: '" + snippetEsc(state.prefill.first_name) + "',",
+            "        last_name: '"  + snippetEsc(state.prefill.last_name)  + "',",
+            "        email: '"      + snippetEsc(state.prefill.email)      + "',",
+            (state.collectPhone ? "        phone: '" + snippetEsc(state.prefill.phone) + "'," : null)
           );
           themeLines = themeLines.concat(addrLines);
           themeLines.push("      }");
         }
-        // theme.fields — only emit fields that diverge from SDK default.
         var fieldsCfg = buildFieldsConfig();
         var fieldKeys = Object.keys(fieldsCfg);
         if (fieldKeys.length) {
@@ -18061,10 +18106,7 @@ function copyClaudeMCPConfig() {
         }
         themeLines.push("    }");
 
-        // --- Config block ---
-        // redirectSettings is REQUIRED with always_redirect:true — without it
-        // a successful payment leaves the buyer stuck on "processing".
-        var configLines = [
+        return [
           "    creatorId: 'YOUR_CREATOR_SLUG',",
           "    productId: 'YOUR_PRODUCT_ID',",
           "    checkoutSessionSecret: 'YOUR_SESSION_SECRET',",
@@ -18075,6 +18117,29 @@ function copyClaudeMCPConfig() {
           "      always_redirect: true",
           "    },"
         ].concat(themeLines).filter(function(l) { return l !== null; }).join('\n');
+      }
+      function snippetAddonItems() {
+        return state.addons.map(function(a) {
+          return "    { id: '" + snippetEsc(a.id) + "', name: '" + snippetEsc(a.name) + "', price: " + (Number(a.price) || 0).toFixed(2) + " }";
+        }).join(',\n');
+      }
+
+      // ─── Language dispatcher ───
+      function generateSnippet() {
+        switch (activeLanguage) {
+          case 'react': return generateReactSnippet();
+          case 'vue':   return generateVueSnippet();
+          case 'next':  return generateNextJsSnippet();
+          case 'curl':  return generateCurlSnippet();
+          case 'html':
+          default:      return generateHtmlSnippet();
+        }
+      }
+
+      // ─── HTML / vanilla JS (the original) ───
+      function generateHtmlSnippet() {
+        var f = state.features;
+        var configLines = snippetConfigLines();
 
         // --- HTML markup ---
         var html = '';
@@ -18119,9 +18184,7 @@ function copyClaudeMCPConfig() {
             "  });";
         }
         if (f.addons) {
-          var addonItems = state.addons.map(function(a) {
-            return "    { id: '" + esc(a.id) + "', name: '" + esc(a.name) + "', price: " + (Number(a.price) || 0).toFixed(2) + " }";
-          }).join(',\n');
+          var addonItems = snippetAddonItems();
           postInitExtras +=
             '\n\n  // Render addon cards on the parent page. Clicking a card\n' +
             "  // calls addAddon/removeAddon on the SDK so the iframe's Pay\n" +
@@ -18155,6 +18218,237 @@ function copyClaudeMCPConfig() {
                postInitExtras + '\n' +
                '<\/script>';
       }
+
+      // ─── React (@fanbasis/checkout-react + AutoCheckout) ───
+      function generateReactSnippet() {
+        var f = state.features;
+        var configLines = snippetConfigLines();
+        var addonItems = f.addons ? snippetAddonItems() : '';
+
+        return "import { useEffect, useState } from 'react';\n" +
+               "import { CheckoutProvider, AutoCheckout, useCheckoutContext } from '@fanbasis/checkout-react';\n" +
+               (f.addons
+                 ? "\nconst ADDONS = [\n" + (addonItems || "  // { id, name, price } objects") + "\n];\n"
+                 : '') +
+               "\nconst config = {\n" + configLines + "\n};\n" +
+               "\nexport default function App() {\n" +
+               "  const [error, setError] = useState(null);\n" +
+               (f.addons ? "  const [selectedAddons, setSelectedAddons] = useState({});\n" : '') +
+               "\n  return (\n" +
+               "    <>\n" +
+               "      {error && (\n" +
+               "        <div role=\"alert\" style={{ background: '#fee2e2', color: '#991b1b', padding: 12, borderRadius: 8, marginBottom: 12 }}>\n" +
+               "          ⚠ {error}\n" +
+               "        </div>\n" +
+               "      )}\n" +
+               (f.addons
+                 ? "      <AddonCards selected={selectedAddons} setSelected={setSelectedAddons} />\n"
+                 : '') +
+               "      <CheckoutProvider config={config}>\n" +
+               "        <GatewayErrors onError={setError} />\n" +
+               (f.addons ? "        <AddonSync selected={selectedAddons} />\n" : '') +
+               "        <AutoCheckout\n" +
+               "          autoInit\n" +
+               "          onSuccess={(data) => {\n" +
+               "            window.location.href = `https://your-site.com/thank-you?tx=${data.transactionId}`;\n" +
+               "          }}\n" +
+               "          onError={(err) => {\n" +
+               "            console.error('[checkout]', err.code, err.message);\n" +
+               "            setError(err.message || 'Could not load checkout.');\n" +
+               "          }}\n" +
+               "        />\n" +
+               (f.programmatic
+                 ? "        <ExternalPayButton />\n"
+                 : '') +
+               "      </CheckoutProvider>\n" +
+               "    </>\n" +
+               "  );\n" +
+               "}\n" +
+               "\n// Gateway errors (card_declined, etc.) come through form:submission_error —\n" +
+               "// not on AutoCheckout props. Attach a listener via useCheckoutContext.\n" +
+               "function GatewayErrors({ onError }) {\n" +
+               "  const { getCheckout } = useCheckoutContext();\n" +
+               "  useEffect(() => {\n" +
+               "    const c = getCheckout();\n" +
+               "    if (!c) return;\n" +
+               "    const handler = (d) => onError(d.data.errorMessage);\n" +
+               "    c.on('form:submission_error', handler);\n" +
+               "    return () => c.off('form:submission_error', handler);\n" +
+               "  }, [getCheckout, onError]);\n" +
+               "  return null;\n" +
+               "}\n" +
+               (f.programmatic
+                 ? "\nfunction ExternalPayButton() {\n" +
+                   "  const { submitForm, isFormReady } = useCheckoutContext();\n" +
+                   "  return (\n" +
+                   "    <button onClick={() => isFormReady && submitForm()} style={{ marginTop: 12 }}>\n" +
+                   "      Pay now\n" +
+                   "    </button>\n" +
+                   "  );\n" +
+                   "}\n"
+                 : '') +
+               (f.addons
+                 ? "\nfunction AddonCards({ selected, setSelected }) {\n" +
+                   "  return (\n" +
+                   "    <div>\n" +
+                   "      {ADDONS.map((a) => (\n" +
+                   "        <label key={a.id} style={{ display: 'flex', gap: 10, padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, marginBottom: 8, cursor: 'pointer' }}>\n" +
+                   "          <input type=\"checkbox\" checked={!!selected[a.id]} onChange={(e) => setSelected({ ...selected, [a.id]: e.target.checked })} />\n" +
+                   "          <strong>{a.name}</strong>\n" +
+                   "          <span style={{ marginLeft: 'auto' }}>${'{a.price.toFixed(2)}'}</span>\n" +
+                   "        </label>\n" +
+                   "      ))}\n" +
+                   "    </div>\n" +
+                   "  );\n" +
+                   "}\n" +
+                   "\n// Sync addon checkbox state with the SDK (addAddon / removeAddon)\n" +
+                   "function AddonSync({ selected }) {\n" +
+                   "  const { getCheckout } = useCheckoutContext();\n" +
+                   "  useEffect(() => {\n" +
+                   "    const c = getCheckout();\n" +
+                   "    if (!c) return;\n" +
+                   "    Object.entries(selected).forEach(([id, on]) => {\n" +
+                   "      if (on) c.addAddon(id);\n" +
+                   "      else    c.removeAddon(id);\n" +
+                   "    });\n" +
+                   "  }, [getCheckout, selected]);\n" +
+                   "  return null;\n" +
+                   "}\n"
+                 : '');
+      }
+
+      // ─── Vue 3 (composition API, vanilla SDK from CDN) ───
+      function generateVueSnippet() {
+        var f = state.features;
+        var configLines = snippetConfigLines();
+        var addonItems = f.addons ? snippetAddonItems() : '';
+
+        return "<template>\n" +
+               (f.addons ? "  <div>\n    <label v-for=\"a in ADDONS\" :key=\"a.id\" class=\"addon-row\">\n      <input type=\"checkbox\" v-model=\"selectedAddons[a.id]\" @change=\"toggleAddon(a)\" />\n      <strong>{{ a.name }}</strong>\n      <span class=\"price\">${{ a.price.toFixed(2) }}</span>\n    </label>\n  </div>\n" : '') +
+               "  <div v-if=\"error\" role=\"alert\" class=\"err\">⚠ {{ error }}</div>\n" +
+               "  <div id=\"checkout-container\"></div>\n" +
+               (f.programmatic ? "  <button @click=\"submit\">Pay now</button>\n" : '') +
+               "</template>\n\n" +
+               "<script setup>\n" +
+               "import { ref, onMounted } from 'vue';\n\n" +
+               "const error = ref(null);\n" +
+               "let checkout = null;\n" +
+               (f.addons
+                 ? "\nconst ADDONS = [\n" + (addonItems || "  // { id, name, price } objects") + "\n];\n" +
+                   "const selectedAddons = ref({});\n" +
+                   "function toggleAddon(a) {\n" +
+                   "  if (!checkout) return;\n" +
+                   "  if (selectedAddons.value[a.id]) checkout.addAddon(a.id);\n" +
+                   "  else                            checkout.removeAddon(a.id);\n" +
+                   "}\n"
+                 : '') +
+               (f.programmatic
+                 ? "\nfunction submit() {\n  if (checkout && checkout.isFormReady()) checkout.submitForm();\n}\n"
+                 : '') +
+               "\nonMounted(() => {\n" +
+               "  checkout = PaymentCheckout.create({\n" +
+               configLines + "\n" +
+               "  });\n" +
+               "  checkout.attachToElement(document.getElementById('checkout-container'));\n" +
+               "  checkout.on('checkout:success', (data) => {\n" +
+               "    window.location.href = `https://your-site.com/thank-you?tx=${data.transactionId}`;\n" +
+               "  });\n" +
+               "  checkout.on('checkout:error', (err) => {\n" +
+               "    console.error('[checkout]', err.code, err.message);\n" +
+               "  });\n" +
+               "  checkout.on('form:submission_error', (d) => {\n" +
+               "    error.value = d.data.errorMessage;\n" +
+               "  });\n" +
+               "  checkout.init();\n" +
+               "});\n" +
+               "<\/script>\n\n" +
+               "<!-- Load the SDK once on the page (e.g. in index.html):\n" +
+               "<script src=\"https://cdn.embedded.fanbasis.io/embed/index.js\"><\/script> -->\n";
+      }
+
+      // ─── Next.js App Router (TypeScript) ───
+      function generateNextJsSnippet() {
+        var f = state.features;
+        var configLines = snippetConfigLines();
+        var addonItems = f.addons ? snippetAddonItems() : '';
+
+        return "'use client'; // Required for Next.js App Router\n\n" +
+               "import { useEffect, useState } from 'react';\n" +
+               "import { useRouter } from 'next/navigation';\n" +
+               "import { CheckoutProvider, AutoCheckout, useCheckoutContext } from '@fanbasis/checkout-react';\n" +
+               (f.addons
+                 ? "\nconst ADDONS = [\n" + (addonItems || "  // { id, name, price } objects") + "\n];\n"
+                 : '') +
+               "\nexport default function CheckoutPage() {\n" +
+               "  const router = useRouter();\n" +
+               "  const [secret, setSecret] = useState<string | null>(null);\n" +
+               "  const [error, setError] = useState<string | null>(null);\n\n" +
+               "  // Fetch the embedded session secret server-side via a Route Handler\n" +
+               "  // that calls /public-api/checkout-sessions/embedded with your API key.\n" +
+               "  useEffect(() => {\n" +
+               "    fetch('/api/embedded-session', { method: 'POST' })\n" +
+               "      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Session fetch failed'))))\n" +
+               "      .then((d) => setSecret(d.checkoutSessionSecret))\n" +
+               "      .catch((e) => setError(e.message));\n" +
+               "  }, []);\n\n" +
+               "  if (error)   return <p style={{ color: '#991b1b' }}>⚠ {error}</p>;\n" +
+               "  if (!secret) return <p>Loading…</p>;\n\n" +
+               "  return (\n" +
+               "    <CheckoutProvider\n" +
+               "      config={{\n" +
+               configLines.replace(/checkoutSessionSecret: 'YOUR_SESSION_SECRET',/, 'checkoutSessionSecret: secret,') + "\n" +
+               "      }}\n" +
+               "    >\n" +
+               "      <GatewayErrors onError={setError} />\n" +
+               "      <AutoCheckout\n" +
+               "        autoInit\n" +
+               "        onSuccess={(data) => router.push(`/thank-you?tx=${data.transactionId}`)}\n" +
+               "        onError={(err) => setError(err.message || 'Could not load checkout.')}\n" +
+               "      />\n" +
+               "    </CheckoutProvider>\n" +
+               "  );\n" +
+               "}\n\n" +
+               "function GatewayErrors({ onError }: { onError: (s: string) => void }) {\n" +
+               "  const { getCheckout } = useCheckoutContext();\n" +
+               "  useEffect(() => {\n" +
+               "    const c = getCheckout();\n" +
+               "    if (!c) return;\n" +
+               "    const h = (d: any) => onError(d.data.errorMessage);\n" +
+               "    c.on('form:submission_error', h);\n" +
+               "    return () => c.off('form:submission_error', h);\n" +
+               "  }, [getCheckout, onError]);\n" +
+               "  return null;\n" +
+               "}\n";
+      }
+
+      // ─── cURL (backend: how to create the checkoutSessionSecret) ───
+      // Different from the others: this isn't a frontend embed. It shows the
+      // server-side call your backend makes to mint the secret that the
+      // frontend SDK then consumes. Useful for backend devs.
+      function generateCurlSnippet() {
+        return "# Step 1: Create a checkout session (mints the embedded session secret).\n" +
+               "# Run this on your BACKEND — never expose FANBASIS_API_KEY in the browser.\n\n" +
+               "curl -X POST 'https://www.fanbasis.com/public-api/checkout-sessions/embedded' \\\n" +
+               "  -H 'Content-Type: application/json' \\\n" +
+               "  -H 'x-api-key: $FANBASIS_API_KEY' \\\n" +
+               "  -d '{\n" +
+               "    \"creatorId\": \"YOUR_CREATOR_SLUG\"\n" +
+               "  }'\n\n" +
+               "# Response:\n" +
+               "# {\n" +
+               "#   \"data\": {\n" +
+               "#     \"checkout_session_secret\": \"227b5d46-fd9b-4fb5-97ea-b4315f9a43bb\"\n" +
+               "#   }\n" +
+               "# }\n\n" +
+               "# Step 2: Return the secret to your frontend (do NOT log it; treat it like a one-time bearer token).\n" +
+               "# Step 3: The frontend SDK uses checkoutSessionSecret in the config to mount the iframe.\n\n" +
+               "# Optional flags:\n" +
+               "#   - Add `\"productId\": \"PROD_ID\"` to bind the session to a specific product.\n" +
+               "#   - Add `\"metadata\": { ... }` for pass-through tags (visible on the transaction).\n" +
+               "#   - Add `\"webhook_url\": \"...\"` so your backend gets notified server-side too.\n" +
+               "\n# See the full checkout-sessions API reference for all options.\n";
+      }
+
       var pulseTimer = null;
       function refreshSnippet() {
         if (!$snippet) return;
@@ -18769,6 +19063,35 @@ function copyClaudeMCPConfig() {
           }
         });
       }
+
+      // ─── Snippet language tabs ───
+      // Switch the snippet between HTML / React / Vue / Next.js / cURL.
+      // Same config, language-appropriate idiom. Selection persists.
+      var $langLabel = document.getElementById('sdkd-lang-label');
+      var $langTabs  = section.querySelectorAll('.sdkd-lang-tab');
+      function setLanguage(lang) {
+        if (['html','react','vue','next','curl'].indexOf(lang) < 0) return;
+        activeLanguage = lang;
+        $langTabs.forEach(function(t) {
+          var on = t.dataset.lang === lang;
+          t.classList.toggle('active', on);
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        if ($langLabel) {
+          $langLabel.textContent = lang === 'next' ? 'tsx · next.js'
+                                 : lang === 'react' ? 'jsx · react'
+                                 : lang === 'vue'   ? 'vue'
+                                 : lang === 'curl'  ? 'bash · cURL'
+                                 : 'html';
+        }
+        try { localStorage.setItem('sdkd-lang', lang); } catch (e) {}
+        refreshSnippet();
+      }
+      $langTabs.forEach(function(t) {
+        t.addEventListener('click', function() { setLanguage(t.dataset.lang); });
+      });
+      // Sync the UI to whatever activeLanguage already loaded from localStorage
+      setLanguage(activeLanguage);
 
       // Hydrate from URL on first load. Uses the cfg captured at IIFE-top
       // (before any DOMContentLoaded handlers could mess with the URL).
