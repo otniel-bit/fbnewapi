@@ -4652,6 +4652,46 @@
     color: #4ade80;
   }
 
+  /* ── SDK Demo: viewport preview toggle ────────────────────────
+     Sits above the iframe. Picking a button constrains the mount
+     container to a phone/tablet width with a soft drop-shadow so
+     users can preview their checkout at smaller widths. */
+  .sdkd-viewport-toggle {
+    display: inline-flex; gap: 4px;
+    padding: 4px;
+    margin: 0 auto 12px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    align-self: flex-start;
+  }
+  .sdkd-vp-btn {
+    appearance: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px;
+    background: transparent;
+    border: none; border-radius: 999px;
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .sdkd-vp-btn:hover { color: var(--text); }
+  .sdkd-vp-btn.active {
+    background: var(--bg); color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.25), 0 1px 3px rgba(0,0,0,0.06);
+    font-weight: 600;
+  }
+  .sdkd-vp-icon { font-size: 14px; line-height: 1; }
+  /* Constrain the mount container based on the viewport selection. The
+     iframe inside scales to 100% so it ends up at the target width.
+     A soft border + shadow makes it look like a device frame. */
+  .sdkd-preview[data-viewport="mobile"]  .sdkd-checkout-mount { max-width: 390px; margin: 0 auto; box-shadow: 0 0 0 1px var(--border), 0 8px 30px rgba(0,0,0,0.08); border-radius: 18px; overflow: hidden; }
+  .sdkd-preview[data-viewport="tablet"]  .sdkd-checkout-mount { max-width: 768px; margin: 0 auto; box-shadow: 0 0 0 1px var(--border), 0 8px 30px rgba(0,0,0,0.08); border-radius: 14px; overflow: hidden; }
+  /* desktop = no override (uses full width) */
+  [data-theme="dark"] .sdkd-vp-btn.active {
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.35), 0 1px 3px rgba(0,0,0,0.3);
+  }
+
   /* ── SDK Demo: mobile responsiveness overrides ────────────────
      Placed at the end of the SDK demo CSS so the cascade wins over
      the baseline rules above. Targets two breakpoints:
@@ -13206,7 +13246,12 @@ await checkout.init();                              // async</code></pre></div>
     </aside>
 
     <!-- ─── Preview panel ─── -->
-    <main class="sdkd-preview">
+    <main class="sdkd-preview" id="sdkd-preview" data-viewport="desktop">
+      <div class="sdkd-viewport-toggle" role="tablist" aria-label="Preview viewport">
+        <button type="button" data-viewport="mobile"  class="sdkd-vp-btn" title="iPhone width (390px)"  aria-label="Mobile"><span class="sdkd-vp-icon">📱</span><span class="sdkd-vp-label">Mobile</span></button>
+        <button type="button" data-viewport="tablet"  class="sdkd-vp-btn" title="Tablet width (768px)"  aria-label="Tablet"><span class="sdkd-vp-icon">📲</span><span class="sdkd-vp-label">Tablet</span></button>
+        <button type="button" data-viewport="desktop" class="sdkd-vp-btn active" title="Full width"      aria-label="Desktop"><span class="sdkd-vp-icon">🖥</span><span class="sdkd-vp-label">Desktop</span></button>
+      </div>
       <div class="sdkd-variant-helper" id="sdkd-variant-helper"></div>
       <div class="sdkd-checkout-mount" id="sdkd-checkout-mount">
         <div class="sdkd-loading">Loading checkout SDK…</div>
@@ -18440,6 +18485,26 @@ function copyClaudeMCPConfig() {
       try {
         var stored = localStorage.getItem('sdkd-eventlog-collapsed');
         if (stored === '0') setEventLogCollapsed(false);
+      } catch (e) {}
+
+      // ─── Viewport preview toggle ───
+      // Lets the user constrain the mount container to phone/tablet
+      // widths so they can preview their checkout at a smaller size
+      // without leaving their desktop. Selection persists in localStorage.
+      var $preview = document.getElementById('sdkd-preview');
+      var $vpBtns  = section.querySelectorAll('.sdkd-vp-btn');
+      function setViewport(vp) {
+        if (!$preview) return;
+        $preview.setAttribute('data-viewport', vp);
+        $vpBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.viewport === vp); });
+        try { localStorage.setItem('sdkd-viewport', vp); } catch (e) {}
+      }
+      $vpBtns.forEach(function(b) {
+        b.addEventListener('click', function() { setViewport(b.dataset.viewport); });
+      });
+      try {
+        var storedVp = localStorage.getItem('sdkd-viewport');
+        if (storedVp === 'mobile' || storedVp === 'tablet') setViewport(storedVp);
       } catch (e) {}
 
       // Customize drawer open/close
