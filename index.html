@@ -4652,6 +4652,59 @@
     color: #4ade80;
   }
 
+  /* ── SDK Demo: mobile responsiveness overrides ────────────────
+     Placed at the end of the SDK demo CSS so the cascade wins over
+     the baseline rules above. Targets two breakpoints:
+       <768px  — tablet+phone: shorter iframe, sticky Customize button,
+                 horizontally-scrolling drawer tabs.
+       <480px  — phone-only: 1-col preset grid, horizontally-scrolling
+                 recipe + feature pill rows (instead of wrap → 4-row mess).
+     Plus a global fix: code blocks now show a visible horizontal
+     scrollbar so long lines never silently clip. */
+  @media (max-width: 768px) {
+    .sdkd-preview               { min-height: 600px; }
+    .sdkd-checkout-mount        { min-height: 580px; }
+    .sdkd-checkout-mount iframe { min-height: 580px !important; }
+    .sdkd-cust-toggle {
+      position: sticky; top: 8px; align-self: flex-start;
+      z-index: 5;
+    }
+    .sdkd-cust-tabs {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sdkd-cust-tabs::-webkit-scrollbar { height: 3px; }
+    .sdkd-cust-tabs .sdkd-cust-tab { flex: 0 0 auto; white-space: nowrap; }
+  }
+  @media (max-width: 480px) {
+    .sdkd-preset-grid { grid-template-columns: 1fr; }
+    .sdkd-feature-pills,
+    .sdkd-recipes {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 2px;
+    }
+    .sdkd-feature-pills::-webkit-scrollbar,
+    .sdkd-recipes::-webkit-scrollbar { display: none; }
+    .sdkd-pill, .sdkd-recipe { flex: 0 0 auto; }
+    .sdkd-feature-pills-label,
+    .sdkd-recipes-label { position: sticky; left: 0; background: var(--bg-alt); padding-right: 6px; }
+  }
+  /* Snippet + any code block: visible horizontal scroll for long lines. */
+  .code-block pre {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .code-block pre::-webkit-scrollbar { height: 6px; }
+  .code-block pre::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.18); border-radius: 3px;
+  }
+  .code-block pre::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.28); }
+
   /* ── 1. RADIAL DARK MODE WIPE (View Transitions API) ────────── */
   /* The browser screenshots the OLD state, then we shrink that
      screenshot away with a clip-path circle originating from the
