@@ -4692,6 +4692,80 @@
     box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.35), 0 1px 3px rgba(0,0,0,0.3);
   }
 
+  /* ── SDK Demo: test cards disclosure ──────────────────────────
+     Collapsible panel below the iframe. Click a card → its PAN is
+     copied to the clipboard so the user can paste it into the card
+     field. The iframe is cross-origin so we can't auto-fill. */
+  .sdkd-testcards {
+    border-top: 1px solid var(--border);
+    background: var(--bg-alt);
+  }
+  .sdkd-testcards-head {
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 600;
+    color: var(--text);
+    cursor: pointer; user-select: none;
+    list-style: none;
+  }
+  .sdkd-testcards-head::-webkit-details-marker { display: none; }
+  .sdkd-testcards-chev {
+    display: inline-block; font-size: 9px; color: var(--text-muted);
+    transition: transform 0.2s ease;
+  }
+  .sdkd-testcards[open] .sdkd-testcards-chev { transform: rotate(90deg); }
+  .sdkd-testcards-hint {
+    font-weight: 400; color: var(--text-muted); font-size: 11.5px;
+  }
+  .sdkd-testcards-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 4px 14px 12px;
+  }
+  @media (max-width: 480px) {
+    .sdkd-testcards-grid { grid-template-columns: 1fr; }
+  }
+  .sdkd-testcard {
+    appearance: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: left;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+  }
+  .sdkd-testcard:hover { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.18); }
+  .sdkd-testcard:active { transform: translateY(1px); }
+  .sdkd-testcard.copied {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.3);
+  }
+  .sdkd-testcard.copied .sdkd-testcard-name::after {
+    content: ' · Copied!';
+    color: #16a34a; font-size: 11.5px;
+  }
+  .sdkd-testcard-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .sdkd-testcard-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px; color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .sdkd-testcard-desc {
+    font-size: 11.5px; color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .sdkd-testcards-foot {
+    padding: 0 14px 12px;
+    margin: 0;
+    font-size: 11.5px; color: var(--text-muted);
+    font-style: italic;
+  }
+  [data-theme="dark"] .sdkd-testcards { background: rgba(255,255,255,0.02); }
+  [data-theme="dark"] .sdkd-testcard  { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); }
+
   /* ── SDK Demo: mobile responsiveness overrides ────────────────
      Placed at the end of the SDK demo CSS so the cascade wins over
      the baseline rules above. Targets two breakpoints:
@@ -13260,6 +13334,39 @@ await checkout.init();                              // async</code></pre></div>
         <button type="button" id="sdkd-prog-submit" class="sdkd-prog-btn">Pay now</button>
         <span class="sdkd-prog-hint">Triggers <code class="inline">checkout.submit()</code> from outside the iframe.</span>
       </div>
+      <details class="sdkd-testcards">
+        <summary class="sdkd-testcards-head">
+          <span class="sdkd-testcards-chev">▶</span>
+          💳 Test cards <span class="sdkd-testcards-hint">(click to copy a PAN, then paste into the card field)</span>
+        </summary>
+        <div class="sdkd-testcards-grid">
+          <button type="button" class="sdkd-testcard" data-pan="4242 4242 4242 4242"
+                  data-flavor="success" title="Visa · always succeeds">
+            <span class="sdkd-testcard-name">✅ Success</span>
+            <span class="sdkd-testcard-num">4242 4242 4242 4242</span>
+            <span class="sdkd-testcard-desc">Payment succeeds → triggers checkout:success + redirect</span>
+          </button>
+          <button type="button" class="sdkd-testcard" data-pan="4000 0000 0000 9995"
+                  data-flavor="declined" title="Insufficient funds decline">
+            <span class="sdkd-testcard-name">❌ Declined</span>
+            <span class="sdkd-testcard-num">4000 0000 0000 9995</span>
+            <span class="sdkd-testcard-desc">Gateway returns <code class="inline">insufficient_funds</code></span>
+          </button>
+          <button type="button" class="sdkd-testcard" data-pan="4000 0000 0000 0341"
+                  data-flavor="threeds" title="3DS challenge required">
+            <span class="sdkd-testcard-name">🔐 3DS Required</span>
+            <span class="sdkd-testcard-num">4000 0000 0000 0341</span>
+            <span class="sdkd-testcard-desc">Triggers 3D-Secure authentication popup</span>
+          </button>
+          <button type="button" class="sdkd-testcard" data-pan="4000 0000 0000 0127"
+                  data-flavor="cvc" title="Incorrect CVC">
+            <span class="sdkd-testcard-name">⛔ CVC Fail</span>
+            <span class="sdkd-testcard-num">4000 0000 0000 0127</span>
+            <span class="sdkd-testcard-desc">Gateway returns <code class="inline">incorrect_cvc</code></span>
+          </button>
+        </div>
+        <p class="sdkd-testcards-foot">Use any future expiry · any 3-digit CVC · any postal code.</p>
+      </details>
       <div class="sdkd-event-log collapsed" id="sdkd-event-log">
         <div class="sdkd-event-log-head" id="sdkd-event-log-toggle" role="button" tabindex="0" aria-expanded="false">
           <span class="sdkd-event-log-head-left">
@@ -18506,6 +18613,29 @@ function copyClaudeMCPConfig() {
         var storedVp = localStorage.getItem('sdkd-viewport');
         if (storedVp === 'mobile' || storedVp === 'tablet') setViewport(storedVp);
       } catch (e) {}
+
+      // ─── Test cards click-to-copy ───
+      // The iframe is cross-origin so we can't programmatically fill the
+      // card field. Best UX: copy the PAN to the clipboard, flash a
+      // "Copied!" pill, let the user paste into the card input.
+      function copyPan(btn) {
+        var pan = btn.dataset.pan;
+        var done = function() {
+          btn.classList.add('copied');
+          setTimeout(function() { btn.classList.remove('copied'); }, 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(pan).then(done).catch(function() {
+            // Fallback for browsers without async clipboard
+            fallbackCopy(pan); done();
+          });
+        } else {
+          fallbackCopy(pan); done();
+        }
+      }
+      section.querySelectorAll('.sdkd-testcard').forEach(function(btn) {
+        btn.addEventListener('click', function() { copyPan(btn); });
+      });
 
       // Customize drawer open/close
       var $custToggle   = document.getElementById('sdkd-cust-toggle');
