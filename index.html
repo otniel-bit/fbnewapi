@@ -4723,6 +4723,29 @@
     border-top-right-radius: 0;
   }
 
+  /* ── SDK Demo: sound toggle button (icon only) ────────────────
+     Mute/unmute the click sounds. Lives next to Share + Customize. */
+  .sdkd-sound-btn {
+    appearance: none; cursor: pointer;
+    width: 36px; height: 36px;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 16px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    margin-left: auto;
+  }
+  .sdkd-sound-btn + .sdkd-share-btn,
+  .sdkd-sound-btn + .sdkd-cust-toggle { margin-left: 4px; }
+  .sdkd-sound-btn:hover { border-color: var(--accent); }
+  .sdkd-sound-btn[aria-pressed="false"] {
+    background: var(--bg-alt);
+    opacity: 0.7;
+  }
+
   /* ── SDK Demo: share button ───────────────────────────────────
      Lives in the toolbar next to Customize. Click → copies a URL
      that recreates the current config in another tab. */
@@ -13193,6 +13216,7 @@ await checkout.init();                              // async</code></pre></div>
   <div class="sdkd-toolbar">
     <div class="sdkd-toolbar-row">
       <span class="sdkd-toolbar-desc">Default Main checkout. Toggle features below or open <strong>🎨 Customize</strong> for full control — the snippet updates as you go.</span>
+      <button class="sdkd-sound-btn" id="sdkd-sound-btn" type="button" aria-pressed="true" title="Click sounds on">🔊</button>
       <button class="sdkd-share-btn" id="sdkd-share-btn" type="button" title="Copy a link that recreates this exact configuration">🔗 Share</button>
       <button class="sdkd-cust-toggle" id="sdkd-cust-toggle" type="button">🎨 Customize</button>
     </div>
@@ -18732,6 +18756,7 @@ function copyClaudeMCPConfig() {
       // syncControlsFromState() at the end keeps the two surfaces in lockstep.
       section.querySelectorAll('input[data-feature]').forEach(function(cb) {
         cb.addEventListener('change', function() {
+          if (cb.checked) playToggleOn(); else playToggleOff();
           var key = cb.dataset.feature;
           var wasOn = !!state.features[key];
           state.features[key] = cb.checked;
@@ -18855,11 +18880,11 @@ function copyClaudeMCPConfig() {
       });
       // Presets
       section.querySelectorAll('.sdkd-preset').forEach(function(btn) {
-        btn.addEventListener('click', function() { applyPreset(btn.dataset.preset); });
+        btn.addEventListener('click', function() { playPop(); applyPreset(btn.dataset.preset); });
       });
       // Recipes (toolbar chips) — bundle of features + preset + field controls
       section.querySelectorAll('.sdkd-recipe').forEach(function(btn) {
-        btn.addEventListener('click', function() { applyRecipe(btn.dataset.recipe); });
+        btn.addEventListener('click', function() { playPop(); applyRecipe(btn.dataset.recipe); });
       });
       // Product field inputs (Add-on variant)
       section.querySelectorAll('input[data-prod-field], textarea[data-prod-field]').forEach(function(el) {
@@ -18921,6 +18946,80 @@ function copyClaudeMCPConfig() {
         if (stored === '0') setEventLogCollapsed(false);
       } catch (e) {}
 
+      // ─── Sound engine (Web Audio API, generated tones) ───
+      // Tasteful pops + ticks on key interactions. Lazy-init the audio
+      // context on first user gesture (browser policy). User can mute
+      // via a 🔊 button in the toolbar; choice persists in localStorage.
+      // Respects prefers-reduced-motion (defaults off when set).
+      var soundEnabled = true;
+      try {
+        var soundPref = localStorage.getItem('sdkd-sound');
+        if (soundPref === 'off') soundEnabled = false;
+        else if (soundPref === null && window.matchMedia &&
+                 window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          soundEnabled = false;
+        }
+      } catch (e) {}
+      var _audioCtx = null;
+      function getAudioCtx() {
+        if (_audioCtx) return _audioCtx;
+        try {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          _audioCtx = new AC();
+          return _audioCtx;
+        } catch (e) { return null; }
+      }
+      function playTone(opts) {
+        if (!soundEnabled) return;
+        var ctx = getAudioCtx(); if (!ctx) return;
+        if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
+        var now = ctx.currentTime;
+        var dur = opts.duration || 0.08;
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = opts.type || 'sine';
+        osc.frequency.setValueAtTime(opts.freqStart, now);
+        if (opts.freqEnd && opts.freqEnd !== opts.freqStart) {
+          osc.frequency.exponentialRampToValueAtTime(Math.max(50, opts.freqEnd), now + dur);
+        }
+        var vol = opts.volume || 0.06;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.start(now);
+        osc.stop(now + dur + 0.02);
+      }
+      function playPop()       { playTone({ freqStart: 600,  freqEnd: 380,  duration: 0.09, volume: 0.06 }); }
+      function playTick()      { playTone({ freqStart: 1200,                duration: 0.04, volume: 0.04, type: 'triangle' }); }
+      function playToggleOn()  { playTone({ freqStart: 440,  freqEnd: 880,  duration: 0.10, volume: 0.06 }); }
+      function playToggleOff() { playTone({ freqStart: 660,  freqEnd: 330,  duration: 0.10, volume: 0.05 }); }
+      function playDing() {
+        // Two-note success — root + perfect fifth, very short attack
+        playTone({ freqStart: 880,  duration: 0.18, volume: 0.05 });
+        playTone({ freqStart: 1320, duration: 0.18, volume: 0.035 });
+      }
+
+      // Sound toggle button in the toolbar
+      var $soundBtn = document.getElementById('sdkd-sound-btn');
+      function refreshSoundBtn() {
+        if (!$soundBtn) return;
+        $soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
+        $soundBtn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+        $soundBtn.setAttribute('title', soundEnabled ? 'Click sounds on (click to mute)' : 'Click sounds off (click to enable)');
+      }
+      if ($soundBtn) {
+        refreshSoundBtn();
+        $soundBtn.addEventListener('click', function() {
+          soundEnabled = !soundEnabled;
+          try { localStorage.setItem('sdkd-sound', soundEnabled ? 'on' : 'off'); } catch (e) {}
+          refreshSoundBtn();
+          // Give the user feedback that the toggle worked
+          if (soundEnabled) playToggleOn(); else { /* silent on mute, as expected */ }
+        });
+      }
+
       // ─── Viewport preview toggle ───
       // Lets the user constrain the mount container to phone/tablet
       // widths so they can preview their checkout at a smaller size
@@ -18934,7 +19033,7 @@ function copyClaudeMCPConfig() {
         try { localStorage.setItem('sdkd-viewport', vp); } catch (e) {}
       }
       $vpBtns.forEach(function(b) {
-        b.addEventListener('click', function() { setViewport(b.dataset.viewport); });
+        b.addEventListener('click', function() { playTick(); setViewport(b.dataset.viewport); });
       });
       try {
         var storedVp = localStorage.getItem('sdkd-viewport');
@@ -18948,6 +19047,7 @@ function copyClaudeMCPConfig() {
       function copyPan(btn) {
         var pan = btn.dataset.pan;
         var done = function() {
+          playDing();
           btn.classList.add('copied');
           setTimeout(function() { btn.classList.remove('copied'); }, 1800);
         };
@@ -19046,6 +19146,7 @@ function copyClaudeMCPConfig() {
           var url = window.location.origin + window.location.pathname +
                     '?cfg=' + encodeState() + '#sdk-demo';
           var done = function() {
+            playDing();
             $shareBtn.classList.add('copied');
             var orig = $shareBtn.textContent;
             $shareBtn.textContent = '✓ Link copied!';
@@ -19088,7 +19189,7 @@ function copyClaudeMCPConfig() {
         refreshSnippet();
       }
       $langTabs.forEach(function(t) {
-        t.addEventListener('click', function() { setLanguage(t.dataset.lang); });
+        t.addEventListener('click', function() { playTick(); setLanguage(t.dataset.lang); });
       });
       // Sync the UI to whatever activeLanguage already loaded from localStorage
       setLanguage(activeLanguage);
@@ -19144,6 +19245,7 @@ function copyClaudeMCPConfig() {
         btn.textContent = 'Copy';
         btn.addEventListener('click', function() {
           var text = ($snippet.innerText || $snippet.textContent).trim();
+          playDing();
           btn.textContent = 'Copied!';
           btn.classList.add('copied');
           setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
