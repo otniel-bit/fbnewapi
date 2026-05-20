@@ -13158,6 +13158,7 @@ await checkout.init();                              // async</code></pre></div>
       <span class="pg-env-dot"></span> Production
     </span>
     <span class="pg-prod-warn" id="pgProdWarn">⚠ You're pointing at live data</span>
+    <button class="sdkd-sound-btn" id="pg-sound-btn" type="button" aria-pressed="true" title="Click sounds on">🔊</button>
   </div>
 
   <!-- Endpoint Picker -->
@@ -19044,24 +19045,25 @@ function copyClaudeMCPConfig() {
         }
       };
 
-      // Sound toggle button in the toolbar
-      var $soundBtn = document.getElementById('sdkd-sound-btn');
+      // Sound toggle buttons (SDK Demo toolbar + API Playground env-bar).
+      // refreshSoundBtn walks ALL .sdkd-sound-btn so toggling one syncs the
+      // visual state of every copy. Click handler is the same for each.
       function refreshSoundBtn() {
-        if (!$soundBtn) return;
-        $soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
-        $soundBtn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
-        $soundBtn.setAttribute('title', soundEnabled ? 'Click sounds on (click to mute)' : 'Click sounds off (click to enable)');
+        document.querySelectorAll('.sdkd-sound-btn').forEach(function(btn) {
+          btn.textContent = soundEnabled ? '🔊' : '🔇';
+          btn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+          btn.setAttribute('title', soundEnabled ? 'Click sounds on (click to mute)' : 'Click sounds off (click to enable)');
+        });
       }
-      if ($soundBtn) {
-        refreshSoundBtn();
-        $soundBtn.addEventListener('click', function() {
+      document.querySelectorAll('.sdkd-sound-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
           soundEnabled = !soundEnabled;
           try { localStorage.setItem('sdkd-sound', soundEnabled ? 'on' : 'off'); } catch (e) {}
           refreshSoundBtn();
-          // Give the user feedback that the toggle worked
-          if (soundEnabled) playToggleOn(); else { /* silent on mute, as expected */ }
+          if (soundEnabled) playToggleOn();   // confirm the unmute audibly
         });
-      }
+      });
+      refreshSoundBtn();
 
       // ─── Viewport preview toggle ───
       // Lets the user constrain the mount container to phone/tablet
