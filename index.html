@@ -17206,6 +17206,7 @@ function copyClaudeMCPConfig() {
     // Click handlers
     elPicker.querySelectorAll('.pg-ep-card').forEach(function(card) {
       card.addEventListener('click', function() {
+        pgSnd('pop');
         var epId = card.getAttribute('data-ep-id');
         var ep = ENDPOINTS.find(function(e) { return e.id === epId; });
         if (ep) selectEndpoint(ep);
@@ -17290,11 +17291,14 @@ function copyClaudeMCPConfig() {
     if (!selected) return;
     var apiKey = elKey.value.trim();
     if (!apiKey) {
+      if (window.fbSound && window.fbSound.error) window.fbSound.error();
       elKey.style.borderColor = '#ef4444';
       elKey.focus();
       setTimeout(function() { elKey.style.borderColor = ''; }, 2000);
       return;
     }
+    // Satisfying pop on the actual send press
+    if (window.fbSound && window.fbSound.pop) window.fbSound.pop();
 
     var url = buildUrl(selected);
     var opts = {
@@ -17322,11 +17326,17 @@ function copyClaudeMCPConfig() {
     fetch(url, opts).then(function(resp) {
       var elapsed = Math.round(performance.now() - t0);
       return resp.text().then(function(text) {
+        // Success ding for 2xx, error sound for 4xx/5xx
+        if (window.fbSound) {
+          if (resp.status >= 200 && resp.status < 300) window.fbSound.ding();
+          else                                         window.fbSound.error();
+        }
         showResponse(resp.status, elapsed, text);
         addHistory(selected, resp.status, elapsed, sentBody, text);
       });
     }).catch(function(err) {
       var elapsed = Math.round(performance.now() - t0);
+      if (window.fbSound && window.fbSound.error) window.fbSound.error();
       showError(err, elapsed);
       addHistory(selected, 0, elapsed, sentBody, null);
     }).finally(function() {
@@ -17437,6 +17447,7 @@ function copyClaudeMCPConfig() {
     // Click to re-select and restore saved request/response
     elHistList.querySelectorAll('.pg-history-item').forEach(function(item) {
       item.addEventListener('click', function() {
+        pgSnd('tick');
         var idx = parseInt(item.getAttribute('data-hist-idx'));
         var h = history[idx];
         if (!h) return;
@@ -17479,8 +17490,15 @@ function copyClaudeMCPConfig() {
   }
 
   // ── EVENT BINDINGS ────────────────────────────────────────
+  // Tiny helper — defensive sound call (engine lives in SDK Demo IIFE,
+  // assigned to window.fbSound after DOMContentLoaded).
+  function pgSnd(name) {
+    if (window.fbSound && typeof window.fbSound[name] === 'function') window.fbSound[name]();
+  }
+
   // Key toggle
   elKeyToggle.addEventListener('click', function() {
+    pgSnd('tick');
     var isPass = elKey.type === 'password';
     elKey.type = isPass ? 'text' : 'password';
     elKeyToggle.textContent = isPass ? '🔒' : '👁';
@@ -17489,7 +17507,10 @@ function copyClaudeMCPConfig() {
   // Env toggle
   [elEnvSand, elEnvProd].forEach(function(pill) {
     pill.addEventListener('click', function() {
-      env = pill.getAttribute('data-env');
+      var newEnv = pill.getAttribute('data-env');
+      // Only play if we're actually changing (avoids audio spam on rapid re-clicks)
+      if (newEnv !== env) pgSnd(newEnv === 'production' ? 'toggleOn' : 'toggleOff');
+      env = newEnv;
       elEnvSand.classList.toggle('active', env === 'sandbox');
       elEnvProd.classList.toggle('active', env === 'production');
       elProdWarn.classList.toggle('show', env === 'production');
@@ -19000,6 +19021,28 @@ function copyClaudeMCPConfig() {
         playTone({ freqStart: 880,  duration: 0.18, volume: 0.05 });
         playTone({ freqStart: 1320, duration: 0.18, volume: 0.035 });
       }
+      function playError() {
+        // Falling minor — a soft "nope" without being harsh
+        playTone({ freqStart: 440, freqEnd: 220, duration: 0.22, volume: 0.05, type: 'triangle' });
+      }
+
+      // Expose the sound engine globally so other docs sections (e.g. the
+      // API Playground) can use the same palette + share the mute state.
+      // Defensive call sites should still use `window.fbSound && fbSound.x()`.
+      window.fbSound = {
+        pop:       playPop,
+        tick:      playTick,
+        toggleOn:  playToggleOn,
+        toggleOff: playToggleOff,
+        ding:      playDing,
+        error:     playError,
+        isEnabled: function() { return soundEnabled; },
+        setEnabled: function(v) {
+          soundEnabled = !!v;
+          try { localStorage.setItem('sdkd-sound', soundEnabled ? 'on' : 'off'); } catch (e) {}
+          if (typeof refreshSoundBtn === 'function') refreshSoundBtn();
+        }
+      };
 
       // Sound toggle button in the toolbar
       var $soundBtn = document.getElementById('sdkd-sound-btn');
