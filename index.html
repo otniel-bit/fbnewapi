@@ -8836,10 +8836,14 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
     <thead><tr><th>Environment</th><th>Base URL</th></tr></thead>
     <tbody>
       <tr><td>Production</td><td><code>https://fanbasis.com</code></td></tr>
-      <tr><td>QA</td><td><code>https://qa.dev-fan-basis.com</code></td></tr>
+      <tr><td>QA / Sandbox</td><td><code>https://qa.dev-fan-basis.com</code></td></tr>
     </tbody>
   </table>
   <p style="margin-top:8px;">All proration endpoints are mounted under <code class="inline">/api/seller/v1/</code>.</p>
+  <div class="callout warning" style="margin-top:12px;">
+    <div class="callout-title">⚠ Different production host than the rest of the API</div>
+    <p>These Seller v1 proration endpoints live on the <strong>apex</strong> domain <code class="inline">https://fanbasis.com</code> (no <code class="inline">www</code>), whereas the rest of the Public API uses <code class="inline">https://www.fanbasis.com</code>. This is intentional — not a typo. The QA/Sandbox host (<code class="inline">qa.dev-fan-basis.com</code>) is the same for both.</p>
+  </div>
 
   <h3 class="subsection-title" style="margin-top:28px;">Standard Upgrade Flow</h3>
   <ol style="margin:6px 0 0 20px;line-height:1.9;">
@@ -9980,6 +9984,18 @@ Content-Type: application/json
         <td>Not Found</td>
         <td>The resource doesn't exist.</td>
         <td>Double-check the ID in your URL. It may have been deleted.</td>
+      </tr>
+      <tr>
+        <td><code style="color:#B91C1C; font-weight:600;">422</code></td>
+        <td>Unprocessable Entity</td>
+        <td>The request was well-formed but failed validation (e.g. a bad value, or an action that isn't allowed in the resource's current state).</td>
+        <td>Check the <code class="inline">message</code> in the response — it names the specific problem. Common on the proration endpoints (e.g. "Subscription is not active").</td>
+      </tr>
+      <tr>
+        <td><code style="color:#B91C1C; font-weight:600;">429</code></td>
+        <td>Too Many Requests</td>
+        <td>You've exceeded the rate limit.</td>
+        <td>Back off and retry. See <a href="#rate-limits">Rate Limits</a> for the limits and recommended retry behavior.</td>
       </tr>
       <tr>
         <td><code style="color:#B91C1C; font-weight:600;">500</code></td>
