@@ -5804,9 +5804,17 @@ function googleTranslateElementInit() {
   <div class="callout-title">◆ Transaction</div>
   <p>A transaction is a single completed payment. Each time a customer pays — whether for a one-time purchase or a subscription renewal — a new transaction is created. Transactions include fee breakdowns and net payout amounts.</p>
 </div>
+<div class="callout concept" style="margin-top:8px;">
+  <div class="callout-title">◆ Subscription</div>
+  <p>A subscription is a recurring payment plan tied to a product. FanBasis bills the customer automatically every <code class="inline">frequency_days</code> (e.g. 30 for monthly) and fires <code class="inline">subscription.renewed</code> on each successful charge. A subscriber keeps access until their subscription is canceled or completes its scheduled periods.</p>
+</div>
+<div class="callout concept" style="margin-top:8px;">
+  <div class="callout-title">◆ Slug / ID</div>
+  <p>A "slug" is a short, URL-safe identifier FanBasis uses for records — for example your <strong>creator slug</strong> (your handle, like <code class="inline">boolerscom</code>) or a <strong>product ID</strong> (like <code class="inline">NLxj6</code>). You'll see these in URLs and request bodies. Note that some IDs are these short slugs (products, sessions) while others are plain integers (customer IDs, subscription IDs).</p>
+</div>
 
 <h3 id="authentication" class="sub-title" style="margin-top:28px;">Authentication</h3>
-<p>Every API request must include your API key in the <code class="inline">x-api-key</code> header. There are no usernames or passwords — just your key.</p>
+<p>Every API request must include your API key in the <code class="inline">x-api-key</code> header. There are no usernames or passwords — just your key. Every endpoint is served under the <code class="inline">/public-api/</code> path on <code class="inline">https://www.fanbasis.com</code> (e.g. <code class="inline">https://www.fanbasis.com/public-api/products</code>). The one exception is the Subscription Proration API, which lives under <code class="inline">/api/seller/v1/</code> on the apex domain — see that section for details.</p>
 <div class="callout warning">
   <div class="callout-title">⚠ Keep your key private</div>
   <p>Never share your API key in public code, GitHub repositories, or client-side JavaScript. If your key is compromised, regenerate it immediately from the <strong>API Keys</strong> section in your FanBasis dashboard.</p>
@@ -5856,7 +5864,7 @@ function googleTranslateElementInit() {
     <div class="qs-num">2</div>
     <div class="qs-content">
       <div class="qs-content-title">Create a checkout session</div>
-      <div class="qs-content-desc">Make a POST request to /checkout-sessions with your product name, price, and type. FanBasis returns a <code class="inline">payment_link</code> — that's your customer's payment page.</div>
+      <div class="qs-content-desc">Make a POST request to <code class="inline">https://www.fanbasis.com/public-api/checkout-sessions</code> with your product name, price, and type. FanBasis returns a <code class="inline">payment_link</code> — that's your customer's payment page.</div>
     </div>
   </div>
   <div class="qs-step">
@@ -5898,12 +5906,16 @@ function googleTranslateElementInit() {
 <div class="env-grid" style="margin-top:16px;">
   <div class="env-card" style="background:#F0FDF4;border-color:#BBF7D0;">
     <div style="font-size:15px;font-weight:700;color:#14532D;margin-bottom:8px;">🟢 Production</div>
-    <div style="font-size:14px;color:#166534;">Use your live API key. Real charges will be made to real cards.</div>
+    <div style="font-size:14px;color:#166534;">Use your live API key. Real charges will be made to real cards.<br><strong>Base URL:</strong> <code class="inline">https://www.fanbasis.com</code></div>
   </div>
   <div class="env-card" style="background:#EFF6FF;border-color:#BFDBFE;">
     <div style="font-size:15px;font-weight:700;color:#1E3A8A;margin-bottom:8px;">🔵 Sandbox (Test Mode)</div>
-    <div style="font-size:14px;color:#1E40AF;">Use your test API key. No real charges. Safe to experiment freely.</div>
+    <div style="font-size:14px;color:#1E40AF;">Use your test API key. No real charges. Safe to experiment freely.<br><strong>Base URL:</strong> <code class="inline">https://qa.dev-fan-basis.com</code></div>
   </div>
+</div>
+<div class="callout info" style="margin-top:12px;">
+  <div class="callout-title">ℹ "Sandbox", "test mode", and "QA" all mean the same thing</div>
+  <p>The test environment is hosted at <code class="inline">https://qa.dev-fan-basis.com</code> — you'll sometimes see it labeled "QA" (it's the same host). If you use the <strong>Embedded Checkout SDK</strong>, note that the SDK's <code class="inline">environment</code> value for this is the string <code class="inline">'sandbox'</code> (never <code class="inline">'qa'</code>), even though the host URL contains "qa".</p>
 </div>
 
 <h3 class="sub-title">Test Card Numbers</h3>
