@@ -8528,7 +8528,7 @@ end</code></pre>
     <pre><code>{
   "status": "success",
   "data": {
-    "charge_id": "ch_abc123",
+    "charge_id": "01J8XR2K9P3QWZ5MN7VABCDEFG",
     "amount": 19.99,
     "status": "succeeded",
     "created_at": "2025-01-15T14:30:00Z"
@@ -13822,7 +13822,7 @@ await checkout.init();                              // async</code></pre></div>
 
   <!-- ── AVAILABLE TOOLS ──────────────────────────────────────── -->
   <h3 id="ai-agent-tools" class="subsection-title">Available AI Agent Tools</h3>
-  <p>All 11 read-only tools are available across every connected platform:</p>
+  <p>These read/query tools are available across every connected platform:</p>
 
   <table class="data-table" style="margin-top:12px;">
     <thead>
@@ -13842,6 +13842,10 @@ await checkout.init();                              // async</code></pre></div>
       <tr><td><code class="inline">fanbasis_get_payment_methods</code></td><td><code class="inline">GET /customers/:id/payment-methods</code></td><td>Customer's saved cards (last 4 only)</td></tr>
     </tbody>
   </table>
+  <div class="callout warning" style="margin-top:12px;">
+    <div class="callout-title">⚠ Write actions also available</div>
+    <p>Beyond the read tools above, the MCP server can also perform <strong>write</strong> actions — charging a customer, creating/updating/deleting discount codes, and extending or cancelling subscriptions. These are state-changing and are gated behind an explicit confirmation step before they execute.</p>
+  </div>
 
   <!-- ── EXAMPLE CONVERSATIONS ────────────────────────────────── -->
   <h3 id="ai-agent-examples" class="subsection-title">Example Conversations</h3>
