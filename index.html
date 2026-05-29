@@ -13337,7 +13337,7 @@ await checkout.init();                              // async</code></pre></div>
         <div class="sdkd-row"><label>Billing form placement</label>
           <select data-cfg-select="billing_form_placement">
             <option value="above">Above payment</option>
-            <option value="below">Below payment</option>
+            <option value="left">Side-by-side (left)</option>
           </select>
         </div>
         <div class="sdkd-row"><label class="sdkd-check"><input type="checkbox" data-cfg-bool="show_product_info" checked> Show product info</label></div>
@@ -17862,8 +17862,8 @@ function copyClaudeMCPConfig() {
           apply: function() {
             applyPresetState('mineral-blue');
             state.features.prefill = true;
-            // Formal layout: billing form below the payment section
-            state.billing_form_placement = 'below';
+            // Formal layout: billing form beside the payment section (only 'above'|'left' are valid)
+            state.billing_form_placement = 'left';
             state.collectPhone = false;
             state.prefill.first_name = 'Marcus';
             state.prefill.last_name  = 'Whitfield';
@@ -18080,8 +18080,7 @@ function copyClaudeMCPConfig() {
           checkoutInstance.on('form:validation',  function(d) { logEvent('form:validation',  safe(d)); });
           checkoutInstance.on('field:value',      function(d) { logEvent('field:value',      safe(d)); });
           checkoutInstance.on('addons:changed',   function(d) { logEvent('addons:changed',   safe(d)); });
-          checkoutInstance.on('payment:success',  function()  { logEvent('payment:success',  '✓ paid'); });
-          checkoutInstance.on('payment:error',    function(d) { logEvent('payment:error',    safe(d)); });
+          checkoutInstance.on('form:submission_error', function(d) { logEvent('form:submission_error', safe(d)); });
           checkoutInstance.on('checkout:success', function(d) { logEvent('checkout:success', safe(d)); });
           checkoutInstance.on('checkout:error',   function(d) { logEvent('checkout:error',   safe(d)); });
         }
