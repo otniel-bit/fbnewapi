@@ -1,0 +1,15 @@
+{
+  "name": "fbnewapi-docs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "FanBasis API & SDK documentation — single-file static site (index.html), served by Netlify. No build step; the scripts below only verify/keep the SDK reference in sync with @fanbasis/checkout-core.",
+  "scripts": {
+    "check:sdk": "node scripts/check-sdk.mjs",
+    "gen:sdk": "node scripts/check-sdk.mjs --write",
+    "check:sdk:npm": "node scripts/check-sdk.mjs --check-npm"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

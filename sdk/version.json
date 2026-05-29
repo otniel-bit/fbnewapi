@@ -1,0 +1,13 @@
+{
+  "_comment": "Pinned SDK versions the docs are written against. The drift gate (scripts/check-sdk.mjs) verifies the docs reference these, and --check-npm fails if npm has shipped a newer release. Bump here + regenerate when you update the docs to a new SDK version.",
+  "packages": {
+    "@fanbasis/checkout-core": {
+      "version": "0.5.0",
+      "types": "sdk/checkout-core.d.ts"
+    },
+    "@fanbasis/checkout-react": {
+      "version": "0.4.0",
+      "types": null
+    }
+  }
+}

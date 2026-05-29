@@ -10729,6 +10729,13 @@ Content-Type: application/json
   <div style="margin-top:28px;">
 
     <div class="changelog-entry">
+      <div class="changelog-date">May 2026</div>
+      <div class="changelog-title">SDK 0.5.0 — Coupon Events & Programmatic Coupons</div>
+      <span class="changelog-tag new">New</span>
+      <div class="changelog-desc">Update to <code class="inline">@fanbasis/checkout-core@0.5.0</code> and <code class="inline">@fanbasis/checkout-react@0.4.0</code>. Two new events — <code class="inline">coupon:applied</code> (<code class="inline">{ code, discountAmount, newTotal }</code>) and <code class="inline">coupon:error</code> (<code class="inline">{ code, error }</code>) — let you react to coupon changes, plus new <code class="inline">applyCoupon(code)</code> / <code class="inline">removeCoupon()</code> methods to apply coupons programmatically.</div>
+    </div>
+
+    <div class="changelog-entry">
       <div class="changelog-date">April 2026</div>
       <div class="changelog-title">SDK 0.4.0 — Prefill, Field Control & Validation Events</div>
       <span class="changelog-tag new">New</span>
@@ -10829,7 +10836,7 @@ Content-Type: application/json
 <li><strong>Hosted JavaScript</strong> — One &lt;script&gt; tag. Works on GHL, WordPress, Squarespace, Wix, Webflow, plain HTML. — <code class="inline">&lt;script src="cdn.embedded.fanbasis.io/embed/index.js"&gt;</code></li>
 <li><strong>React & Next.js</strong> — Native components, hooks, and TypeScript types. Built on the same core engine. — <code class="inline">npm install @fanbasis/checkout-react</code></li>
 </ul></div>
-<div class="callout info"><div class="callout-title">ℹ Documented versions</div><p>This documentation reflects <code class="inline">@fanbasis/checkout-core@0.4.0</code> and <code class="inline">@fanbasis/checkout-react@0.3.0</code>. Highlights of the 0.4.0 release: native field <strong>prefill</strong>, per-field <strong>hide/disable</strong> control, top-level <code class="inline">metadata</code> and <code class="inline">collectPhone</code> options, and new <code class="inline">form:validation</code> / <code class="inline">field:value</code> events. See <a href="#sdk-migration">Migration Guide</a> for details.</p></div>
+<div class="callout info"><div class="callout-title">ℹ Documented versions</div><p>This documentation reflects <code class="inline">@fanbasis/checkout-core@0.5.0</code> and <code class="inline">@fanbasis/checkout-react@0.4.0</code>. New in 0.5.0: <code class="inline">coupon:applied</code> / <code class="inline">coupon:error</code> events and the <code class="inline">applyCoupon()</code> / <code class="inline">removeCoupon()</code> methods. The 0.4.0 release added native field <strong>prefill</strong>, per-field <strong>hide/disable</strong> control, top-level <code class="inline">metadata</code> and <code class="inline">collectPhone</code> options, and the <code class="inline">form:validation</code> / <code class="inline">field:value</code> events. See <a href="#sdk-migration">Migration Guide</a> for details.</p></div>
 <p>Use the sidebar to navigate the full SDK documentation, including configuration options, event hooks, prefill &amp; field control, programmatic submission, platform-specific guides, and troubleshooting.</p>
 </section>
 
@@ -11962,6 +11969,8 @@ interface FieldControl {
 <tr><td><code class="inline">form:submission_error</code></td><td><code class="inline">{ type, timestamp, data: { errorCode, errorMessage, retryable } }</code></td><td>Gateway declined or errored the payment</td></tr>
 <tr><td><code class="inline">form:validation</code></td><td><code class="inline">{ isValid, fields: Record&lt;string, { valid, error }&gt; }</code></td><td>Per-field validation status updated</td></tr>
 <tr><td><code class="inline">addons:changed</code></td><td><code class="inline">{ selectedAddons: string[], addons: Addon[] }</code></td><td>Addon selection changed</td></tr>
+<tr><td><code class="inline">coupon:applied</code></td><td><code class="inline">{ code, discountAmount, newTotal }</code></td><td>A coupon was applied successfully</td></tr>
+<tr><td><code class="inline">coupon:error</code></td><td><code class="inline">{ code, error }</code></td><td>A coupon failed to apply (invalid, expired, etc.)</td></tr>
 <tr><td><code class="inline">field:value</code></td><td><code class="inline">{ field, value }</code></td><td>Field value changed (setter or user input)</td></tr>
 </tbody>
 </table>
@@ -12781,7 +12790,7 @@ app.listen(3000);</code></pre></div>
     <span class="section-num">DEVELOPER RESOURCES</span>
     <h1>Types & Interfaces</h1>
   </div>
-<p>Complete TypeScript interfaces from <code class="inline">@fanbasis/checkout-core@0.4.0</code> and <code class="inline">@fanbasis/checkout-react@0.3.0</code>.</p>
+<p>Complete TypeScript interfaces from <code class="inline">@fanbasis/checkout-core@0.5.0</code> and <code class="inline">@fanbasis/checkout-react@0.4.0</code>.</p>
 
 <h3 class="sub-title">CheckoutConfig</h3>
 <div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutConfig {
@@ -12936,6 +12945,17 @@ interface Addon {
   };
 }
 
+interface CouponAppliedData {
+  code: string;
+  discountAmount: number;
+  newTotal: number;
+}
+
+interface CouponErrorData {
+  code: string;
+  error: string;
+}
+
 interface FieldValueData {
   field: string;
   value: string | PrefillAddress | null;
@@ -12990,6 +13010,10 @@ enum PaymentErrorCode {
   removeAddon(addonId: string): void;
   toggleAddon(addonId: string): void;
 
+  // Coupons
+  applyCoupon(code: string): void;
+  removeCoupon(): void;
+
   // Field setters/getters (Promise-returning)
   setEmail(value: string): Promise&lt;void&gt;;
   getEmail(): Promise&lt;string | null&gt;;
@@ -13010,22 +13034,26 @@ enum PaymentErrorCode {
 }</code></pre></div>
 
 <h3 class="sub-title">Event map</h3>
-<div class="code-block"><div class="code-label plain">typescript</div><pre><code>interface CheckoutEvents {
-  'checkout:opened':         () =&gt; void;
-  'checkout:closed':         () =&gt; void;
-  'checkout:loaded':         () =&gt; void;
-  'checkout:error':          (error: PaymentError) =&gt; void;
-  'checkout:success':        (data: CheckoutSuccessData) =&gt; void;
-  'form:ready':              (data: FormReadyData) =&gt; void;
-  'form:submitting':         (data: FormSubmittingData) =&gt; void;
-  'form:submission_error':   (data: FormSubmissionErrorData) =&gt; void;
-  'form:validation':         (data: FormValidationData) =&gt; void;
-  'addons:changed':          (data: AddonsChangedData) =&gt; void;
-  'field:value':             (data: FieldValueData) =&gt; void;
+<div class="code-block"><div class="code-label plain">typescript</div><pre><code><!--SDK-GEN:event-map start-->
+interface CheckoutEvents {
+  'checkout:opened':       () =&gt; void;
+  'checkout:closed':       () =&gt; void;
+  'checkout:loaded':       () =&gt; void;
+  'checkout:error':        (error: PaymentError) =&gt; void;
+  'checkout:success':      (data: CheckoutSuccessData) =&gt; void;
+  'form:ready':            (data: FormReadyData) =&gt; void;
+  'form:submitting':       (data: FormSubmittingData) =&gt; void;
+  'form:submission_error': (data: FormSubmissionErrorData) =&gt; void;
+  'form:validation':       (data: FormValidationData) =&gt; void;
+  'addons:changed':        (data: AddonsChangedData) =&gt; void;
+  'coupon:applied':        (data: CouponAppliedData) =&gt; void;
+  'coupon:error':          (data: CouponErrorData) =&gt; void;
+  'field:value':           (data: FieldValueData) =&gt; void;
 }
 
 type CheckoutEventName = keyof CheckoutEvents;
-type CheckoutEventListener&lt;T extends CheckoutEventName&gt; = CheckoutEvents[T];</code></pre></div>
+type CheckoutEventListener&lt;T extends CheckoutEventName&gt; = CheckoutEvents[T];
+<!--SDK-GEN:event-map end--></code></pre></div>
 
 <h3 class="sub-title">React SDK exports</h3>
 <div class="code-block"><div class="code-label plain">typescript</div><pre><code>// Components
@@ -13134,7 +13162,7 @@ allow="payment"</code></pre></div>
     <span class="section-num">DEVELOPER RESOURCES</span>
     <h1>Migration Guide</h1>
   </div>
-<p>Documenting <code class="inline">@fanbasis/checkout-core@0.4.0</code> and <code class="inline">@fanbasis/checkout-react@0.3.0</code>.</p>
+<p>Documenting <code class="inline">@fanbasis/checkout-core@0.5.0</code> and <code class="inline">@fanbasis/checkout-react@0.4.0</code>.</p>
 
 <h3 class="sub-title">Upgrading to 0.4.0</h3>
 <p><strong>New capabilities (no breaking changes):</strong></p>

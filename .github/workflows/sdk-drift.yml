@@ -1,0 +1,37 @@
+name: SDK drift gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly (Mon 13:00 UTC) — catches a new @fanbasis/checkout-core release.
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Fail if the docs are missing any event / error code / method / config field
+      # present in the pinned SDK types, or don't reference the pinned version.
+      - name: SDK drift check
+        run: node scripts/check-sdk.mjs
+
+      # Fail if the generated Event-map block is stale (someone edited it by hand
+      # or the pinned types changed without regenerating).
+      - name: Generated blocks are up to date
+        run: |
+          node scripts/check-sdk.mjs --write
+          git diff --exit-code index.html
+
+      # Only on the weekly cron: fail loudly if npm shipped a newer SDK version
+      # than the docs are pinned to, so the docs get updated.
+      - name: New SDK release check
+        if: github.event_name == 'schedule'
+        run: node scripts/check-sdk.mjs --check-npm
