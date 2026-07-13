@@ -18,6 +18,8 @@ All requests require an `x-api-key` header:
 x-api-key: YOUR_API_KEY
 ```
 
+Every response carries `status` (`"success"` or `"error"`), a human-readable `message`, `data`, and an opaque `request_id` string — include the `request_id` when contacting support so the exact request can be traced.
+
 ## Environments
 
 | Environment | Base URL |
@@ -51,17 +53,26 @@ curl https://www.fanbasis.com/public-api/webhook-subscriptions \
 ```json
 {
   "status": "success",
+  "message": "Webhook subscriptions retrieved successfully",
   "data": [
     {
-      "id": "ws_abc123",
+      "id": "184",
+      "user_id": null,
+      "organization_id": 42,
+      "organization_uuid": "0e6c1b9a-4f2d-4c8e-9b1a-7d3e5f2a8c01",
       "webhook_url": "https://yoursite.com/webhooks",
       "event_types": ["payment.succeeded", "subscription.created"],
       "is_active": true,
-      "created_at": "2025-01-01T00:00:00Z"
+      "last_used_at": "2026-07-10T08:15:00+00:00",
+      "created_at": "2026-07-01T00:00:00+00:00",
+      "updated_at": "2026-07-10T08:15:00+00:00"
     }
-  ]
+  ],
+  "request_id": "…"
 }
 ```
+
+Subscription IDs are plain numeric strings (e.g. `"184"`). `user_id` is a legacy field and is always `null`. `last_used_at` is the timestamp of the most recent delivery, or `null`.
 
 #### Create a Webhook Subscription
 
@@ -69,7 +80,7 @@ curl https://www.fanbasis.com/public-api/webhook-subscriptions \
 POST /public-api/webhook-subscriptions
 ```
 
-Registers a new URL to receive webhook events. You choose which events to subscribe to. The response includes a secret_key — use it to verify that incoming requests are genuinely from Commas. The secret_key is only shown once. Store it securely (e.g., as an environment variable). You'll use it to validate the signature of every incoming webhook request.
+Registers a new URL to receive webhook events. You choose which events to subscribe to. The response includes a secret_key — use it to verify that incoming requests are genuinely from Commas. Treat it like a password: store it securely (e.g., as an environment variable) and never commit or log it. You'll use it to validate the signature of every incoming webhook request.
 
 **Request Body**
 
@@ -102,14 +113,21 @@ curl -X POST https://www.fanbasis.com/public-api/webhook-subscriptions \
 ```json
 {
   "status": "success",
+  "message": "Webhook subscription created successfully",
   "data": {
-    "id": "ws_new123",
+    "id": "184",
+    "user_id": null,
+    "organization_id": 42,
+    "organization_uuid": "0e6c1b9a-4f2d-4c8e-9b1a-7d3e5f2a8c01",
     "webhook_url": "https://yourapp.com/webhooks/fanbasis",
     "event_types": ["payment.succeeded", "subscription.created", "subscription.canceled"],
-    "secret_key": "whsec_abcdef1234567890",
     "is_active": true,
-    "created_at": "2025-01-15T10:00:00Z"
-  }
+    "secret_key": "whsk_9f2c4e6a8b0d…64 hexadecimal characters",
+    "last_used_at": null,
+    "created_at": "2026-07-13T10:00:00+00:00",
+    "updated_at": "2026-07-13T10:00:00+00:00"
+  },
+  "request_id": "…"
 }
 ```
 
@@ -130,7 +148,7 @@ Removes a webhook subscription. Commas will immediately stop sending events to t
 **Request**
 
 ```bash
-curl -X DELETE "https://www.fanbasis.com/public-api/webhook-subscriptions/ws_abc123" \
+curl -X DELETE "https://www.fanbasis.com/public-api/webhook-subscriptions/184" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -169,7 +187,7 @@ Sends a simulated event to your webhook URL so you can verify everything is work
 **Request**
 
 ```bash
-curl -X POST "https://www.fanbasis.com/public-api/webhook-subscriptions/ws_abc123/test" \
+curl -X POST "https://www.fanbasis.com/public-api/webhook-subscriptions/184/test" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "event_type": "payment.succeeded" }'
@@ -188,6 +206,10 @@ curl -X POST "https://www.fanbasis.com/public-api/webhook-subscriptions/ws_abc12
   }
 }
 ```
+
+You can test any subscribed event type, including `refund.created`, `dispute.created`, and `dispute.updated`.
+
+**Errors:** `400` when the `event_type` is not one this subscription is subscribed to ("Event type not subscribed to"); `500` when your endpoint could not be reached or delivery failed.
 
 ---
 
@@ -396,8 +418,8 @@ You can optionally restrict the payment methods that will appear on this specifi
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `creator_id` | string | yes | Creator/seller ID. |
-| `product_id` | string | yes | Product ID to create the embedded checkout for. |
+| `creator_id` | string | no | Accepted for backwards compatibility but not validated or used — the session is scoped by your API key. |
+| `product_id` | string | no | Accepted for backwards compatibility but not validated or used. The returned secret is reusable across all your products. |
 | `metadata` | object | no | Arbitrary JSON object stored with the checkout session. Reserved key: `allowed_payment_methods`. |
 | `metadata.allowed_payment_methods` | array of strings | no | Per-session allow-list of payment methods. Must contain at least 1 entry. See [Accepted payment methods](#accepted-payment-methods). |
 
@@ -439,7 +461,6 @@ curl -X POST https://www.fanbasis.com/public-api/checkout-sessions/embedded \
   "data": {
     "id": 3204,
     "checkout_session_secret": "550e8400-e29b-41d4-a716-446655440000",
-    "your_handle": "your-creator-slug",
     "metadata": {
       "campaign_id": "summer-2026",
       "allowed_payment_methods": ["card", "cashapp"]
@@ -506,7 +527,6 @@ curl -X PATCH "https://www.fanbasis.com/public-api/checkout-sessions/embedded/55
   "data": {
     "id": 3204,
     "checkout_session_secret": "550e8400-e29b-41d4-a716-446655440000",
-    "your_handle": "your-creator-slug",
     "metadata": {
       "campaign_id": "summer-2026",
       "allowed_payment_methods": ["card", "klarna"]
@@ -520,11 +540,11 @@ curl -X PATCH "https://www.fanbasis.com/public-api/checkout-sessions/embedded/55
 
 The following strings are accepted in `allowed_payment_methods`. Anything outside this list returns `400 Validation failed`.
 
-`card`, `cashapp`, `affirm`, `klarna`, `afterpay_clearpay`, `apple_pay`, `google_pay`, `link`, `zip`, `nmi`, `blinc`, `sezzle`, `crypto`, `us_bank_account`, `payva`, `climb`, `paypal`, `paypal_later`, `creditkey`, `amazon_pay`, `claritypay`
+`card`, `cashapp`, `affirm`, `klarna`, `afterpay_clearpay`, `apple_pay`, `google_pay`, `link`, `zip`, `sezzle`, `crypto`, `us_bank_account`, `payva`, `climb`, `paypal`, `paypal_later`, `creditkey`, `amazon_pay`, `claritypay`
 
 **How `allowed_payment_methods` is enforced**
 
-The session list is **intersected** with the creator's enabled methods — it can only narrow what the buyer sees, never expand it.
+The session list is **intersected** with the creator's enabled methods and the product's configuration — it can only narrow what the buyer sees, never expand it. This enforcement applies to both embedded and non-embedded (hosted) checkout.
 
 | Filter | Applied? |
 |---|---|
@@ -532,7 +552,7 @@ The session list is **intersected** with the creator's enabled methods — it ca
 | Creator's account-level enabled methods | ✅ Always (intersection) |
 | Service-type restrictions (e.g. subscriptions remove BNPL) | ✅ Always |
 | Per-method amount limits (Affirm, Klarna, Afterpay, Zip, ClarityPay, Climb, CreditKey min/max) | ✅ Always |
-| Product-level disabled methods | ❌ Bypassed (session takes precedence) |
+| Product-level disabled methods | ✅ Always — the session allow-list can only narrow further, never re-enable |
 
 If filtering leaves the list empty, the session falls back to `["card"]` so checkout is never blank.
 
@@ -704,7 +724,6 @@ Returns every subscriber across all your products. Filter by customer or product
 | ----------- | ------- | -------- | ---------------------------------------------------------------- |
 | product_id  | string  | No       | Show only subscribers to this product.                           |
 | customer_id | string  | No       | Show only subscriptions belonging to this customer.              |
-| status      | string  | No       | Filter by subscription status (e.g. active, cancelled, expired). |
 | page        | integer | No       | Page number.                                                     |
 | per_page    | integer | No       | Results per page (max 100).                                      |
 
@@ -720,23 +739,47 @@ curl "https://www.fanbasis.com/public-api/subscribers?product_id=NLxj6" \
 ```json
 {
   "status": "success",
+  "message": "Subscribers retrieved successfully",
   "data": {
     "subscribers": [
       {
-        "id": "sub_1",
-        "customer": { "name": "Jane Doe", "email": "jane@example.com" },
-        "product": { "title": "Pro Monthly Membership", "price": 29.99 },
+        "id": 111388,
+        "customer": {
+          "id": "5yWjR",
+          "name": "Jane Doe",
+          "email": "jane@example.com",
+          "phone": "3055550100",
+          "country_code": "1"
+        },
+        "product": {
+          "id": "NLxj6",
+          "title": "Pro Monthly Membership",
+          "internal_name": null,
+          "description": null,
+          "price": "29.99",
+          "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/NLxj6"
+        },
         "subscription": {
+          "id": 111388,
           "status": "active",
-          "payment_frequency": 30,
-          "created_at": "2025-01-01T00:00:00Z"
+          "service_type": "subscription",
+          "payment_frequency": "monthly",
+          "completion_date": null,
+          "cancelled_at": null,
+          "auto_renew_count": 3,
+          "charge_consent": 1,
+          "created_at": "2026-01-01T00:00:00.000000Z",
+          "updated_at": "2026-07-01T00:00:00.000000Z"
         }
       }
     ],
-    "pagination": { "current_page": 1, "total_items": 80 }
-  }
+    "pagination": { "current_page": 1, "total_pages": 40, "per_page": 25, "total_items": 80, "has_more": true }
+  },
+  "request_id": "…"
 }
 ```
+
+Row `id` and `subscription.id` are numeric; `customer.id` and `product.id` are public hashids. `subscription.status` includes the full status set (see Subscription Statuses), including `onetime_service` for one-time purchases.
 
 #### Get Subscriptions for a Checkout Session
 
@@ -774,16 +817,25 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?
   "data": {
     "subscriptions": [
       {
-        "id": "sub_1",
+        "id": 111388,
+        "user_id": "5yWjR",
+        "first_name": "Jane Doe",
+        "last_name": "Jane Doe",
         "email": "jane@example.com",
+        "phone": "3055550100",
+        "country_code": "1",
         "subscription_status": "active",
-        "next_renewal_date": "2025-02-15T00:00:00Z"
+        "next_renewal_date": "2026-08-15T00:00:00.000000Z",
+        "created_at": "2026-01-15T00:00:00.000000Z"
       }
     ],
-    "pagination": { "current_page": 1, "total_pages": 1, "total_items": 12 }
-  }
+    "pagination": { "current_page": 1, "total_pages": 1, "per_page": 25, "total_items": 12, "has_more": false }
+  },
+  "request_id": "…"
 }
 ```
+
+Note: `first_name` and `last_name` currently both return the customer's full name — don't rely on them being split.
 
 #### Get Subscriptions for a Product
 
@@ -821,10 +873,16 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?
   "data": {
     "subscriptions": [
       {
-        "id": "sub_1",
+        "id": 111388,
+        "user_id": "5yWjR",
+        "first_name": "Jane Doe",
+        "last_name": "Jane Doe",
         "email": "jane@example.com",
+        "phone": "3055550100",
+        "country_code": "1",
         "subscription_status": "active",
-        "next_renewal_date": "2025-02-15T00:00:00Z"
+        "next_renewal_date": "2026-08-15T00:00:00.000000Z",
+        "created_at": "2026-01-15T00:00:00.000000Z"
       }
     ],
     "pagination": { "current_page": 1, "total_pages": 2, "total_items": 40 }
@@ -871,30 +929,36 @@ curl -X DELETE \
 POST /public-api/checkout-sessions/transactions/:transactionId/refund
 ```
 
-Issues a full or partial refund for a payment. For a full refund, don't include amount_cents. For a partial refund, specify exactly how much to refund. Once issued, a refund cannot be canceled. The customer receives the refunded amount back to their original payment method within a few business days.
+Issues a full or partial refund for a payment. Both `amount_cents` and `reason` are **required** — an empty body returns `400 Validation failed`. Pass the transaction's full remaining amount as `amount_cents` for a full refund. Refunds are processed synchronously: a `200` response means the refund is done (there is no pending/succeeded/failed lifecycle). Once issued, a refund cannot be canceled. The customer receives the refunded amount back to their original payment method within a few business days.
 
 **Path Parameters**
 
 | Parameter     | Type   | Required | Description                          |
 | ------------- | ------ | -------- | ------------------------------------ |
-| transactionId | string | Yes      | The ID of the transaction to refund. |
+| transactionId | string | Yes      | The transaction to refund — accepts the internal hashid (e.g. `pX9vQ`) or the public order ID (`ORD-XXXX-XXXX-XXXX`). The response echoes the hashid. |
 
 **Request Body**
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `amount_cents` | integer | Yes | Amount to refund in cents (minimum 1). |
+| `reason` | string | Yes | Why the refund was issued — 3 to 255 characters. |
+
 ```json
 {
-  "amount_cents": 1500
+  "amount_cents": 2500,
+  "reason": "Customer requested partial refund"
 }
 ```
 
 **Request**
 
 ```bash
-# Full refund — omit amount_cents
-curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions/txn_abc123/refund" \
+curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions/pX9vQ/refund" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -H "Idempotency-Key: refund-req-001" \
+  -d '{ "amount_cents": 2500, "reason": "Customer requested partial refund" }'
 ```
 
 **Response**
@@ -903,9 +967,21 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/transactions
 {
   "status": "success",
   "message": "Transaction refunded successfully",
-  "data": { "refund_id": "re_1234567890", "transaction_id": "txn_abc123", "refund_amount": 29.99, "refund_type": "full" }
+  "data": {
+    "refund_id": "d8Kw2",
+    "transaction_id": "pX9vQ",
+    "refund_amount": 25.00,
+    "refund_amount_cents": 2500,
+    "refund_type": "partial",
+    "refund_cost": 26.05,
+    "proportional_fee": 1.05,
+    "creator_amount_deduction": 25.00
+  },
+  "request_id": "req_9f2c…"
 }
 ```
+
+Supports the `Idempotency-Key` header — replaying the same key within 10 minutes returns `409` with `{"status": "error", "message": "This refund request was already processed.", "data": []}`.
 
 #### Extend a Subscription
 
@@ -957,7 +1033,7 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend
 
 Tier-upgrade endpoints with automatic proration. Three calls drive the flow: list available upgrade targets, preview the math, then execute.
 
-**Prerequisites:** the seller must enable Subscription Proration in the admin panel and choose a billing mode (`immediate` or `next_cycle`). Proration must also be enabled on each target service. If proration is disabled, `Get Available Upgrades` returns an empty array; `Preview` / `Process` return `422`.
+**Prerequisites:** Subscription Proration must be enabled for your **organization** in the admin panel, with a billing mode (`immediate` or `next_cycle`). Proration must also be enabled on each target service. If proration is disabled, `Get Available Upgrades` returns an empty array; `Preview` / `Process` return `400` (the body may carry a stray `"errors": 422` field — the HTTP status is 400). Note: proration is currently unavailable (force-disabled) for organizations processing on Adyen.
 
 #### Get Available Upgrades
 
@@ -1088,7 +1164,8 @@ Executes the upgrade. Marks the original subscription as `upgraded` (stops auto-
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `target_service_id` | integer | yes | — | The service ID to upgrade to. |
-| `billing_mode` | string | no | `immediate` | `immediate` (charge prorated `amount_due` now) or `next_cycle` (defer; credit applied at next renewal). |
+| `billing_mode` | string | no | seller's configured mode | `immediate` (charge prorated `amount_due` now) or `next_cycle` (defer; credit applied at next renewal). Defaults to the billing mode configured on your organization. |
+| `payment_method_id` | string | when `immediate` | — | The buyer's stored payment method to charge. Required when `billing_mode` resolves to `immediate`. |
 
 **Request**
 
@@ -1144,7 +1221,7 @@ curl -X POST "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade" \
 | `400` | Target tier is not a valid upgrade (Preview only). |
 | `401` | Missing/invalid/inactive API key. |
 | `404` | Subscription not found or doesn't belong to the seller. |
-| `422` | Subscription not `active`, target service has proration disabled, downgrade attempted, or stored payment method failed. Common `errors.general` messages: `Subscription is not active`, `Proration is not enabled for this service`, `Downgrade not allowed`, `Target service price must be higher than current service price`. |
+| `400` | Upgrade rejected — subscription not `active`, proration disabled for the organization or target service, downgrade attempted, or stored payment method failed. The body may include a stray `"errors": 422` field; the HTTP status is 400. Common messages: `Subscription is not active`, `Proration is not enabled for this service`, `Downgrade not allowed`, `Target service price must be higher than current service price`. |
 | `500` | Unhandled error during upgrade processing. |
 
 All error bodies include a `statuscode` field matching the HTTP status.
@@ -1158,6 +1235,12 @@ All error bodies include a `statuscode` field matching the HTTP status.
 | `upgraded` | ❌ | ❌ | Original subscription after upgrade — stopped renewing. |
 | `cancelled` | ❌ | ❌ | Manually cancelled. |
 | `paused` | ❌ | ❌ | Paused by seller or buyer. |
+| `paused_by_admin` | ❌ | ❌ | Paused by a Commas admin. |
+| `paused_by_persona` | ❌ | ❌ | Paused pending identity verification. |
+| `holded` | ❌ | ❌ | On hold (e.g. under review). |
+| `failed` | ❌ | ❌ | Terminal payment failure — retries exhausted. |
+| `completed` | ❌ | ❌ | Ran through all scheduled periods. |
+| `onetime_service` | ❌ | ❌ | A one-time purchase record (appears in subscriber lists). |
 
 A subscription can only be upgraded once. After upgrade, `base_subscription` is permanently `upgraded`; to upgrade again, call this endpoint on `new_subscription.subscription_id`.
 
@@ -1259,7 +1342,32 @@ curl -X POST https://www.fanbasis.com/public-api/discount-codes \
 **Response**
 
 ```json
-{ "status": "success", "message": "Discount code created successfully", "data": {} }
+# 201 Created
+{
+  "status": "success",
+  "message": "Discount code created successfully",
+  "data": {
+    "id": "z41y",
+    "code": "SUMMER20",
+    "description": "20% off for new subscribers",
+    "type": "percentage",
+    "value": "20.0000",
+    "duration": "once",
+    "expiry": "2025-08-31T00:00:00.000000Z",
+    "expiry_time": "00:00",
+    "limited_redemptions": true,
+    "usable_number": 100,
+    "one_time": true,
+    "code_type": "no_limits",
+    "service_count": 1,
+    "usage_count": 0,
+    "services": [
+      { "id": "qYyEp", "title": "Pro Monthly", "price": "29.00" }
+    ],
+    "created_at": "2026-07-13T09:12:00.000000Z",
+    "updated_at": "2026-07-13T09:12:00.000000Z"
+  }
+}
 ```
 
 #### Get a Discount Code
@@ -1288,15 +1396,27 @@ curl "https://www.fanbasis.com/public-api/discount-codes/1" \
 ```json
 {
   "status": "success",
+  "message": "Discount code retrieved successfully",
   "data": {
-    "id": 1,
+    "id": "z41y",
     "code": "SUMMER20",
-    "discount_type": "percentage",
-    "value": 20,
+    "description": "20% off for new subscribers",
+    "type": "percentage",
+    "value": "20.0000",
     "duration": "once",
-    "expiry": "2025-08-31",
-    "times_used": 12,
-    "is_active": true
+    "expiry": "2025-08-31T00:00:00.000000Z",
+    "expiry_time": "00:00",
+    "limited_redemptions": true,
+    "usable_number": 100,
+    "one_time": true,
+    "code_type": "no_limits",
+    "service_count": 1,
+    "usage_count": 12,
+    "services": [
+      { "id": "qYyEp", "title": "Pro Monthly", "price": "29.00" }
+    ],
+    "created_at": "2026-07-13T09:12:00.000000Z",
+    "updated_at": "2026-07-13T09:12:00.000000Z"
   }
 }
 ```
@@ -1345,7 +1465,31 @@ curl -X PUT "https://www.fanbasis.com/public-api/discount-codes/1" \
 **Response**
 
 ```json
-{ "status": "success", "message": "Discount code updated successfully", "data": {} }
+{
+  "status": "success",
+  "message": "Discount code updated successfully",
+  "data": {
+    "id": "z41y",
+    "code": "SUMMER20",
+    "description": "20% off for new subscribers",
+    "type": "percentage",
+    "value": "20.0000",
+    "duration": "once",
+    "expiry": "2025-08-31T00:00:00.000000Z",
+    "expiry_time": "00:00",
+    "limited_redemptions": true,
+    "usable_number": 100,
+    "one_time": true,
+    "code_type": "no_limits",
+    "service_count": 1,
+    "usage_count": 0,
+    "services": [
+      { "id": "qYyEp", "title": "Pro Monthly", "price": "29.00" }
+    ],
+    "created_at": "2026-07-13T09:12:00.000000Z",
+    "updated_at": "2026-07-13T09:12:00.000000Z"
+  }
+}
 ```
 
 #### Delete a Discount Code
@@ -1372,7 +1516,7 @@ curl -X DELETE "https://www.fanbasis.com/public-api/discount-codes/1" \
 **Response**
 
 ```json
-{ "status": "success", "message": "Discount code deleted successfully", "data": [] }
+{ "status": "success", "message": "Coupon Code has been deleted successfully!", "data": null }
 ```
 
 ---
@@ -1424,6 +1568,19 @@ curl "https://www.fanbasis.com/public-api/products" \
 }
 ```
 
+Note: Community & Courses products are excluded from this list — it returns payment products only.
+
+#### More Product Endpoints
+
+Also available with the same `x-api-key` authentication:
+
+| Endpoint | Description |
+|---|---|
+| `POST /public-api/products/create` | Create a product programmatically. |
+| `GET /public-api/products/:id/transactions` | Transactions for one product — same row shape as Get All Transactions. |
+| `GET /public-api/products/:id/subscriptions` | Subscriptions for one product — same row shape as Get Subscriptions for a Product. |
+| `GET /public-api/transactions/all` | All transactions across products — same row shape as Get All Transactions. Known issue: `refunds` on rows from this endpoint may show zeroed amounts. |
+
 ---
 
 ### Transactions
@@ -1442,12 +1599,12 @@ Returns the full details of a single payment. Useful for customer support lookup
 
 | Parameter     | Type   | Required | Description                                                                                      |
 | ------------- | ------ | -------- | ------------------------------------------------------------------------------------------------ |
-| transactionId | string | Yes      | The transaction ID. This appears in webhook events and in the transactions list as the id field. |
+| transactionId | string | Yes      | The transaction's hashid (from transaction list responses). Webhook events reference the same transaction by its public order ID (`ORD-…`). |
 
 **Request**
 
 ```bash
-curl "https://www.fanbasis.com/public-api/transactions/txn_abc123" \
+curl "https://www.fanbasis.com/public-api/transactions/pX9vQ" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -1456,22 +1613,45 @@ curl "https://www.fanbasis.com/public-api/transactions/txn_abc123" \
 ```json
 {
   "status": "success",
+  "message": "Transaction retrieved successfully",
   "data": {
-    "id": "txn_abc123",
-    "transaction_date": "2025-01-15T14:30:00Z",
+    "id": 919049,
+    "transaction_date": "2026-06-30T14:55:09.000000Z",
     "fan": {
+      "id": "5yWjR",
       "name": "Jane Doe",
       "email": "jane@example.com",
-      "country_code": "US"
+      "phone": "3055550100",
+      "country_code": "1"
+    },
+    "servicePayment": {
+      "id": "p9Rwr",
+      "payment_type": "auto_renew",
+      "fund_release_on": "2026-07-02 09:55:09",
+      "fund_released": 1
     },
     "service": {
+      "id": "NLxj6",
       "title": "Pro Monthly Membership",
-      "price": 29.99
+      "internal_name": null,
+      "description": null,
+      "price": "29.99",
+      "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/NLxj6"
     },
+    "product": {
+      "id": "NLxj6",
+      "title": "Pro Monthly Membership",
+      "internal_name": null,
+      "description": null,
+      "price": "29.99",
+      "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/NLxj6"
+    },
+    "refunds": [],
     "fee_amount": 1.20,
     "net_amount": 28.79,
-    "refunds": []
-  }
+    "amount": 29.99
+  },
+  "request_id": "…"
 }
 ```
 
@@ -1504,18 +1684,50 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/transactions?page=1&
 ```json
 {
   "status": "success",
+  "message": "Transactions retrieved successfully",
   "data": {
     "transactions": [
       {
-        "id": "txn_abc123",
-        "fan": { "name": "Jane Doe", "email": "jane@example.com" },
-        "service": { "title": "Pro Monthly Membership", "price": 29.99 },
+        "id": 919049,
+        "transaction_date": "2026-06-30T14:55:09.000000Z",
+        "fan": {
+          "id": "5yWjR",
+          "name": "Jane Doe",
+          "email": "jane@example.com",
+          "phone": "3055550100",
+          "country_code": "1"
+        },
+        "servicePayment": {
+          "id": "p9Rwr",
+          "payment_type": "auto_renew",
+          "fund_release_on": "2026-07-02 09:55:09",
+          "fund_released": 1
+        },
+        "service": {
+          "id": "NLxj6",
+          "title": "Pro Monthly Membership",
+          "internal_name": null,
+          "description": null,
+          "price": "29.99",
+          "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/NLxj6"
+        },
+        "product": {
+          "id": "NLxj6",
+          "title": "Pro Monthly Membership",
+          "internal_name": null,
+          "description": null,
+          "price": "29.99",
+          "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/NLxj6"
+        },
+        "refunds": [],
         "fee_amount": 1.20,
-        "net_amount": 28.79
+        "net_amount": 28.79,
+        "amount": 29.99
       }
     ],
-    "pagination": { "current_page": 1, "total_pages": 5, "total_items": 95, "has_more": true }
-  }
+    "pagination": { "current_page": 1, "total_pages": 5, "per_page": 20, "total_items": 95, "has_more": true }
+  },
+  "request_id": "…"
 }
 ```
 
@@ -1533,16 +1745,13 @@ The Commas API allows you to issue full or partial refunds for successful paymen
 |------|--------|
 | Payment must have succeeded | Only payments with status succeeded are eligible. Failed, pending, or cancelled payments cannot be refunded. |
 | Within processor refund window | Refunds must be initiated within the payment processor's refund window. For Affirm and Afterpay transactions this is 120 days; for Cash App Pay it is 90 days. Requests outside the processor window are automatically blocked. Contact support@fanbasis.com for off-platform options if the window has passed. |
-| No duplicate in-flight refund | If a refund request is already in a pending state for the same payment, a second request will be rejected until the first completes. |
+| No duplicate refund requests | Refunds are synchronous. Replaying the same `Idempotency-Key` within 10 minutes returns `409` ("This refund request was already processed.") instead of refunding twice. |
 | Amount ≤ amount paid | The cumulative refund amount across all partial refunds cannot exceed the original payment amount. Overage requests are rejected with REFUND_AMOUNT_EXCEEDS_PAID_AMOUNT. |
 | Not already fully refunded | If a payment has already been fully refunded, additional refund requests are rejected with PAYMENT_ALREADY_REFUNDED. |
 
-**Refund Statuses**
+**Refunds are synchronous**
 
-| Status | Meaning |
-|--------|---------|
-| amount | integer |
-| reason | string |
+There is no refund status lifecycle to poll: a `200` response means the refund is done, and the body carries the final amounts (`refund_amount`, `refund_amount_cents`, `refund_cost`, `proportional_fee`, `creator_amount_deduction`). Failures return an error response instead. Subscribe to the `refund.created` webhook to catch refunds issued from the dashboard too.
 
 ---
 
@@ -1585,45 +1794,57 @@ Events your webhook endpoint will receive:
 - `subscription.renewed`
 - `subscription.completed`
 - `subscription.canceled`
+- `subscription.past_due`
+- `subscription.recovered`
 - `dispute.created`
 - `dispute.updated`
 - `refund.created`
-- `subscription.id`
-- `subscription.status`
+
+All events are delivered in the envelope format `{ "id": "<uuid>", "type": "<event>", "data": { … }, "created_at": "<ISO 8601>" }`. All IDs in payloads are public strings: order IDs are `ORD-XXXX-XXXX-XXXX`, buyers are `user_` + 12 characters, products/subscriptions/refunds/disputes are hashids. Amounts are in dollars. `customFields` (array of `{label, type, value}`) may appear on most events.
 
 #### Example Webhook Payload
 
 ```json
 {
-  "payment_id": "txn_abc123",
-  "checkout_session_id": 345424,
-  "customer_id": "cust_def456",
-  "subscription_id": "sub_ghi012",
-  "buyer": {
-    "id": 12345,
-    "email": "alex@example.com",
-    "name": "Alex Johnson",
-    "country_code": "US",
-    "ip_address": "203.0.113.42"
+  "id": "9b2f5c1e-4a7d-4c9e-b1f3-2d8e6a1c0f45",
+  "type": "payment.succeeded",
+  "data": {
+    "payment_id": "ORD-8F3K-2MQ9-X7LP",
+    "amount": 29.00,
+    "currency": "USD",
+    "status": "succeeded",
+    "created_at": "2026-07-13T21:42:47+00:00",
+    "payment_type": "subscription",
+    "payment_method": "card",
+    "buyer": {
+      "id": "user_4Kd9mQ2xZ7Lp",
+      "name": "Alex Johnson",
+      "email": "alex@example.com"
+    },
+    "item": {
+      "id": "NLxj6",
+      "title": "Pro Membership",
+      "type": "subscription"
+    },
+    "subscription": {
+      "id": "qYyEp",
+      "status": "active",
+      "payment_frequency": "monthly"
+    },
+    "api_metadata": {
+      "data": {
+        "discord_user_id": "123456789",
+        "plan": "monthly"
+      }
+    },
+    "discount_code": "SUMMER20",
+    "discount_amount": 5.80,
+    "customFields": [
+      { "label": "Discord username", "type": "text", "value": "alex#1234" }
+    ],
+    "event_type": "payment.succeeded"
   },
-  "item": {
-    "id": 678,
-    "name": "Pro Membership",
-    "type": "subscription",
-    "description": "Monthly access to all premium content",
-    "image": "https://cdn.example.com/pro-icon.png",
-    "quantity": 1,
-    "unit_price": 2900,
-    "tax": 0
-  },
-  "amount": 2900,
-  "currency": "USD",
-  "status": "paid",
-  "payment_method": "card",
-  "api_metadata": {
-    "discord_user_id": "123456789",
-    "plan": "monthly"
-  }
+  "created_at": "2026-07-13T21:42:47+00:00"
 }
 ```
 
@@ -1631,7 +1852,7 @@ Events your webhook endpoint will receive:
 
 ### Rate Limits & Pagination
 
-The API enforces rate limits per account/endpoint. When exceeded, returns HTTP `429 Too Many Requests`.
+The API enforces rate limits per account/endpoint. The **checkout-sessions** and **customers** endpoint groups return `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers on every response. When exceeded, the API returns HTTP `429 Too Many Requests` — note the 429 body uses `{"success": false, …}` instead of the usual `{"status": "error", …}` envelope.
 
 Implement exponential backoff and check the `Retry-After` header.
 
@@ -1651,8 +1872,8 @@ Implement exponential backoff and check the `Retry-After` header.
 | 200 | OK | Request succeeded. | Nothing — all good! Your data is in the data field. |
 | 201 | Created | A new resource was created. | Store the returned ID for future requests. |
 | 400 | Bad Request | Your request was invalid. | Check the errors field in the response for field-by-field details. |
-| 401 | Unauthorized | API key missing or wrong. | Check that your x-api-key header is included and spelled correctly. |
-| 403 | Forbidden | You don't have permission. | Your account may not have access to this feature. Contact support. |
+| 401 | Unauthorized | API key missing or wrong — also returned when the resource you referenced belongs to a different organization than your key. | Check that your x-api-key header is included and that the resource ID is yours. |
+| 403 | Forbidden | You don't have permission — returned when your creator account is not yet approved for API access. | Contact support to get your account approved. |
 | 404 | Not Found | The resource doesn't exist. | Double-check the ID in your URL. It may have been deleted. |
 | 500 | Server Error | Something broke on our end. | Try again in a moment. Contact Commas support if it keeps happening. |
 | CHECKOUT_SESSION_CONSUMED | 400 | The checkout session is no longer available (e.g. it has been deleted or explicitly closed). Active sessions can accept multiple payments. | |
