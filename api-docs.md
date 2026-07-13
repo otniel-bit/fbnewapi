@@ -1,6 +1,6 @@
-# Fanbasis API Reference
+# Commas API Reference
 
-> **AI-optimized reference** — every endpoint, parameter, request/response example, webhook event, and error code in the Fanbasis public API.
+> **AI-optimized reference** — every endpoint, parameter, request/response example, webhook event, and error code in the Commas public API.
 
 ## Base URL
 
@@ -29,7 +29,7 @@ x-api-key: YOUR_API_KEY
 
 ### Webhooks
 
-Webhooks Webhooks are the bridge between Fanbasis and your application. Instead of constantly asking "did something happen?", your server just listens and Fanbasis calls it automatically whenever an event occurs — like a payment coming in or a subscription being canceled. ⬡ How webhooks work You…
+Webhooks Webhooks are the bridge between Commas and your application. Instead of constantly asking "did something happen?", your server just listens and Commas calls it automatically whenever an event occurs — like a payment coming in or a subscription being canceled. ⬡ How webhooks work You…
 
 #### List Your Webhook Subscriptions
 
@@ -69,7 +69,7 @@ curl https://www.fanbasis.com/public-api/webhook-subscriptions \
 POST /public-api/webhook-subscriptions
 ```
 
-Registers a new URL to receive webhook events. You choose which events to subscribe to. The response includes a secret_key — use it to verify that incoming requests are genuinely from Fanbasis. The secret_key is only shown once. Store it securely (e.g., as an environment variable). You'll use it to validate the signature of every incoming webhook request.
+Registers a new URL to receive webhook events. You choose which events to subscribe to. The response includes a secret_key — use it to verify that incoming requests are genuinely from Commas. The secret_key is only shown once. Store it securely (e.g., as an environment variable). You'll use it to validate the signature of every incoming webhook request.
 
 **Request Body**
 
@@ -119,7 +119,7 @@ curl -X POST https://www.fanbasis.com/public-api/webhook-subscriptions \
 DELETE /public-api/webhook-subscriptions/:webhookSubscriptionId
 ```
 
-Removes a webhook subscription. Fanbasis will immediately stop sending events to that URL.
+Removes a webhook subscription. Commas will immediately stop sending events to that URL.
 
 **Path Parameters**
 
@@ -193,7 +193,7 @@ curl -X POST "https://www.fanbasis.com/public-api/webhook-subscriptions/ws_abc12
 
 ### Checkout Sessions
 
-A checkout session is how you create a payment page. Think of it as a product listing that Fanbasis hosts for you — you define the name, price, and type, and Fanbasis gives you a link customers can use to pay. One checkout session can be shared with unlimited customers and generates a new…
+A checkout session is how you create a payment page. Think of it as a product listing that Commas hosts for you — you define the name, price, and type, and Commas gives you a link customers can use to pay. One checkout session can be shared with unlimited customers and generates a new…
 
 #### Create a Checkout Session
 
@@ -388,7 +388,7 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/transactions?p
 POST /public-api/checkout-sessions/embedded
 ```
 
-Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Requires an existing Fanbasis `product_id`. Returns a `checkout_session_secret` you use to construct the embedded checkout URL.
+Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Requires an existing Commas `product_id`. Returns a `checkout_session_secret` you use to construct the embedded checkout URL.
 
 You can optionally restrict the payment methods that will appear on this specific session by passing `allowed_payment_methods` inside `metadata`. If `metadata` is omitted, the checkout falls back to the creator's account-level payment method settings.
 
@@ -540,7 +540,7 @@ If filtering leaves the list empty, the session falls back to `["card"]` so chec
 
 ### Customers
 
-Your customer list includes everyone who has ever purchased from you through Fanbasis. The Customers API lets you search your list, view saved payment methods, and charge customers again directly — without them needing to go through checkout. ✦ When is this useful? A customer wants to add another…
+Your customer list includes everyone who has ever purchased from you through Commas. The Customers API lets you search your list, view saved payment methods, and charge customers again directly — without them needing to go through checkout. ✦ When is this useful? A customer wants to add another…
 
 #### List Your Customers
 
@@ -1428,7 +1428,7 @@ curl "https://www.fanbasis.com/public-api/products" \
 
 ### Transactions
 
-A transaction is a record of a single completed payment. Every time a customer pays — one-time or recurring — a transaction is created. The Transactions API lets you pull detailed records including customer info, the product sold, Fanbasis's fee, and your net payout.
+A transaction is a record of a single completed payment. Every time a customer pays — one-time or recurring — a transaction is created. The Transactions API lets you pull detailed records including customer info, the product sold, Commas's fee, and your net payout.
 
 #### Look Up a Transaction
 
@@ -1523,7 +1523,7 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/transactions?page=1&
 
 ### Refunds
 
-The Fanbasis API allows you to issue full or partial refunds for successful payments. Refunds are processed back to the original payment method.
+The Commas API allows you to issue full or partial refunds for successful payments. Refunds are processed back to the original payment method.
 
 **Note:** The refund endpoint is `POST /public-api/checkout-sessions/transactions/:transactionId/refund` — documented under Subscribers above.
 
@@ -1548,7 +1548,7 @@ The Fanbasis API allows you to issue full or partial refunds for successful paym
 
 ### Disputes
 
-A dispute (chargeback) occurs when a customer contacts their bank to reverse a charge. Fanbasis notifies you when a dispute is filed and provides tools to respond.
+A dispute (chargeback) occurs when a customer contacts their bank to reverse a charge. Commas notifies you when a dispute is filed and provides tools to respond.
 
 **Important:** Dispute response deadlines are strict and set by the card network. Respond as quickly as possible.
 
@@ -1556,7 +1556,7 @@ A dispute (chargeback) occurs when a customer contacts their bank to reverse a c
 
 | Status | Description |
 |--------|-------------|
-| opened | A dispute has been filed by the customer's bank. Fanbasis sends a dispute.created webhook. Respond as quickly as possible. |
+| opened | A dispute has been filed by the customer's bank. Commas sends a dispute.created webhook. Respond as quickly as possible. |
 | challenged | You have submitted evidence to counter the dispute. The card network is reviewing your submission. |
 | won | The dispute was resolved in your favor. No funds were reversed. |
 | lost | The dispute was resolved in the customer's favor. The disputed amount (plus any chargeback fee) has been debited from your balance. |
@@ -1654,7 +1654,7 @@ Implement exponential backoff and check the `Retry-After` header.
 | 401 | Unauthorized | API key missing or wrong. | Check that your x-api-key header is included and spelled correctly. |
 | 403 | Forbidden | You don't have permission. | Your account may not have access to this feature. Contact support. |
 | 404 | Not Found | The resource doesn't exist. | Double-check the ID in your URL. It may have been deleted. |
-| 500 | Server Error | Something broke on our end. | Try again in a moment. Contact Fanbasis support if it keeps happening. |
+| 500 | Server Error | Something broke on our end. | Try again in a moment. Contact Commas support if it keeps happening. |
 | CHECKOUT_SESSION_CONSUMED | 400 | The checkout session is no longer available (e.g. it has been deleted or explicitly closed). Active sessions can accept multiple payments. | |
 | PAYMENT_NOT_SUCCEEDED | 400 | The referenced payment has not reached a succeeded status. Check payment status before proceeding. | |
 | PREVIOUS_PAYMENT_PENDING | 400 | Cannot create a new charge — a previous payment for this subscription is still processing. | |
