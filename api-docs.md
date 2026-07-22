@@ -1918,3 +1918,33 @@ Implement exponential backoff and check the `Retry-After` header.
   }
 }
 ```
+
+---
+
+## Commas CLI
+
+Full command-line access to your Commas account — for sellers and for AI agents that can run shell commands (Claude Code, Cursor, etc.). Requires Node.js 20+.
+
+**Setup:**
+
+```bash
+npm install -g commas-cli
+commas login     # prompts for your Commas API key
+commas status    # verify the connection
+```
+
+**Common commands:**
+
+```bash
+commas products list                     # list products
+commas customers search "<query>"       # find customers
+commas tx list / get <id> / refund <id> # transactions & refunds
+commas subs list / cancel <id>          # subscribers & subscriptions
+commas checkout create                  # create a payment link
+commas discounts create                 # discount codes
+commas webhooks list / create / test    # webhook subscriptions
+commas docs <question>                  # search these docs
+commas tools / call <tool>              # list & call any server capability
+```
+
+**Notes for AI agents:** every command accepts `--json` for machine-readable output. Destructive commands (refunds, charges, cancellations, deletions) prompt for confirmation — pass `--yes` to confirm non-interactively. `commas env sandbox` switches all commands to the QA environment; `--env sandbox` does it for a single command. Exit code 0 = success, 1 = failure.
