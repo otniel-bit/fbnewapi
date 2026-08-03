@@ -18,7 +18,29 @@ All requests require an `x-api-key` header:
 x-api-key: YOUR_API_KEY
 ```
 
-Every response carries `status` (`"success"` or `"error"`), a human-readable `message`, `data`, and an opaque `request_id` string — include the `request_id` when contacting support so the exact request can be traced.
+Every response carries `status` (`"success"` or `"error"`), a human-readable `message`, and `data`. Most responses also carry an opaque `request_id` string — include it when contacting support so the exact request can be traced. `request_id` is **not** on every response: the discount-code and embedded-checkout responses omit it.
+
+### API Key Scopes
+
+Every API key carries a set of scopes. A key that lacks the scope for a route is rejected with `403`:
+
+```json
+{
+  "status": "error",
+  "message": "API key does not have permission for this resource. Required scope(s): refunds"
+}
+```
+
+| Scope | Routes it covers |
+|---|---|
+| `checkout-sessions` | `/public-api/checkout-sessions/*` (everything except the refund endpoint), `/public-api/products/*`, `/public-api/discount-codes/*` |
+| `refunds` | `POST /public-api/checkout-sessions/transactions/:transactionId/refund` |
+| `payments` | `/public-api/transactions/*` |
+| `webhooks` | `/public-api/webhook-subscriptions/*` |
+| `customers` | `/public-api/customers/*`, `/public-api/subscribers` |
+| `subscriptions` | The Subscription Proration endpoints (`/api/seller/v1/subscriptions/*`) |
+
+Keys created with the default settings carry **all** scopes, so most integrations never see a `403`. Narrow a key's scopes when you want to hand out read-only or refund-only credentials.
 
 ## Environments
 
@@ -207,9 +229,11 @@ curl -X POST "https://www.fanbasis.com/public-api/webhook-subscriptions/184/test
 }
 ```
 
-You can test any subscribed event type, including `refund.created`, `dispute.created`, and `dispute.updated`.
+You can test most subscribed event types, including `refund.created`, `dispute.created`, and `dispute.updated`. Three event types have **no test payload implemented** and return `500` even when your subscription is subscribed to them: `product.purchased`, `subscription.past_due`, and `subscription.recovered`.
 
-**Errors:** `400` when the `event_type` is not one this subscription is subscribed to ("Event type not subscribed to"); `500` when your endpoint could not be reached or delivery failed.
+Test deliveries are not shaped like real ones. For `payment.succeeded` and the core `subscription.*` events the test endpoint sends a **flat** payload (no `{id, type, data, created_at}` envelope), while every real delivery is enveloped — so don't validate your parser against test events alone.
+
+**Errors:** `400` when the `event_type` is not one this subscription is subscribed to ("Event type not subscribed to"); `500` when your endpoint could not be reached, delivery failed, or the event type has no test payload.
 
 ---
 
@@ -223,7 +247,15 @@ A checkout session is how you create a payment page. Think of it as a product li
 POST /public-api/checkout-sessions
 ```
 
-This is the most important endpoint — you'll call it every time you want to offer a product for purchase. The payment link you get back is ready to use immediately. You're launching a new coaching package priced at $199 one-time. You call this endpoint, get a payment link, and paste it into your newsletter. Anyone who clicks and pays gets a transaction recorded automatically.
+This is the most important endpoint — you'll call it every time you want to offer a product for purchase. The payment link you get back is ready to use immediately.
+
+**Required fields:** `product.title`, `amount_cents`, and `type` — plus `subscription.frequency_days` when `type` is `subscription`. Everything else is optional.
+
+**`amount_cents` has a minimum of `100`** ($1.00). Anything lower returns `400 Validation failed`.
+
+**`metadata` values must be strings.** The single exception is the reserved key `allowed_payment_methods`, which takes an array. Nested objects, numbers, and booleans are rejected.
+
+**`subscription.initial_fee` has a minimum of 1 and cannot be combined with `free_trial_days`** — sending both (or sending `initial_fee: 0`) returns `400`. You're launching a new coaching package priced at $199 one-time. You call this endpoint, get a payment link, and paste it into your newsletter. Anyone who clicks and pays gets a transaction recorded automatically.
 
 **Request Body**
 
@@ -243,9 +275,7 @@ This is the most important endpoint — you'll call it every time you want to of
   "subscription": {
     "frequency_days": 30,
     "auto_expire_after_x_periods": null,
-    "free_trial_days": 7,
-    "initial_fee": 0,
-    "initial_fee_days": 0
+    "free_trial_days": 7
   },
   "success_url": "https://yoursite.com/success",
   "webhook_url": "https://yoursite.com/webhooks/fanbasis"
@@ -392,7 +422,7 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/transactions?p
   "data": {
     "transactions": [
       {
-        "id": "txn_abc123",
+        "id": 919049,
         "fan": { "name": "Jane Doe", "email": "jane@example.com" },
         "service": { "title": "Pro Monthly Membership", "price": 29.99 },
         "fee_amount": 1.20,
@@ -538,23 +568,27 @@ curl -X PATCH "https://www.fanbasis.com/public-api/checkout-sessions/embedded/55
 
 #### Accepted Payment Methods
 
-The following strings are accepted in `allowed_payment_methods`. Anything outside this list returns `400 Validation failed`.
+The following strings are accepted in `allowed_payment_methods`:
 
 `card`, `cashapp`, `affirm`, `klarna`, `afterpay_clearpay`, `apple_pay`, `google_pay`, `link`, `zip`, `sezzle`, `crypto`, `us_bank_account`, `payva`, `climb`, `paypal`, `paypal_later`, `creditkey`, `amazon_pay`, `claritypay`
 
+Validation applies to the **array** form (embedded sessions and metadata updates): an entry outside the list there returns `400 Validation failed`. Hosted (non-embedded) checkout-session creation additionally accepts `allowed_payment_methods` as a **comma-separated string**, and entries in that form are **not** validated — unknown values are simply dropped later during filtering rather than rejected up front.
+
 **How `allowed_payment_methods` is enforced**
 
-The session list is **intersected** with the creator's enabled methods and the product's configuration — it can only narrow what the buyer sees, never expand it. This enforcement applies to both embedded and non-embedded (hosted) checkout.
+The session list is **intersected** with the creator's enabled methods and the product's configuration — in practice it narrows what the buyer sees rather than expanding it. This enforcement applies to both embedded and non-embedded (hosted) checkout.
 
 | Filter | Applied? |
 |---|---|
 | Global platform kill switch | ✅ Always |
 | Creator's account-level enabled methods | ✅ Always (intersection) |
 | Service-type restrictions (e.g. subscriptions remove BNPL) | ✅ Always |
-| Per-method amount limits (Affirm, Klarna, Afterpay, Zip, ClarityPay, Climb, CreditKey min/max) | ✅ Always |
-| Product-level disabled methods | ✅ Always — the session allow-list can only narrow further, never re-enable |
+| Per-method amount limits (Affirm, Klarna, Afterpay, Zip, Sezzle, Crypto, Payva, ClarityPay, Climb, CreditKey min/max, plus PayPal Pay Later's country-based limits) | ✅ Always |
+| Product-level disabled methods | ✅ Always — the session allow-list narrows further, it does not re-enable |
 
-If filtering leaves the list empty, the session falls back to `["card"]` so checkout is never blank.
+**Known exception to "narrow only":** on the legacy hosted Spreedly rail, Apple Pay and Google Pay can still surface even when the session list excludes them, because those wallets are injected by the hosted payment form rather than by the method filter.
+
+If filtering leaves the list empty, the session falls back to `["card"]` in Commas mode. On legacy FanBasis-mode deployments the fallback is `["card", "cashapp", "us_bank_account"]`.
 
 ---
 
@@ -568,7 +602,7 @@ Your customer list includes everyone who has ever purchased from you through Com
 GET /public-api/customers
 ```
 
-Returns a searchable, paginated list of all your customers — with their total spend, transaction count, and last payment date.
+Returns a searchable, paginated list of all your customers — with their total spend, transaction count, and last payment date. `id` is a plain numeric integer, and `total_spent` may serialize as a **string** (it comes straight out of a decimal column) — parse it defensively.
 
 **Query Parameters**
 
@@ -593,15 +627,15 @@ curl "https://www.fanbasis.com/public-api/customers?search=jane@example.com" \
   "data": {
     "customers": [
       {
-        "id": "cust_1",
+        "id": 102482,
         "name": "Jane Doe",
         "email": "jane@example.com",
         "total_transactions": 5,
-        "total_spent": 149.95,
+        "total_spent": "149.95",
         "last_transaction_date": "2025-01-10T00:00:00Z"
       }
     ],
-    "pagination": { "current_page": 1, "total_items": 58 }
+    "pagination": { "current_page": 1, "per_page": 10, "total_items": 58, "total_pages": 6, "has_more": true }
   }
 }
 ```
@@ -618,12 +652,12 @@ Shows all payment cards a customer has on file. You'll need the payment method I
 
 | Parameter  | Type   | Required | Description                                 |
 | ---------- | ------ | -------- | ------------------------------------------- |
-| customerId | string | Yes      | The customer's ID (from the customer list). |
+| customerId | integer | Yes      | The customer's numeric ID (from the customer list). |
 
 **Request**
 
 ```bash
-curl "https://www.fanbasis.com/public-api/customers/cust_1/payment-methods" \
+curl "https://www.fanbasis.com/public-api/customers/102482/payment-methods" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -661,32 +695,46 @@ Charges a customer using a saved payment method. No checkout page needed — the
 
 | Parameter  | Type   | Required | Description        |
 | ---------- | ------ | -------- | ------------------ |
-| customerId | string | Yes      | The customer's ID. |
+| customerId | integer | Yes      | The customer's numeric ID. |
 
 **Request Body**
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `payment_method_id` | string | Yes | A saved payment method `id` (or `payment_method_uuid`) from the payment-methods endpoint. |
+| `amount_cents` | integer | Yes | Amount to charge in cents (minimum 1). |
+| `description` | string | Yes | What the charge is for — max 255 characters. |
+| `metadata` | object | No | Accepted (string values only) but **not persisted** — it will not appear on the transaction or in webhooks. |
+
 ```json
 {
-  "payment_method_id": "pm_abc123xyz",
-  "service_id": "svc_premium_monthly",
+  "payment_method_id": "01KNHTPEASJ6WCGWZ66C5RGYB5",
   "amount_cents": 1999,
-  "description": "Monthly premium subscription charge",
-  "metadata": {}
+  "description": "Monthly premium subscription charge"
 }
 ```
+
+**Headers**
+
+Supports the `Idempotency-Key` header. Replaying the same key within 10 minutes returns `409` with `{"status": "error", "message": "This charge request was already processed.", "data": []}` instead of charging twice.
+
+**Undocumented preconditions** — a charge is rejected unless all of these hold:
+
+- **Manual rebilling is enabled for your organization.** This is an admin-side flag; contact support if charges are refused outright.
+- **The customer has a prior non-free purchase from you.** Customers who have only ever been on a free trial or a $0 product cannot be charged.
+- **The customer has an authorized payment method** — i.e. `charge_consent` is set on the subscription record (visible as `subscription.charge_consent: 1` in the Subscribers response).
 
 **Request**
 
 ```bash
-curl -X POST "https://www.fanbasis.com/public-api/customers/cust_1/charge" \
+curl -X POST "https://www.fanbasis.com/public-api/customers/102482/charge" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: charge-req-001" \
   -d '{
-    "payment_method_id": "pm_abc",
-    "service_id": "svc_pro_plan",
+    "payment_method_id": "01KNHTPEASJ6WCGWZ66C5RGYB5",
     "amount_cents": 1999,
-    "description": "Upgrade to Pro plan",
-    "metadata": {}
+    "description": "Upgrade to Pro plan"
   }'
 ```
 
@@ -723,7 +771,7 @@ Returns every subscriber across all your products. Filter by customer or product
 | Parameter   | Type    | Required | Description                                                      |
 | ----------- | ------- | -------- | ---------------------------------------------------------------- |
 | product_id  | string  | No       | Show only subscribers to this product.                           |
-| customer_id | string  | No       | Show only subscriptions belonging to this customer.              |
+| customer_id | integer | No       | Show only subscriptions belonging to this customer. Must be the **raw numeric** customer id — the hashid returned in `customer.id` will not match. |
 | page        | integer | No       | Page number.                                                     |
 | per_page    | integer | No       | Results per page (max 100).                                      |
 
@@ -896,20 +944,24 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?
 DELETE /public-api/checkout-sessions/:checkoutSessionId/subscriptions/:subscriptionId
 ```
 
-Cancels a customer's subscription. They keep access until the end of the current billing period but won't be charged again. The subscriptionId is the id field returned in the subscription list above — not the customer's user ID.
+Cancels a customer's subscription. Cancellation takes effect **immediately** — the subscription stops auto-renewing and no further charges are made. Access generally runs to the end of the already-paid period, with one exception: if the subscriber is inside a **free-trial or initial-fee period**, community access (Discord / Telegram) is revoked immediately.
+
+Only subscriptions in `active` status can be cancelled. Anything else — including a subscription that is already cancelled — returns `404` with `"Subscription not found or not active"` (not a `400`).
+
+The `subscriptionId` is the numeric `id` field returned in the subscription list above — not the customer's user ID.
 
 **Path Parameters**
 
 | Parameter         | Type   | Required | Description                                                    |
 | ----------------- | ------ | -------- | -------------------------------------------------------------- |
 | checkoutSessionId | string | Yes      | The ID of the product the subscription belongs to.             |
-| subscriptionId    | string | Yes      | The subscription ID from the subscription list (the id field). |
+| subscriptionId    | integer | Yes      | The subscription ID from the subscription list (the numeric `id` field). |
 
 **Request**
 
 ```bash
 curl -X DELETE \
-  "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions/sub_xyz789" \
+  "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions/111388" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -919,7 +971,7 @@ curl -X DELETE \
 {
   "status": "success",
   "message": "Subscription cancelled successfully",
-  "data": { "id": "sub_1", "cancelled_at": "2025-01-15T14:00:00Z", "subscription_status": "cancelled" }
+  "data": { "id": 111388, "cancelled_at": "2026-07-13T14:00:00Z", "subscription_status": "cancelled" }
 }
 ```
 
@@ -991,6 +1043,8 @@ POST /public-api/checkout-sessions/:checkoutSessionId/extend-subscription
 
 Pushes out a customer's next billing date by a given number of days. Use this to comp members for downtime, run a loyalty promotion, or manually extend access.
 
+Only **active** subscriptions can be extended — anything else is rejected.
+
 **Path Parameters**
 
 | Parameter         | Type   | Required | Description                                        |
@@ -999,9 +1053,14 @@ Pushes out a customer's next billing date by a given number of days. Use this to
 
 **Request Body**
 
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `user_id` | integer \| string | Yes | The subscriber's customer id — either the raw numeric id or its hashid. |
+| `duration_days` | integer | Yes | How many days to push the next billing date out by. |
+
 ```json
 {
-  "user_id": "usr_abc123",
+  "user_id": 102482,
   "duration_days": 30
 }
 ```
@@ -1012,7 +1071,7 @@ Pushes out a customer's next billing date by a given number of days. Use this to
 curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend-subscription" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "user_id": "usr_456", "duration_days": 30 }'
+  -d '{ "user_id": 102482, "duration_days": 30 }'
 ```
 
 **Response**
@@ -1021,7 +1080,15 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend
 {
   "status": "success",
   "message": "Subscription extended successfully",
-  "data": { "subscription_id": "sub_1", "new_completion_date": "2025-04-15T00:00:00Z" }
+  "data": {
+    "subscription_id": 111388,
+    "user_id": 102482,
+    "product_id": "NLxj6",
+    "duration_extended_days": 30,
+    "new_completion_date": "2026-04-15T00:00:00.000000Z",
+    "extended_at": "2026-03-16T09:12:00.000000Z",
+    "request_id": "…"
+  }
 }
 ```
 
@@ -1029,11 +1096,11 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend
 
 ### Subscription Proration
 
-> **Note:** These endpoints live on the Seller v1 API (`/api/seller/v1/`) but use the same `x-api-key` auth as the rest of the Public API. Production base URL: `https://fanbasis.com` (apex, no www). QA: `https://qa.dev-fan-basis.com`.
+> **Note:** These endpoints live on the Seller v1 API (`/api/seller/v1/`) but use the same `x-api-key` auth as the rest of the Public API. Production base URL: `https://www.fanbasis.com` — use the `www` host. The apex domain (`fanbasis.com`) issues a 301 redirect, which drops the body on `POST` requests. QA: `https://qa.dev-fan-basis.com`.
 
 Tier-upgrade endpoints with automatic proration. Three calls drive the flow: list available upgrade targets, preview the math, then execute.
 
-**Prerequisites:** Subscription Proration must be enabled for your **organization** in the admin panel, with a billing mode (`immediate` or `next_cycle`). Proration must also be enabled on each target service. If proration is disabled, `Get Available Upgrades` returns an empty array; `Preview` / `Process` return `400` (the body may carry a stray `"errors": 422` field — the HTTP status is 400). Note: proration is currently unavailable (force-disabled) for organizations processing on Adyen.
+**Prerequisites:** Subscription Proration must be enabled for your **organization** in the admin panel, with a billing mode (`immediate` or `next_cycle`). This is an **organization-level setting only** — there is no per-service proration flag (those columns were dropped). If proration is disabled, `Get Available Upgrades` returns an empty array; `Preview` / `Process` return `400` (the body may carry a stray `"errors": 422` field — the HTTP status is 400). Note: proration is currently unavailable (force-disabled) for organizations processing on Adyen.
 
 #### Get Available Upgrades
 
@@ -1052,7 +1119,7 @@ Lists every valid upgrade target for a subscription, with proration math pre-cal
 **Request**
 
 ```bash
-curl -X GET "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrades" \
+curl -X GET "https://www.fanbasis.com/api/seller/v1/subscriptions/12345/upgrades" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -1090,7 +1157,7 @@ curl -X GET "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrades" \
 }
 ```
 
-`available_upgrades` is an empty array (with `200`) when the current tier is already the highest, the subscription is anything other than `active`, or no other services have proration enabled. Only tiers priced higher than the current tier are returned.
+`available_upgrades` is an empty array (with `200`) when the current tier is already the highest, the subscription is anything other than `active`, or proration is not enabled for your organization. Only tiers priced higher than the current tier are returned.
 
 #### Preview Upgrade
 
@@ -1115,7 +1182,7 @@ Returns the proration calculation for a single specific target tier. Read-only �
 **Request**
 
 ```bash
-curl -X GET "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade/preview?target_service_id=1003" \
+curl -X GET "https://www.fanbasis.com/api/seller/v1/subscriptions/12345/upgrade/preview?target_service_id=1003" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -1170,7 +1237,7 @@ Executes the upgrade. Marks the original subscription as `upgraded` (stops auto-
 **Request**
 
 ```bash
-curl -X POST "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade" \
+curl -X POST "https://www.fanbasis.com/api/seller/v1/subscriptions/12345/upgrade" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1220,11 +1287,12 @@ curl -X POST "https://fanbasis.com/api/seller/v1/subscriptions/12345/upgrade" \
 |---|---|
 | `400` | Target tier is not a valid upgrade (Preview only). |
 | `401` | Missing/invalid/inactive API key. |
-| `404` | Subscription not found or doesn't belong to the seller. |
-| `400` | Upgrade rejected — subscription not `active`, proration disabled for the organization or target service, downgrade attempted, or stored payment method failed. The body may include a stray `"errors": 422` field; the HTTP status is 400. Common messages: `Subscription is not active`, `Proration is not enabled for this service`, `Downgrade not allowed`, `Target service price must be higher than current service price`. |
+| `404` | Subscription not found or doesn't belong to the seller (the `GET` endpoints). |
+| `422` | `POST /upgrade` with a missing or foreign subscription ID returns `422` — **not** `404`. |
+| `400` | Upgrade rejected — subscription not `active`, proration disabled for the organization, downgrade attempted, or stored payment method failed. The body may include a stray `"errors": 422` field; the HTTP status is 400. The real messages are: `Subscription must be active to upgrade.`, `Proration is not enabled for this seller.`, `Downgrade not allowed. Target tier must have a higher price.` |
 | `500` | Unhandled error during upgrade processing. |
 
-All error bodies include a `statuscode` field matching the HTTP status.
+Controller-level error bodies carry a `statuscode` field matching the HTTP status, but `401`, `403`, and `422` responses do **not** — don't rely on `statuscode` being present.
 
 **Subscription statuses**
 
@@ -1264,8 +1332,8 @@ Returns all your discount codes. Use the search parameter to quickly find a spec
 
 | Parameter | Type    | Required | Description                                       |
 | --------- | ------- | -------- | ------------------------------------------------- |
-| search    | string  | No       | Filter codes by their code string or description. |
-| per_page  | integer | No       | Results per page (max 100).                       |
+| search    | string  | No       | Matches the code string, the discount type, the value, or the title of an attached product. It does **not** match the description. |
+| per_page  | integer | No       | Results per page. Not validated server-side — an out-of-range value is passed straight to the paginator. |
 
 **Request**
 
@@ -1283,18 +1351,31 @@ curl "https://www.fanbasis.com/public-api/discount-codes" \
     "current_page": 1,
     "data": [
       {
-        "id": 1,
+        "id": "z41y",
         "code": "SUMMER20",
-        "discount_type": "percentage",
-        "value": 20,
+        "description": "20% off for new subscribers",
+        "type": "percentage",
+        "value": "20.0000",
         "duration": "once",
-        "is_active": true
+        "expiry": "2025-08-31T00:00:00.000000Z",
+        "expiry_time": "00:00",
+        "limited_redemptions": true,
+        "usable_number": 100,
+        "one_time": true,
+        "code_type": "no_limits",
+        "service_count": 1,
+        "usage_count": 12,
+        "services": [
+          { "id": "qYyEp", "title": "Pro Monthly", "price": "29.00" }
+        ]
       }
     ],
     "total": 1
   }
 }
 ```
+
+Notes on this shape: `id` is a **hashid**, the request field `discount_type` comes back as `type`, `value` is a string, and there is **no `is_active` field** — use `expiry` and `usage_count` / `usable_number` to decide whether a code is still usable. This endpoint returns a raw Laravel paginator (`data.current_page`, `data.data[]`, `data.total`, …) rather than the `data.pagination` envelope used elsewhere.
 
 #### Create a Discount Code
 
@@ -1345,7 +1426,7 @@ curl -X POST https://www.fanbasis.com/public-api/discount-codes \
 # 201 Created
 {
   "status": "success",
-  "message": "Discount code created successfully",
+  "message": "Coupon code added successfully.",
   "data": {
     "id": "z41y",
     "code": "SUMMER20",
@@ -1382,12 +1463,12 @@ Fetches the details of one discount code, including how many times it's been use
 
 | Parameter | Type   | Required | Description             |
 | --------- | ------ | -------- | ----------------------- |
-| id        | string | Yes      | The discount code's ID. |
+| id        | string | Yes      | The discount code's **hashid** (e.g. `z41y`), exactly as returned in `data.id`. A numeric id returns `400 "Invalid discount code ID"`. |
 
 **Request**
 
 ```bash
-curl "https://www.fanbasis.com/public-api/discount-codes/1" \
+curl "https://www.fanbasis.com/public-api/discount-codes/z41y" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -1427,13 +1508,13 @@ curl "https://www.fanbasis.com/public-api/discount-codes/1" \
 PUT /public-api/discount-codes/:id
 ```
 
-Updates an existing discount code. Only include the fields you want to change.
+Updates an existing discount code. This is a **full replacement, not a patch** — you must send the complete payload, with the same required set as create (`code`, `discount_type`, `value`, `duration`, `service_ids`). A partial body returns `400 Validation failed`.
 
 **Path Parameters**
 
 | Parameter | Type   | Required | Description             |
 | --------- | ------ | -------- | ----------------------- |
-| id        | string | Yes      | The discount code's ID. |
+| id        | string | Yes      | The discount code's **hashid** (e.g. `z41y`). A numeric id returns `400 "Invalid discount code ID"`. |
 
 **Request Body**
 
@@ -1456,10 +1537,18 @@ Updates an existing discount code. Only include the fields you want to change.
 **Request**
 
 ```bash
-curl -X PUT "https://www.fanbasis.com/public-api/discount-codes/1" \
+curl -X PUT "https://www.fanbasis.com/public-api/discount-codes/z41y" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "expiry": "2025-12-31" }'
+  -d '{
+    "code": "SUMMER20",
+    "discount_type": "percentage",
+    "value": 20,
+    "duration": "once",
+    "service_ids": [101],
+    "expiry": "2025-12-31",
+    "one_time": true
+  }'
 ```
 
 **Response**
@@ -1504,12 +1593,12 @@ Deletes a discount code. Customers with active subscriptions already using this 
 
 | Parameter | Type   | Required | Description             |
 | --------- | ------ | -------- | ----------------------- |
-| id        | string | Yes      | The discount code's ID. |
+| id        | string | Yes      | The discount code's **hashid** (e.g. `z41y`). A numeric id returns `400 "Invalid discount code ID"`. |
 
 **Request**
 
 ```bash
-curl -X DELETE "https://www.fanbasis.com/public-api/discount-codes/1" \
+curl -X DELETE "https://www.fanbasis.com/public-api/discount-codes/z41y" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -1556,17 +1645,20 @@ curl "https://www.fanbasis.com/public-api/products" \
     "current_page": 1,
     "data": [
       {
-        "id": "prod_1",
+        "id": "qYyEp",
         "title": "Pro Monthly",
+        "internal_name": null,
         "description": "Full access to all features, billed monthly.",
-        "price": 29.99,
-        "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/prod_1"
+        "price": "29.99",
+        "payment_link": "https://www.fanbasis.com/agency-checkout/your-handle/qYyEp"
       }
     ],
     "total": 5
   }
 }
 ```
+
+Product `id` values here are **hashids** and `price` is a **string** in dollars. This endpoint returns a raw Laravel paginator (`data.current_page`, `data.data[]`, `data.total`, …), not the `data.pagination` envelope.
 
 Note: Community & Courses products are excluded from this list — it returns payment products only.
 
@@ -1576,9 +1668,9 @@ Also available with the same `x-api-key` authentication:
 
 | Endpoint | Description |
 |---|---|
-| `POST /public-api/products/create` | Create a product programmatically. |
-| `GET /public-api/products/:id/transactions` | Transactions for one product — same row shape as Get All Transactions. |
-| `GET /public-api/products/:id/subscriptions` | Subscriptions for one product — same row shape as Get Subscriptions for a Product. |
+| `POST /public-api/products/create` | Create a product programmatically. Takes `price` in **dollars** (minimum 1), not cents. |
+| `GET /public-api/products/:id/transactions` | Transactions for one product — same row shape as Get All Transactions. `:id` must be the **numeric** product id; hashids are not decoded on this route. |
+| `GET /public-api/products/:id/subscriptions` | Subscriptions for one product — same row shape as Get Subscriptions for a Product. `:id` must be the **numeric** product id; hashids are not decoded on this route. |
 | `GET /public-api/transactions/all` | All transactions across products — same row shape as Get All Transactions. Known issue: `refunds` on rows from this endpoint may show zeroed amounts. |
 
 ---
@@ -1743,11 +1835,11 @@ The Commas API allows you to issue full or partial refunds for successful paymen
 
 | Rule | Details |
 |------|--------|
-| Payment must have succeeded | Only payments with status succeeded are eligible. Failed, pending, or cancelled payments cannot be refunded. |
-| Within processor refund window | Refunds must be initiated within the payment processor's refund window. For Affirm and Afterpay transactions this is 120 days; for Cash App Pay it is 90 days. Requests outside the processor window are automatically blocked. Contact support@fanbasis.com for off-platform options if the window has passed. |
+| Payment must be refundable | The API does **not** pre-check the payment's status. A payment that isn't eligible (failed, still pending, already reversed) is not rejected up front — the request is forwarded to the gateway, which rejects it, and you get a `400` carrying the gateway's message. |
+| Processor refund window | Each processor enforces its own refund window — typically 120–180 days. The API does **not** pre-validate it. An out-of-window refund is attempted and fails at the gateway with a `400` carrying the gateway's message. Contact support@fanbasis.com for off-platform options once the window has passed. |
 | No duplicate refund requests | Refunds are synchronous. Replaying the same `Idempotency-Key` within 10 minutes returns `409` ("This refund request was already processed.") instead of refunding twice. |
-| Amount ≤ amount paid | The cumulative refund amount across all partial refunds cannot exceed the original payment amount. Overage requests are rejected with REFUND_AMOUNT_EXCEEDS_PAID_AMOUNT. |
-| Not already fully refunded | If a payment has already been fully refunded, additional refund requests are rejected with PAYMENT_ALREADY_REFUNDED. |
+| Amount ≤ remaining refundable amount | The cumulative refund amount across all partial refunds cannot exceed the original payment amount. Overage returns `400` with a descriptive message, e.g. `"Refund amount exceeds remaining refundable amount. Already refunded: $10.00, Remaining: $19.99"`. |
+| Not already fully refunded | A fully refunded payment has no remaining refundable amount, so further requests fail the same way — `400` with a descriptive `message`. |
 
 **Refunds are synchronous**
 
@@ -1765,19 +1857,50 @@ A dispute (chargeback) occurs when a customer contacts their bank to reverse a c
 
 | Status | Description |
 |--------|-------------|
-| opened | A dispute has been filed by the customer's bank. Commas sends a dispute.created webhook. Respond as quickly as possible. |
-| challenged | You have submitted evidence to counter the dispute. The card network is reviewing your submission. |
+| needs_response | A dispute has been filed by the customer's bank. Commas sends a `dispute.created` webhook. Submit your evidence before the `due_by` deadline. |
+| warning_needs_response | An early-warning / pre-dispute alert (e.g. an Ethoca inquiry) that needs a response before it can escalate into a full chargeback. |
+| under_review | Evidence has been submitted and the card network is reviewing it. |
 | won | The dispute was resolved in your favor. No funds were reversed. |
 | lost | The dispute was resolved in the customer's favor. The disputed amount (plus any chargeback fee) has been debited from your balance. |
-| accepted | You accepted the dispute without contesting it. Funds were returned to the customer. |
-| expired | The response window passed without a submission. Treated the same as lost. |
-| cancelled | The customer withdrew the dispute before it was resolved. |
+| lost_rdr | Resolved against you automatically through Visa's Rapid Dispute Resolution (RDR) program — the customer is refunded per your RDR rules without a formal chargeback. |
+| warning_closed | The early-warning alert was resolved or closed — it did not escalate into a chargeback. |
 
-**Dispute Reason Categories**
+**Dispute Events**
 
-| dispute.created | A dispute was filed by the customer's bank. Act immediately and submit evidence as soon as possible. |
+| Event | When it fires |
 | --- | --- |
-| dispute.updated | The dispute's status changed (e.g., challenged, won, lost, accepted, expired, cancelled). Check data.status to see the new state. |
+| dispute.created | A dispute was filed by the customer's bank. Act immediately and submit evidence as soon as possible. |
+| dispute.updated | The dispute's status changed (e.g. `under_review`, `won`, `lost`, `lost_rdr`, `warning_closed`). Check `data.status` to see the new state. |
+
+Both dispute events use the standard envelope. Amounts are in **dollars**, the response deadline is `due_by`, and there is **no `creator_id`** field:
+
+```json
+{
+  "id": "fe3505d5-1b32-4c04-95bf-5d5f60957b7f",
+  "type": "dispute.created",
+  "data": {
+    "id": "gT5mN",
+    "dispute_id": "dp_1Q2w3E4r5T",
+    "amount": 49.00,
+    "dispute_fee": 15.00,
+    "total_amount": 64.00,
+    "status": "needs_response",
+    "reason": "fraudulent",
+    "payment_intent_id": "pi_3Nc8QJ2eZvKYlo2C0xYzAbCd",
+    "due_by": "2026-02-08T23:59:59Z",
+    "created_at": "2026-02-01T12:00:00Z",
+    "updated_at": "2026-02-01T12:00:00Z",
+    "organization_id": "org_7Hj2kL9mP4Qr",
+    "buyer": {
+      "id": "user_9Qp3nR7yT2Wk",
+      "name": "John Doe",
+      "email": "buyer@example.com"
+    },
+    "event_type": "dispute.created"
+  },
+  "created_at": "2026-02-01T12:00:00Z"
+}
+```
 
 ---
 
@@ -1800,7 +1923,13 @@ Events your webhook endpoint will receive:
 - `dispute.updated`
 - `refund.created`
 
-All events are delivered in the envelope format `{ "id": "<uuid>", "type": "<event>", "data": { … }, "created_at": "<ISO 8601>" }`. All IDs in payloads are public strings: order IDs are `ORD-XXXX-XXXX-XXXX`, buyers are `user_` + 12 characters, products/subscriptions/refunds/disputes are hashids. Amounts are in dollars. `customFields` (array of `{label, type, value}`) may appear on most events.
+**Every** real delivery uses the envelope format `{ "id": "<uuid>", "type": "<event>", "data": { … }, "created_at": "<ISO 8601>" }` — there are no flat events on the live path. All IDs in payloads are public strings: order IDs are `ORD-XXXX-XXXX-XXXX`, buyers are `user_` + 12 characters, products/subscriptions/refunds/disputes are hashids. Amounts are in dollars. `customFields` (array of `{label, type, value}`) may appear on most events.
+
+**Delivery semantics** — delivery is **at-most-once**. A delivery that fails (non-2xx response, timeout, or unreachable host) is logged and **never retried**; there is no backoff schedule and no redelivery queue. Duplicates are therefore rare but still possible, so dedupe on the envelope `id` (a UUID) and make your handler idempotent. Because nothing is redelivered, reconcile any gap against the API instead of waiting for a retry — e.g. `GET /public-api/checkout-sessions/transactions` for payments, or the subscribers/refunds endpoints for the rest.
+
+Note that the [Test a Webhook Subscription](#test-a-webhook-subscription) endpoint sends **flat** payloads for `payment.succeeded` and the core `subscription.*` events, so don't validate your envelope parser against test events alone.
+
+**`payment.failed` fires on retries too.** Every failed dunning / revival attempt inside the subscription recovery window emits its own `payment.failed` event, in addition to `subscription.past_due`. Dedupe on the envelope `id` if you notify the customer on this event.
 
 #### Example Webhook Payload
 
@@ -1852,16 +1981,40 @@ All events are delivered in the envelope format `{ "id": "<uuid>", "type": "<eve
 
 ### Rate Limits & Pagination
 
-The API enforces rate limits per account/endpoint. The **checkout-sessions** and **customers** endpoint groups return `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers on every response. When exceeded, the API returns HTTP `429 Too Many Requests` — note the 429 body uses `{"success": false, …}` instead of the usual `{"status": "error", …}` envelope.
+Rate limiting applies only to the **checkout-sessions** and **customers** endpoint groups (10,000 authenticated requests per hour). Responses from those groups carry `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers; other endpoint groups are not rate-limited and do not return the headers. When the limit is exceeded the API returns HTTP `429 Too Many Requests` — note the 429 body uses `{"success": false, …}` instead of the usual `{"status": "error", …}` envelope.
 
-Implement exponential backoff and check the `Retry-After` header.
+Back off before retrying a `429`.
 
 **Pagination** — All list endpoints support:
 
 | Parameter | Type    | Default | Description |
 |-----------|---------|---------|-------------|
 | `page`    | integer | 1       | Page number (starts at 1) |
-| `per_page`| integer | 20      | Results per page (max 100) |
+| `per_page`| integer | 10      | Results per page (max 100) |
+
+There are no `sort` or `order` parameters — ordering is fixed per endpoint.
+
+Most list endpoints return the resource array and pagination block **inside `data`**:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "customers": [ … ],
+    "pagination": {
+      "current_page": 1,
+      "per_page": 10,
+      "total_items": 142,
+      "total_pages": 15,
+      "has_more": true
+    }
+  }
+}
+```
+
+The array key matches the resource (`customers`, `transactions`, `subscribers`, `subscriptions`). There is no `meta` object and no `has_next_page` field — use `data.pagination.has_more`.
+
+Two endpoints are different: `GET /public-api/discount-codes` and `GET /public-api/products` return a **raw Laravel paginator** — `data.current_page`, `data.data[]`, `data.total`, `data.per_page`, `data.next_page_url`, … — with no `pagination` sub-object.
 
 ---
 
@@ -1875,49 +2028,55 @@ Implement exponential backoff and check the `Retry-After` header.
 | 401 | Unauthorized | API key missing or wrong — also returned when the resource you referenced belongs to a different organization than your key. | Check that your x-api-key header is included and that the resource ID is yours. |
 | 403 | Forbidden | You don't have permission — returned when your creator account is not yet approved for API access. | Contact support to get your account approved. |
 | 404 | Not Found | The resource doesn't exist. | Double-check the ID in your URL. It may have been deleted. |
+| 409 | Conflict | An `Idempotency-Key` replay within the 10-minute window (charges and refunds). | Treat the original request as the source of truth — don't retry with the same key. |
+| 422 | Unprocessable Entity | Well-formed but rejected in the resource's current state. Common on the proration endpoints. | Read `message` — it names the specific problem. |
+| 429 | Too Many Requests | Rate limit exceeded on the checkout-sessions or customers group. | Back off before retrying. Note the different response envelope below. |
 | 500 | Server Error | Something broke on our end. | Try again in a moment. Contact Commas support if it keeps happening. |
-| CHECKOUT_SESSION_CONSUMED | 400 | The checkout session is no longer available (e.g. it has been deleted or explicitly closed). Active sessions can accept multiple payments. | |
-| PAYMENT_NOT_SUCCEEDED | 400 | The referenced payment has not reached a succeeded status. Check payment status before proceeding. | |
-| PREVIOUS_PAYMENT_PENDING | 400 | Cannot create a new charge — a previous payment for this subscription is still processing. | |
-| TOTAL_PAYMENT_AMOUNT_BELOW_MINIMUM_AMOUNT | 400 | Cart total is below the minimum amount required to process a payment through the gateway. | |
-| NO_ELIGIBLE_PAYMENT_METHODS | 400 | After applying all filters (country, currency, etc.) no valid payment methods remain for this transaction. | |
-| UNSUPPORTED_COUNTRY | 400 | The buyer's country is not yet supported. Check the supported countries list. | |
-| UNSUPPORTED_CURRENCY | 400 | The requested currency is not supported. Currently USD and select currencies are available. | |
-| PAYMENT_ALREADY_REFUNDED | 400 | This payment has already been fully refunded. Duplicate refund requests are not allowed. | |
-| PAYMENT_HAS_BEEN_REFUNDED | 400 | The payment ID has been fully refunded and no further refunds can be applied. | |
-| REFUND_WINDOW_EXPIRED | 400 | The refund window for this processor has closed (120 days for Affirm/Afterpay, 90 days for Cash App Pay). Contact support@fanbasis.com for off-platform options. | |
-| REFUND_AMOUNT_EXCEEDS_PAID_AMOUNT | 400 | The requested refund amount (including any previous partial refunds) exceeds the original paid amount. | |
-| EXISTING_REFUND_REQUEST_PROCESSING | 409 | A refund with status pending is already being processed for this payment. Wait for it to settle before submitting another. | |
-| ZERO_AMOUNT_PAYMENT_REFUND_NOT_ALLOWED | 400 | Cannot refund a payment with a zero-currency amount. | |
-| INVALID_DISCOUNT_CODE | 400 | The discount code does not exist or cannot be applied to any product in the cart. | |
-| DISCOUNT_CODE_EXPIRED | 400 | The discount code is past its expires_at date and is no longer valid. | |
-| DISCOUNT_CODE_USAGE_LIMIT_EXCEEDED | 400 | The code has reached its maximum usage limit and cannot be applied to new orders. | |
-| DISCOUNT_CODE_ALREADY_EXISTS | 409 | A discount code with this code string already exists. Use a unique code value. | |
-| DISCOUNT_NOT_AVAILABLE_FOR_PRODUCT | 400 | The discount code is restricted to specific products and cannot be applied to one or more items in the cart. | |
-| SUBSCRIPTION_INACTIVE | 400 | The subscription is not in an active state. Check its current status before performing operations. | |
-| SUBSCRIPTION_EXPIRED | 400 | The subscription's billing period has ended. No new charges can be created. | |
-| SUBSCRIPTION_PAYMENT_RETRY_LIMIT_EXCEEDED | 400 | The subscription has hit the maximum number of payment retry attempts. Manual intervention is required. | |
-| UNAUTHORIZED | 401 | No API key provided, or the key is invalid / lacks the required scope for this action. | |
-| TOO_MANY_REQUESTS | 429 | Rate limit exceeded. Check the Retry-After header for how long to wait, then retry with exponential backoff. | |
-| INVALID_REQUEST_BODY | 400 | The request body is malformed JSON or fails schema validation. Check the errors field for field-level details. | |
-| INVALID_REQUEST_PARAMETERS | 400 | One or more request parameters have invalid semantics (e.g. a date set in the past). | |
-| NOT_FOUND | 404 | The requested resource does not exist. Verify the ID is correct and the resource has not been deleted. | |
-| INTERNAL_SERVER_ERROR | 500 | An unexpected server-side error occurred. Log the request details and contact support if it persists. | |
 
-**Standard error response format:**
+**Error Response Shapes**
+
+There is **no machine-readable `code` field** on error responses. Branch on the **HTTP status** plus the human-readable `message` — never on an error code string.
+
+`400` — validation failure:
 
 ```json
 {
   "status": "error",
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Human-readable description",
-    "errors": [
-      { "field": "email", "message": "Invalid email format" }
-    ]
-  }
+  "message": "Validation failed",
+  "data": [],
+  "errors": { "field": ["msg"] }
 }
 ```
+
+`401` — missing or invalid credentials:
+
+```json
+{
+  "status": "error",
+  "message": "Authentication required. Please provide X-API-KEY or Bearer token."
+}
+```
+
+`403` — the key is valid but lacks the scope for this route (see [API Key Scopes](#api-key-scopes)):
+
+```json
+{
+  "status": "error",
+  "message": "API key does not have permission for this resource. Required scope(s): refunds"
+}
+```
+
+`429` — rate limited. Note this uses a **different envelope** (`success`, not `status`):
+
+```json
+{
+  "success": false,
+  "message": "Too many requests. Please try again later.",
+  "errors": { "rate_limit": "Rate limit exceeded, please try after 60s" }
+}
+```
+
+**Business-rule failures come back as `400` with a descriptive `message`** rather than a code — for example `"Refund amount exceeds remaining refundable amount. Already refunded: $10.00, Remaining: $19.99"`, or `"Subscription must be active to upgrade."`. Log the whole body; match on status first and on message text only where you must.
 
 ---
 
