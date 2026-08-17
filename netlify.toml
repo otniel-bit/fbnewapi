@@ -15,3 +15,12 @@
 
 [build.environment]
   NODE_VERSION = "20"
+
+# Canonicalize: send the default Netlify subdomain to the custom domain with a
+# 301 so commasdocs.com is the single indexable home (no duplicate content).
+# Only matches the fbnewapi.netlify.app host, so commasdocs.com never loops.
+[[redirects]]
+  from = "https://fbnewapi.netlify.app/*"
+  to = "https://commasdocs.com/:splat"
+  status = 301
+  force = true
