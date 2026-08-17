@@ -1,0 +1,17 @@
+# Commas docs — static single-file site served from the repo root.
+#
+# On every deploy, regenerate the Changelog section of index.html from
+# changelog.json (the single source of truth). The generator is fail-open:
+# if changelog.json is missing or malformed it logs a warning and leaves
+# index.html untouched, so the changelog can never break a deploy.
+#
+# To add a changelog entry: prepend an object to changelog.json and commit.
+# (Run `npm run changelog` locally to preview; `npm run changelog:check`
+# verifies index.html is in sync.)
+
+[build]
+  command = "node scripts/build-changelog.mjs"
+  publish = "."
+
+[build.environment]
+  NODE_VERSION = "20"

@@ -1,0 +1,104 @@
+[
+  {
+    "date": "August 2026",
+    "title": "Documentation Accuracy Pass",
+    "tag": "improved",
+    "desc": "A full accuracy audit of the API reference and SDK docs against the live platform. Corrected webhook payload shapes, error response formats, dispute lifecycle statuses, pagination parameters, and refund fields; fixed in-page navigation, search coverage, dark-mode contrast, and the embedded <strong>Try it</strong> panels."
+  },
+  {
+    "date": "August 2026",
+    "title": "API Key Scopes",
+    "tag": "new",
+    "desc": "API keys now carry granular <strong>scopes</strong>. A key created with default settings has all six scopes (<code class=\"inline\">checkout-sessions</code>, <code class=\"inline\">refunds</code>, <code class=\"inline\">payments</code>, <code class=\"inline\">webhooks</code>, <code class=\"inline\">customers</code>, <code class=\"inline\">subscriptions</code>), so existing integrations are unaffected. Narrow a key to hand out read-only or refund-only access; a request missing the required scope is rejected with <code class=\"inline\">403</code> naming the scope it needs."
+  },
+  {
+    "date": "August 2026",
+    "title": "Order Bumps — showAllAddons",
+    "tag": "new",
+    "desc": "A new top-level <code class=\"inline\">showAllAddons: true</code> config renders every dashboard-associated addon as a native order bump inside the embedded checkout — unselected by default and toggleable, with no parent-page UI. The older <code class=\"inline\">bumpProductIds</code> option is <strong>deprecated</strong>. See <a href=\"#sdk-addons\">Addons &amp; order bumps</a>."
+  },
+  {
+    "date": "July 2026",
+    "title": "Commas CLI",
+    "tag": "new",
+    "desc": "Run your Commas business from the terminal — and let AI agents operate it. Install with <code class=\"inline\">npm install -g commas-cli</code>, then <code class=\"inline\">commas login</code>. Manage products, transactions, refunds, subscriptions, discount codes, and webhooks; every command supports <code class=\"inline\">--json</code> for scripting. See <a href=\"#cli\">Connect to CLI</a>."
+  },
+  {
+    "date": "July 2026",
+    "title": "FanBasis is now Commas",
+    "tag": "improved",
+    "desc": "FanBasis has rebranded to <strong>Commas</strong>. Your integration is unchanged — the API base URL (<code class=\"inline\">https://www.fanbasis.com/public-api</code>) and your existing API keys continue to work, so no migration is required."
+  },
+  {
+    "date": "May 2026",
+    "title": "SDK 0.5.0 — Coupon Events &amp; Programmatic Coupons",
+    "tag": "new",
+    "desc": "Update to <code class=\"inline\">@fanbasis/checkout-core@0.5.0</code> and <code class=\"inline\">@fanbasis/checkout-react@0.4.0</code>. Two new events — <code class=\"inline\">coupon:applied</code> (<code class=\"inline\">{ code, discountAmount, newTotal }</code>) and <code class=\"inline\">coupon:error</code> (<code class=\"inline\">{ code, error }</code>) — let you react to coupon changes, plus new <code class=\"inline\">applyCoupon(code)</code> / <code class=\"inline\">removeCoupon()</code> methods to apply coupons programmatically."
+  },
+  {
+    "date": "April 2026",
+    "title": "SDK 0.4.0 — Prefill, Field Control &amp; Validation Events",
+    "tag": "new",
+    "desc": "Major update to <code class=\"inline\">@fanbasis/checkout-core@0.4.0</code> and <code class=\"inline\">@fanbasis/checkout-react@0.3.0</code>. Native <a href=\"#sdk-prefill\">prefill</a> for email/name/phone/address; per-field <code class=\"inline\">hide</code>/<code class=\"inline\">disable</code> control via the new <code class=\"inline\">fields</code> config; top-level <code class=\"inline\">collectPhone</code> and <code class=\"inline\">metadata</code> options; new <code class=\"inline\">form:validation</code> and <code class=\"inline\">field:value</code> events; setter/getter methods on the checkout instance."
+  },
+  {
+    "date": "April 2026",
+    "title": "SDK Documentation Audit",
+    "tag": "improved",
+    "desc": "Full audit of the SDK reference against the current 0.4.0 source. Corrected event payload shapes (<code class=\"inline\">checkout:success</code>, <code class=\"inline\">addons:changed</code>, <code class=\"inline\">form:submission_error</code>), <code class=\"inline\">CheckoutState</code> shape, and the <code class=\"inline\">PaymentErrorCode</code> enum. Migration Guide now lists stale patterns to avoid (<code class=\"inline\">await create()</code>, <code class=\"inline\">'qa'</code>, <code class=\"inline\">customerEmail</code>)."
+  },
+  {
+    "date": "February 2026",
+    "title": "AI Agent MCP Integration",
+    "tag": "new",
+    "desc": "Connect Claude, ChatGPT, or Grok directly to your Commas account via MCP. Query transactions, customers, products, and subscribers with natural language. Includes full setup guides for Claude Desktop, ChatGPT, and Grok."
+  },
+  {
+    "date": "February 2026",
+    "title": "API Playground",
+    "tag": "new",
+    "desc": "Interactive API explorer built right into the docs. Test any endpoint with your API key, see real responses, and build requests without writing code. Includes request history and environment switching."
+  },
+  {
+    "date": "February 2026",
+    "title": "Common Workflows Guide",
+    "tag": "new",
+    "desc": "Step-by-step guides for the five most common seller scenarios: one-time payments, recurring subscriptions, discount campaigns, refunds, and webhook automation."
+  },
+  {
+    "date": "February 2026",
+    "title": "Premium Documentation Redesign",
+    "tag": "improved",
+    "desc": "Complete UI overhaul with dark mode support, multi-language code examples (Shell, Python, Node, PHP), sidebar search, scroll animations, and a new design system inspired by the best API docs in the industry."
+  },
+  {
+    "date": "January 2026",
+    "title": "Embedded Checkout",
+    "tag": "new",
+    "desc": "Embed the Commas checkout directly on your website using an iframe. No redirects needed — buyers stay on your domain for a seamless purchase experience."
+  },
+  {
+    "date": "January 2026",
+    "title": "Discount Codes API",
+    "tag": "new",
+    "desc": "Full CRUD API for discount codes. Create percentage or fixed-amount discounts, set usage limits and expiration dates, and track redemptions programmatically."
+  },
+  {
+    "date": "January 2026",
+    "title": "Webhook Signature Validation",
+    "tag": "improved",
+    "desc": "Enhanced webhook security with HMAC-SHA256 signature verification. Updated docs now include validation examples in Python, Node.js, and PHP."
+  },
+  {
+    "date": "December 2025",
+    "title": "Disputes &amp; Chargebacks",
+    "tag": "new",
+    "desc": "New dispute lifecycle documentation covering chargeback notifications, evidence submission deadlines, and webhook events for real-time dispute tracking."
+  },
+  {
+    "date": "December 2025",
+    "title": "Rate Limiting Update",
+    "tag": "improved",
+    "desc": "Rate limiting now applies to the <strong>checkout-sessions</strong> and <strong>customers</strong> endpoint groups at 10,000 authenticated requests per hour. Responses from those groups carry <code class=\"inline\">X-RateLimit-Limit</code>, <code class=\"inline\">X-RateLimit-Remaining</code>, and <code class=\"inline\">X-RateLimit-Reset</code> headers; other endpoint groups are not rate-limited and do not return the headers."
+  }
+]
