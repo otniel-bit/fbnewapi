@@ -442,6 +442,8 @@ POST /public-api/checkout-sessions/embedded
 
 Creates a checkout session designed to be embedded directly inside your app or website, rather than redirecting to a separate page. Requires an existing Commas `product_id`. Returns a `checkout_session_secret` you use to construct the embedded checkout URL.
 
+**Order bumps / addons:** this endpoint has no addon parameter. Addons are bound by associating them with the main product in the Commas dashboard, then shown at checkout via the embed SDK's top-level `showAllAddons: true` config flag (the deprecated `bumpProductIds` loads them pre-selected — prefer `showAllAddons`).
+
 You can optionally restrict the payment methods that will appear on this specific session by passing `allowed_payment_methods` inside `metadata`. If `metadata` is omitted, the checkout falls back to the creator's account-level payment method settings.
 
 **Request Parameters**
