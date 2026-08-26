@@ -650,6 +650,8 @@ GET /public-api/customers/:customerId/payment-methods
 
 Shows all payment cards a customer has on file. You'll need the payment method ID to charge them directly.
 
+**Which ID:** use the numeric `id` from *List Your Customers* (e.g. `102482`). A transaction's `fan.id` or a subscriber's `customer.id` (e.g. `5yWjR`) is a **different** identifier and returns `Customer not found`. Searching customers by that other ID returns nothing either — look the buyer up by **email** to get the right ID.
+
 **Path Parameters**
 
 | Parameter  | Type   | Required | Description                                 |
@@ -691,7 +693,7 @@ curl "https://www.fanbasis.com/public-api/customers/102482/payment-methods" \
 POST /public-api/customers/:customerId/charge
 ```
 
-Charges a customer using a saved payment method. No checkout page needed — the charge happens immediately.
+Charges a customer using a saved payment method. No checkout page needed — the charge happens immediately. A saved card alone is not enough — see the preconditions below.
 
 **Path Parameters**
 
@@ -724,7 +726,9 @@ Supports the `Idempotency-Key` header. Replaying the same key within 10 minutes 
 
 - **Manual rebilling is enabled for your organization.** This is an admin-side flag; contact support if charges are refused outright.
 - **The customer has a prior non-free purchase from you.** Customers who have only ever been on a free trial or a $0 product cannot be charged.
-- **The customer has an authorized payment method** — i.e. `charge_consent` is set on the subscription record (visible as `subscription.charge_consent: 1` in the Subscribers response).
+- **The customer has an authorized subscription with you** — an authorization the platform records when they buy. `subscription.charge_consent: 1` in the Subscribers response is a useful signal but **not a reliable one**: in production testing, 7 of 8 customers showing `charge_consent: 1` still could not be charged. Treat it as necessary, not sufficient.
+
+When a precondition is missing the API returns `404 No authorized subscription found for customer`. The customer ID is usually correct — check the authorization rather than hunting for an ID mistake.
 
 **Request**
 
@@ -985,6 +989,8 @@ POST /public-api/checkout-sessions/transactions/:transactionId/refund
 
 Issues a full or partial refund for a payment. Both `amount_cents` and `reason` are **required** — an empty body returns `400 Validation failed`. Pass the transaction's full remaining amount as `amount_cents` for a full refund. Refunds are processed synchronously: a `200` response means the refund is done (there is no pending/succeeded/failed lifecycle). Once issued, a refund cannot be canceled. The customer receives the refunded amount back to their original payment method within a few business days.
 
+**Bank/ACH payments cannot be refunded until they settle.** ACH completes asynchronously, so a charge can report success while still in progress. Refunding one early fails with `Failed to refund transaction`, which does not indicate that waiting is the fix — check the payment with *Get a Transaction* and retry once it has completed. Card payments are unaffected.
+
 **Path Parameters**
 
 | Parameter     | Type   | Required | Description                          |
@@ -1102,7 +1108,7 @@ curl -X POST "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/extend
 
 Tier-upgrade endpoints with automatic proration. Three calls drive the flow: list available upgrade targets, preview the math, then execute.
 
-**Prerequisites:** Subscription Proration must be enabled for your **organization** in the admin panel, with a billing mode (`immediate` or `next_cycle`). This is an **organization-level setting only** — there is no per-service proration flag (those columns were dropped). If proration is disabled, `Get Available Upgrades` returns an empty array; `Preview` / `Process` return `400` (the body may carry a stray `"errors": 422` field — the HTTP status is 400). Note: proration is currently unavailable (force-disabled) for organizations processing on Adyen.
+**Prerequisites:** your API key needs the `subscriptions` scope — without it every endpoint below returns `403` naming the missing scope, regardless of proration settings. Subscription Proration must also be enabled for your **organization** in the admin panel, with a billing mode (`immediate` or `next_cycle`). This is an **organization-level setting only** — there is no per-service proration flag (those columns were dropped). If proration is disabled, `Get Available Upgrades` returns an empty array; `Preview` / `Process` return `400` (the body may carry a stray `"errors": 422` field — the HTTP status is 400). Note: proration is currently unavailable (force-disabled) for organizations processing on Adyen.
 
 #### Get Available Upgrades
 

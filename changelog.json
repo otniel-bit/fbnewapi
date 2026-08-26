@@ -1,6 +1,12 @@
 [
   {
     "date": "August 2026",
+    "title": "Documented Charge, Refund &amp; Customer ID Gotchas",
+    "tag": "improved",
+    "desc": "Three requirements that were previously only discoverable by hitting an error are now written down. <a href=\"#charge-customer\">Charge a Customer</a> needs the customer to have an <strong>authorized subscription</strong> — saved cards alone are not enough, and the <code class=\"inline\">404</code> it returns names a missing subscription, not a bad ID. <a href=\"#payment-methods\">Saved Payment Methods</a> needs the numeric customer ID from the customer list; a transaction's <code class=\"inline\">fan.id</code> is a different identifier and will not resolve. <a href=\"#refunds\">Refunds</a> of ACH/bank payments only work once the payment settles. Also noted: the proration endpoints require the <code class=\"inline\">subscriptions</code> key scope."
+  },
+  {
+    "date": "August 2026",
     "title": "Commas CLI 0.2.0",
     "tag": "fixed",
     "desc": "Update with <code class=\"inline\">npm install -g commas-cli@latest</code>. <strong>Every command in 0.1.0 hung indefinitely once you were logged in</strong> — that is fixed, so the CLI is usable. Also fixed: commands could run against the wrong environment after an earlier <code class=\"inline\">--env sandbox</code>, and a refund whose confirmation had expired reported success. Amounts written with thousands separators (<code class=\"inline\">--amount 1,299.50</code>) are now read correctly rather than as $1.00, and <code class=\"inline\">--json</code> always emits valid JSON. <code class=\"inline\">discounts create</code>/<code class=\"inline\">update</code> now send the fields the API expects (<code class=\"inline\">--type cash|percentage</code>, <code class=\"inline\">--duration</code>, <code class=\"inline\">--products</code>), and <code class=\"inline\">checkout embedded</code> takes the required <code class=\"inline\">--creator</code> and <code class=\"inline\">--product</code>. New: <code class=\"inline\">commas keys list</code> and <code class=\"inline\">commas keys add sandbox</code> register the API key an environment needs. See <a href=\"#cli\">Connect to CLI</a>."
