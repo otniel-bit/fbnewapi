@@ -1,6 +1,12 @@
 [
   {
     "date": "August 2026",
+    "title": "Commas CLI 0.2.0 — Discount &amp; Embedded Checkout Fixes",
+    "tag": "fixed",
+    "desc": "Update with <code class=\"inline\">npm install -g commas-cli@latest</code>. Fixes three commands that broke when the API contract changed: <code class=\"inline\">discounts create</code>/<code class=\"inline\">update</code> now send the correct fields (<code class=\"inline\">--type cash|percentage</code>, <code class=\"inline\">--duration</code>, <code class=\"inline\">--products</code>), and <code class=\"inline\">checkout embedded</code> now takes the required <code class=\"inline\">--creator</code> and <code class=\"inline\">--product</code>. <code class=\"inline\">checkout create</code> validates the price up front, and passing both <code class=\"inline\">--amount</code> and <code class=\"inline\">--amount-cents</code> is now an error rather than a silent guess."
+  },
+  {
+    "date": "August 2026",
     "title": "Documentation Accuracy Pass",
     "tag": "improved",
     "desc": "A full accuracy audit of the API reference and SDK docs against the live platform. Corrected webhook payload shapes, error response formats, dispute lifecycle statuses, pagination parameters, and refund fields; fixed in-page navigation, search coverage, dark-mode contrast, and the embedded <strong>Try it</strong> panels."
