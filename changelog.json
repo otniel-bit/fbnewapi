@@ -1,9 +1,9 @@
 [
   {
     "date": "August 2026",
-    "title": "Commas CLI 0.2.0 — Discount &amp; Embedded Checkout Fixes",
+    "title": "Commas CLI 0.2.0",
     "tag": "fixed",
-    "desc": "Update with <code class=\"inline\">npm install -g commas-cli@latest</code>. Fixes three commands that broke when the API contract changed: <code class=\"inline\">discounts create</code>/<code class=\"inline\">update</code> now send the correct fields (<code class=\"inline\">--type cash|percentage</code>, <code class=\"inline\">--duration</code>, <code class=\"inline\">--products</code>), and <code class=\"inline\">checkout embedded</code> now takes the required <code class=\"inline\">--creator</code> and <code class=\"inline\">--product</code>. <code class=\"inline\">checkout create</code> validates the price up front, and passing both <code class=\"inline\">--amount</code> and <code class=\"inline\">--amount-cents</code> is now an error rather than a silent guess."
+    "desc": "Update with <code class=\"inline\">npm install -g commas-cli@latest</code>. <strong>Every command in 0.1.0 hung indefinitely once you were logged in</strong> — that is fixed, so the CLI is usable. Also fixed: commands could run against the wrong environment after an earlier <code class=\"inline\">--env sandbox</code>, and a refund whose confirmation had expired reported success. Amounts written with thousands separators (<code class=\"inline\">--amount 1,299.50</code>) are now read correctly rather than as $1.00, and <code class=\"inline\">--json</code> always emits valid JSON. <code class=\"inline\">discounts create</code>/<code class=\"inline\">update</code> now send the fields the API expects (<code class=\"inline\">--type cash|percentage</code>, <code class=\"inline\">--duration</code>, <code class=\"inline\">--products</code>), and <code class=\"inline\">checkout embedded</code> takes the required <code class=\"inline\">--creator</code> and <code class=\"inline\">--product</code>. New: <code class=\"inline\">commas keys list</code> and <code class=\"inline\">commas keys add sandbox</code> register the API key an environment needs. See <a href=\"#cli\">Connect to CLI</a>."
   },
   {
     "date": "August 2026",
