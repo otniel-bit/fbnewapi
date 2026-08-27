@@ -361,6 +361,8 @@ curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6" \
 
 #### Delete a Checkout Session
 
+> **Soft delete:** removal takes the session out of all list endpoints and stops new purchases, but a direct `GET /checkout-sessions/:id` may still return `200` with the old data. Do not treat a 200 on GET as proof a session is live — check the list endpoints.
+
 ```
 DELETE /public-api/checkout-sessions/:checkoutSessionId
 ```
@@ -1324,6 +1326,41 @@ A subscription can only be upgraded once. After upgrade, `base_subscription` is 
 
 ---
 
+#### Create a Subscription Payment Link
+
+```
+POST /api/seller/v1/subscription-payment-links
+```
+
+Creates a complete recurring offer in one call — the subscription plus course access, Discord roles, Telegram chats, order bumps (addons) and post-purchase upsells. Same authentication, **www host** and `subscriptions` key scope as the upgrade endpoints above.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `title` | string | Yes | Subscription name (max 255 chars). |
+| `price` | number | Yes | Recurring price in **dollars** (e.g. 49.99), not cents. |
+| `payment_frequency` | integer | Yes | Billing frequency in **days** (30 = monthly). |
+| `internal_name` | string | No | Internal label (max 50 chars). |
+| `description` | string | No | Max 5000 chars. |
+| `is_free_trial` + `free_trial_days` | boolean + integer | No | Free trial — flag and day count together. |
+| `is_joining_fees` + `joining_fees` + `joining_fee_days` | boolean + number + integer | No | One-time joining fee (dollars) and the days it covers — all three together. |
+| `is_subscription_period` + `subscription_period` | boolean + integer | No | Auto-expire after this many billing periods. |
+| `course_ids` / `discord_role_ids` / `telegram_chat_ids` | integer[] | No | Content and access to grant. |
+| `addon_ids` / `upsell_ids` | integer[] | No | Products to offer as order bumps / post-purchase upsells. |
+| `successfull__payment_redirect` | url | No | Redirect after payment — the field really is spelled with a double-l and double underscore. |
+| `webhook_url` | url | No | Webhook URL for this link's events. |
+
+Returns `201` with the link's `id`, `product_id_hash`, pricing and attachments. The link appears in List Your Products and can be deleted via Delete a Checkout Session.
+
+MCP tool: `create_subscription_payment_link` · CLI: `commas subs link-create --title "Pro Plan" --price 49.99 --frequency-days 30 --courses 11 --discord-roles 22 --addons 33`
+
+#### Preview a Subscription Payment Link
+
+```
+POST /api/seller/v1/subscription-payment-links/preview
+```
+
+Same body as create; computes the resulting configuration **without persisting anything**. MCP: `preview_subscription_payment_link` · CLI: `commas subs link-preview …`
+
 ### Discount Codes
 
 Discount codes let you offer reduced pricing to specific customers or as part of a promotion. You control the discount type (percentage or fixed amount), how long it applies, when it expires, and how many times it can be used. ✦ Ideas for using discount codes "SUMMER20" — 20% off the first payment.…
@@ -1670,16 +1707,54 @@ Product `id` values here are **hashids** and `price` is a **string** in dollars.
 
 Note: Community & Courses products are excluded from this list — it returns payment products only.
 
+#### Create a Product
+
+```
+POST /public-api/products/create
+```
+
+Creates a product directly and returns its `product_id` plus a ready-to-share `payment_link` in one call.
+
+**Price is in DOLLARS here, not cents** — `19.99` = $19.99, minimum 1 — unlike Create a Checkout Session's `amount_cents`. Sending cents creates a product 100× the intended price.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `title` | string | Yes | Product name (max 255 chars). |
+| `price` | number | Yes | Price in **dollars**, minimum 1. |
+| `type` | string | No | `onetime` (default) or `subscription`. |
+| `payment_frequency_days` | integer | If subscription | Billing frequency in days. |
+| `description` | string | No | Product description. |
+| `free_trial_days` | integer | No | Free trial days. Cannot be combined with `initial_fee` (400). |
+| `initial_fee` | number | No | Initial fee in dollars. Cannot be combined with `free_trial_days` (400). |
+| `initial_fee_days` | integer | No | Days the initial fee covers. |
+| `auto_expire_after_x_periods` | integer | No | Auto-expire the subscription after X periods. |
+| `successful_payment_redirect` | url | No | Redirect after successful payment. |
+| `webhook_url` | url | No | Webhook URL for this product's events. |
+| `application_fee` | number | No | Application fee amount. |
+| `metadata` | string | No | Arbitrary metadata as a JSON string. |
+
+**Response:** `{ "status": "success", "message": "Created Product", "data": { "product_id": 1474183, "payment_link": "https://www.fanbasis.com/agency-checkout/…" } }`
+
+MCP tool: `create_product` · CLI: `commas products create --title "…" --price 19.99`
+
+#### Get Transactions for a Product
+
+```
+GET /public-api/products/:productId/transactions
+```
+
+All transactions for one product (per-product revenue). Same row shape as Get All Transactions; `page`/`per_page` (max 100) supported.
+
+**Use the numeric product id on the raw endpoint.** This route does **not** decode hashids — the path parameter is compared numerically, so a hashid like `62oN7` is silently read as `62`, filtering by the **wrong product** or none, with a 200 either way. Resolve a hashid via Look Up a Checkout Session (`data.product.id`) first. The MCP tool (`get_product_transactions`) and CLI (`commas products transactions <id>`) resolve either form automatically.
+
 #### More Product Endpoints
 
 Also available with the same `x-api-key` authentication:
 
 | Endpoint | Description |
 |---|---|
-| `POST /public-api/products/create` | Create a product programmatically. Takes `price` in **dollars** (minimum 1), not cents. |
-| `GET /public-api/products/:id/transactions` | Transactions for one product — same row shape as Get All Transactions. `:id` must be the **numeric** product id; hashids are not decoded on this route. |
 | `GET /public-api/products/:id/subscriptions` | Subscriptions for one product — same row shape as Get Subscriptions for a Product. `:id` must be the **numeric** product id; hashids are not decoded on this route. |
-| `GET /public-api/transactions/all` | All transactions across products — same row shape as Get All Transactions. Known issue: `refunds` on rows from this endpoint may show zeroed amounts. |
+| `GET /public-api/transactions/all` | All transactions across products — same rows as Get All Transactions, requiring the `payments` scope instead of `checkout-sessions` (useful for narrow-scope keys; otherwise redundant). Known issue: `refunds` on rows from this endpoint may show zeroed amounts. |
 
 ---
 

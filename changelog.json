@@ -1,6 +1,12 @@
 [
   {
     "date": "August 2026",
+    "title": "Direct Product Creation &amp; Subscription Payment Links",
+    "tag": "new",
+    "desc": "Four new capabilities across the API, MCP and CLI (commas-cli 0.4.0). <a href=\"#prod-create\">Create a Product</a> (<code class=\"inline\">POST /products/create</code>) returns a <code class=\"inline\">product_id</code> and shareable <code class=\"inline\">payment_link</code> in one call — note the price is in <strong>dollars</strong>, not cents. <a href=\"#prod-transactions\">Get Transactions for a Product</a> gives per-product revenue. <a href=\"#proration-link-create\">Subscription Payment Links</a> create a full recurring offer — courses, Discord roles, order bumps and upsells attached — in one request (needs the <code class=\"inline\">subscriptions</code> key scope). The CLI also gained <code class=\"inline\">subs upgrades</code> / <code class=\"inline\">upgrade-preview</code> / <code class=\"inline\">upgrade</code> and <code class=\"inline\">checkout update-embedded</code>; every server tool (38) now has a dedicated command."
+  },
+  {
+    "date": "August 2026",
     "title": "Documented Charge, Refund &amp; Customer ID Gotchas",
     "tag": "improved",
     "desc": "Three requirements that were previously only discoverable by hitting an error are now written down. <a href=\"#charge-customer\">Charge a Customer</a> needs the customer to have an <strong>authorized subscription</strong> — saved cards alone are not enough, and the <code class=\"inline\">404</code> it returns names a missing subscription, not a bad ID. <a href=\"#payment-methods\">Saved Payment Methods</a> needs the numeric customer ID from the customer list; a transaction's <code class=\"inline\">fan.id</code> is a different identifier and will not resolve. <a href=\"#refunds\">Refunds</a> of ACH/bank payments only work once the payment settles. Also noted: the proration endpoints require the <code class=\"inline\">subscriptions</code> key scope."
