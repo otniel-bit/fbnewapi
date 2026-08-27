@@ -49,6 +49,19 @@ Keys created with the default settings carry **all** scopes, so most integration
 | Production  | `https://www.fanbasis.com` |
 | Sandbox     | `https://qa.dev-fan-basis.com` |
 
+Sandbox needs its own API key — always use your **sandbox (test) API key** against the sandbox base URL; production keys do not work there. If you use the Embedded Checkout SDK, its `environment` value for the test environment is the string `'sandbox'` (never `'qa'`), even though the host URL contains "qa".
+
+### Test Card Numbers
+
+Use these card numbers to simulate payments in sandbox — they do not charge real cards. They work **exclusively in sandbox mode**; using them in production results in a payment failure.
+
+| Card Brand | Card Number | Expiry | CVV |
+|---|---|---|---|
+| Visa | `4242 4242 4242 4242` | Any future date | Any 3 digits |
+| Mastercard | `5555 5555 5555 4444` | Any future date | Any 4 digits |
+| Amex | `3782 822463 10005` | Any future date | Any 4 digits |
+| Discover | `6011 1111 1111 1117` | Any future date | Any 3 digits |
+
 ## Endpoints
 
 ### Webhooks
@@ -190,7 +203,7 @@ curl -X DELETE "https://www.fanbasis.com/public-api/webhook-subscriptions/184" \
 POST /public-api/webhook-subscriptions/:webhookSubscriptionId/test
 ```
 
-Sends a simulated event to your webhook URL so you can verify everything is working before going live. Great for testing your server's response logic without needing a real payment. Once you start receiving real payment events, these practices will save you from subtle, hard-to-debug issues:
+Sends a simulated event to your webhook URL so you can verify everything is working before going live. Great for testing your server's response logic without needing a real payment.
 
 **Path Parameters**
 
@@ -251,11 +264,19 @@ This is the most important endpoint — you'll call it every time you want to of
 
 **Required fields:** `product.title`, `amount_cents`, and `type` — plus `subscription.frequency_days` when `type` is `subscription`. Everything else is optional.
 
+**`type` must be one of:** `subscription`, `onetime_reusable`, or `onetime_non_reusable`.
+
+| Type | Use when | Behavior |
+|---|---|---|
+| `subscription` | Recurring product (membership, SaaS, content access) | Charges `amount_cents` every `subscription.frequency_days`. Renews automatically until canceled. |
+| `onetime_reusable` | Single-purchase product where one shareable link serves many buyers (digital download, course, ebook) | Single charge of `amount_cents`. The same payment link works for unlimited buyers — share publicly. |
+| `onetime_non_reusable` | Single-buyer transaction (consultation booking, custom invoice, one-off service) | Single charge of `amount_cents`. The link is consumed after the first successful payment and won't accept further buyers. |
+
 **`amount_cents` has a minimum of `100`** ($1.00). Anything lower returns `400 Validation failed`.
 
 **`metadata` values must be strings.** The single exception is the reserved key `allowed_payment_methods`, which takes an array. Nested objects, numbers, and booleans are rejected.
 
-**`subscription.initial_fee` has a minimum of 1 and cannot be combined with `free_trial_days`** — sending both (or sending `initial_fee: 0`) returns `400`. You're launching a new coaching package priced at $199 one-time. You call this endpoint, get a payment link, and paste it into your newsletter. Anyone who clicks and pays gets a transaction recorded automatically.
+**`subscription.initial_fee` has a minimum of 1 and cannot be combined with `free_trial_days`** — sending both (or sending `initial_fee: 0`) returns `400`. `subscription.initial_fee_days` (integer, optional) sets the number of days before recurring billing kicks in after the initial fee. You're launching a new coaching package priced at $199 one-time. You call this endpoint, get a payment link, and paste it into your newsletter. Anyone who clicks and pays gets a transaction recorded automatically.
 
 **Request Body**
 
@@ -504,6 +525,14 @@ curl -X POST https://www.fanbasis.com/public-api/checkout-sessions/embedded \
 }
 ```
 
+**Embedded checkout URL format** — build the embeddable URL from your creator handle, the product `id`, and the returned `checkout_session_secret`:
+
+```
+https://embedded.fanbasis.io/session/{your-handle}/{product-id}/{checkout_session_secret}
+```
+
+Load this URL inside an `<iframe>` or open it as a popup to display the embedded payment form.
+
 #### Update an Embedded Checkout Session
 
 ```
@@ -673,21 +702,25 @@ curl "https://www.fanbasis.com/public-api/customers/102482/payment-methods" \
 {
   "status": "success",
   "data": {
-    "customer": { "name": "Jane Doe", "email": "jane@example.com" },
+    "customer": { "id": 102482, "name": "Jane Doe", "email": "jane@example.com" },
     "payment_methods": [
       {
-        "id": "pm_abc",
+        "id": "01KNHTPEASJ6WCGWZ66C5RGYB5",
         "type": "card",
         "last4": "4242",
-        "brand": "visa",
-        "exp_month": 12,
-        "exp_year": 2027,
-        "is_default": true
+        "payment_method_uuid": "9c04840d-8d55-4a7a-b84d-d511412d62da",
+        "is_default": true,
+        "mandate_status": null,
+        "metadata": {
+          "data": { "card_type": "visa", "month": 1, "year": 2027 }
+        }
       }
     ]
   }
 }
 ```
+
+**Where card brand & expiry live:** top-level fields are `id`, `type`, `last4`, `payment_method_uuid`, `is_default`, and `mandate_status`. The card brand and expiry are nested inside `metadata.data` (`card_type`, `month`, `year`). Use the `id` (or `payment_method_uuid`) as the `payment_method_id` when charging the customer.
 
 #### Charge a Customer Directly
 
@@ -829,7 +862,7 @@ curl "https://www.fanbasis.com/public-api/subscribers?product_id=NLxj6" \
         }
       }
     ],
-    "pagination": { "current_page": 1, "total_pages": 40, "per_page": 25, "total_items": 80, "has_more": true }
+    "pagination": { "current_page": 1, "total_pages": 4, "per_page": 25, "total_items": 80, "has_more": true }
   },
   "request_id": "…"
 }
@@ -896,16 +929,18 @@ Note: `first_name` and `last_name` currently both return the customer's full nam
 #### Get Subscriptions for a Product
 
 ```
-GET /public-api/checkout-sessions/:productId/subscriptions
+GET /public-api/products/:productId/subscriptions
 ```
 
-Lists every subscriber to a specific product. Shows their email, subscription status, and when they'll next be billed. Great for managing your member list.
+Lists every subscriber to a specific product. Shows their email, subscription status, and when they'll next be billed. Great for managing your member list. To list subscriptions by checkout session instead, use Get Subscriptions for a Checkout Session above.
+
+**Use the numeric product id on this route.** This route does **not** decode hashids — the path parameter is compared numerically, so a hashid like `62oN7` is silently read as `62`, filtering by the **wrong product** or none, with a 200 either way. Resolve a hashid via Look Up a Checkout Session (`data.product.id`) first.
 
 **Path Parameters**
 
-| Parameter | Type   | Required | Description                                                    |
-| --------- | ------ | -------- | -------------------------------------------------------------- |
-| productId | string | Yes      | The checkout_session_id of the product to get subscribers for. |
+| Parameter | Type    | Required | Description                                                        |
+| --------- | ------- | -------- | ------------------------------------------------------------------ |
+| productId | integer | Yes      | The **numeric** product id. Hashids are not decoded on this route. |
 
 **Query Parameters**
 
@@ -917,7 +952,7 @@ Lists every subscriber to a specific product. Shows their email, subscription st
 **Request**
 
 ```bash
-curl "https://www.fanbasis.com/public-api/checkout-sessions/NLxj6/subscriptions?page=1" \
+curl "https://www.fanbasis.com/public-api/products/1023864/subscriptions?page=1" \
   -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -1430,6 +1465,23 @@ POST /public-api/discount-codes
 
 Creates a new discount code with the settings you define.
 
+**Request Body Parameters**
+
+| Parameter | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| `discount_type` | string | Yes | `percentage` or `cash`. Comes back as `type` in responses. |
+| `value` | number | Yes | For `percentage`, the percent (20 = 20%). For `cash`, the amount in **dollars** (5 = $5.00), **not cents** — sending `1000` intending $10.00 creates a $1,000 discount. |
+| `duration` | string | Yes | `once`, `forever`, or `multiple_months`. |
+| `no_of_months` | integer | No | Number of months; send with `duration: "multiple_months"`. |
+| `service_ids` | number[] | Yes | Products the code applies to. |
+| `code` | string | No | The code customers enter (max 45 chars). |
+| `description` | string | No | Description of the code. |
+| `expiry` | date | No | Expiry date (e.g. `2025-08-31`). |
+| `expiry_time` | string | No | Expiry time (e.g. `00:00`). |
+| `limited_redemptions` | boolean | No | Whether redemptions are capped. |
+| `usable_number` | integer | No | Maximum redemptions; send with `limited_redemptions: true`. |
+| `one_time` | boolean | No | One-time-use flag. |
+
 **Request Body**
 
 ```json
@@ -1464,6 +1516,23 @@ curl -X POST https://www.fanbasis.com/public-api/discount-codes \
     "one_time": true
   }'
 ```
+
+**Request — cash discount ($10.00 off)**
+
+```bash
+curl -X POST https://www.fanbasis.com/public-api/discount-codes \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "LOYALVIP",
+    "discount_type": "cash",
+    "value": 10,
+    "duration": "forever",
+    "service_ids": [101]
+  }'
+```
+
+With `discount_type: "cash"`, `value` is in **dollars** — `value: 10` means $10.00 off, not 10 cents. The code reads back with `"type": "cash"` and `"value": "10.0000"`.
 
 **Response**
 
@@ -1843,9 +1912,11 @@ Returns every payment that's been made across all your products. Each result sho
 | Parameter   | Type    | Required | Description                                 |
 | ----------- | ------- | -------- | ------------------------------------------- |
 | product_id  | string  | No       | Only show transactions for this product.    |
-| customer_id | string  | No       | Only show transactions from this customer.  |
+| customer_id | integer | No       | Only show transactions from this customer. Must be the **raw numeric** customer id — the hashid returned in `fan.id` will not match. |
 | page        | integer | No       | Which page of results to show. Starts at 1. |
 | per_page    | integer | No       | How many results per page (max 100).        |
+
+**An unrecognised `customer_id` is silently ignored.** This filter fails open: a `customer_id` that doesn't match one of your customers is not rejected — the endpoint returns **every transaction** on the account with a `200`. Pass the **raw numeric** customer id from List Your Customers (search by the buyer's email if all you have is a `fan.id`), and verify the returned rows actually belong to that customer rather than trusting the filter.
 
 **Request**
 
@@ -2006,6 +2077,8 @@ Events your webhook endpoint will receive:
 - `dispute.updated`
 - `refund.created`
 
+This section documents the delivery envelope and representative payloads only. The per-event `data` field tables and example payloads for all 14 events live in the **Webhook Events Reference** section of the HTML docs (https://commasdocs.com/#webhook-events-reference), which is the authoritative source for each event's fields.
+
 **Every** real delivery uses the envelope format `{ "id": "<uuid>", "type": "<event>", "data": { … }, "created_at": "<ISO 8601>" }` — there are no flat events on the live path. All IDs in payloads are public strings: order IDs are `ORD-XXXX-XXXX-XXXX`, buyers are `user_` + 12 characters, products/subscriptions/refunds/disputes are hashids. Amounts are in dollars. `customFields` (array of `{label, type, value}`) may appear on most events.
 
 **Delivery semantics** — delivery is **at-most-once**. A delivery that fails (non-2xx response, timeout, or unreachable host) is logged and **never retried**; there is no backoff schedule and no redelivery queue. Duplicates are therefore rare but still possible, so dedupe on the envelope `id` (a UUID) and make your handler idempotent. Because nothing is redelivered, reconcile any gap against the API instead of waiting for a retry — e.g. `GET /public-api/checkout-sessions/transactions` for payments, or the subscribers/refunds endpoints for the rest.
@@ -2013,6 +2086,18 @@ Events your webhook endpoint will receive:
 Note that the [Test a Webhook Subscription](#test-a-webhook-subscription) endpoint sends **flat** payloads for `payment.succeeded` and the core `subscription.*` events, so don't validate your envelope parser against test events alone.
 
 **`payment.failed` fires on retries too.** Every failed dunning / revival attempt inside the subscription recovery window emits its own `payment.failed` event, in addition to `subscription.past_due`. Dedupe on the envelope `id` if you notify the customer on this event.
+
+#### Verifying Webhook Signatures
+
+Every webhook request is signed with **HMAC-SHA256** so you can confirm it genuinely came from Commas. The signature is sent in the `x-webhook-signature` header, computed from your webhook subscription's `secret_key` and the raw request body:
+
+1. Capture the **raw request body** before any parsing.
+2. Read the signature from the `x-webhook-signature` header.
+3. Compute `HMAC-SHA256(raw_body, secret_key)` and hex-encode it.
+4. Compare against the header value using a **constant-time comparison** (`crypto.timingSafeEqual`, `hash_equals`, `hmac.compare_digest`) to prevent timing attacks.
+5. Reject with `401 Unauthorized` if the signatures do not match.
+
+Never re-serialize the parsed JSON to generate or compare signatures — serializers can reorder keys or alter whitespace, causing a mismatch on legitimate requests. Always use the raw bytes exactly as received.
 
 #### Example Webhook Payload
 
@@ -2178,6 +2263,7 @@ commas status    # verify the connection
 **Common commands:**
 
 ```bash
+commas keys list / add sandbox           # per-environment API keys
 commas products list                     # list products
 commas customers search "<query>"       # find customers
 commas tx list / get <id> / refund <id> # transactions & refunds
@@ -2189,4 +2275,4 @@ commas docs <question>                  # search these docs
 commas tools / call <tool>              # list & call any server capability
 ```
 
-**Notes for AI agents:** every command accepts `--json` for machine-readable output. Destructive commands (refunds, charges, cancellations, deletions) prompt for confirmation — pass `--yes` to confirm non-interactively. `commas env sandbox` switches all commands to the QA environment; `--env sandbox` does it for a single command. Exit code 0 = success, 1 = failure.
+**Notes for AI agents:** every command accepts `--json` for machine-readable output. Destructive commands (refunds, charges, cancellations, deletions) prompt for confirmation — pass `--yes` to confirm non-interactively. `commas env sandbox` switches all commands to the QA environment; `--env sandbox` does it for a single command. Sandbox needs its own API key registered against your account — check what you have with `commas keys list`, add one with `commas keys add sandbox`, then switch (environment is persisted per API key server-side). Exit code 0 = success, 1 = failure.
