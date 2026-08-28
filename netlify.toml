@@ -24,3 +24,12 @@
   to = "https://commasdocs.com/:splat"
   status = 301
   force = true
+
+# Path-style URLs (/api/checkout-sessions, /sdk/quick-start-js, /cli) all
+# serve the single-page app. A 200 rewrite never shadows real files, so the
+# .mcpb download, api-docs.md, changelog.json, favicons, and /sdk assets
+# keep resolving as themselves.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
