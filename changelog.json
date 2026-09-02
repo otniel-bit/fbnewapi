@@ -1,5 +1,11 @@
 [
   {
+    "date": "September 2026",
+    "title": "Invoicing — API, MCP &amp; CLI",
+    "tag": "new",
+    "desc": "Send invoices to your clients programmatically. <a href=\"#invoices\">Seven new endpoints</a> under <code class=\"inline\">/public-api/invoices</code>: <strong>creating an invoice also emails it to the recipient</strong> with a hosted payment page, plus list/get, next sequential number, resend (payment reminder), void, and mark-paid. Line-item amounts are integer <strong>cents</strong>; statuses are <code class=\"inline\">pending</code>, <code class=\"inline\">paid</code>, <code class=\"inline\">paid_off_platform</code>, <code class=\"inline\">canceled</code>, <code class=\"inline\">overdue</code>. Requires the new <code class=\"inline\">invoices</code> key scope (default keys have it automatically). The <a href=\"#ai-agent\">AI Agent connector</a> gains six matching tools (44 total), and <code class=\"inline\">commas-cli 0.5.0</code> adds <code class=\"inline\">commas invoices send</code> — an invoice created, numbered, and emailed from one terminal command. Verified end-to-end in QA and production."
+  },
+  {
     "date": "August 2026",
     "title": "Documentation Accuracy Audit — Second Pass",
     "tag": "improved",

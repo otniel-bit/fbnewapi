@@ -1827,6 +1827,64 @@ Also available with the same `x-api-key` authentication:
 
 ---
 
+### Invoices
+
+Create and send invoices to clients. **Creating an invoice also emails it to the recipient automatically** with a hosted payment page — `POST /invoices` is the whole "send an invoice" flow. Requires the `invoices` key scope (keys with default/full scopes have it automatically; explicitly narrowed keys must add it). All monetary values are integer **cents** (`unitPrice: 15000` = $150.00) — note this differs from product creation, which takes dollars.
+
+Invoice statuses: `pending`, `paid`, `paid_off_platform`, `canceled`, `overdue`.
+
+#### Create & Send an Invoice
+
+`POST /public-api/invoices` → `201`
+
+Body:
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `invoiceNo` | string | yes | Get the next sequential number from `GET /invoices/next-number` |
+| `issueDate` | string | yes | `YYYY-MM-DD`, cannot be in the future |
+| `dueDate` | string | yes | `YYYY-MM-DD` |
+| `newInvoiceRecipient` | object | yes* | `{"name", "email"}` — recipients dedupe by email. *Or `invoiceRecipientId` for an existing recipient |
+| `lineItems` | array | yes | 1–10 of `{"name", "quantity", "unitPrice"}` — `quantity` int ≥ 1, `unitPrice` int cents ≥ 1, optional `description` |
+| `memo`, `footer` | string | no | Shown on the invoice |
+| `ccEmail`, `bccEmail` | string | no | Copied on the invoice email |
+| `taxes` | array | no | `{"label", "type": "percentage"\|"fixed", "value"}` — percentage ×100 (850 = 8.5%), fixed in cents |
+| `discount` | object | no | `{"type": "percentage"\|"fixed", "value"}`, cannot exceed subtotal |
+
+```bash
+curl -X POST "https://www.fanbasis.com/public-api/invoices" \
+  -H "x-api-key: YOUR_API_KEY" -H "Content-Type: application/json" \
+  -d '{
+    "invoiceNo": "INV-001",
+    "issueDate": "2026-09-01",
+    "dueDate": "2026-09-15",
+    "newInvoiceRecipient": {"name": "Jane Client", "email": "jane@example.com"},
+    "lineItems": [{"name": "Consulting", "quantity": 1, "unitPrice": 50000}]
+  }'
+```
+
+Response `201`: envelope with `data.id` (UUID — use for all later calls), `data.publicId`, `data.invoiceNo`, `data.status: "pending"`, `subtotal`/`total` in cents, `invoiceRecipient`, `lineItems` (each with computed `total`), and an `activities` audit trail.
+
+#### Next Invoice Number
+
+`GET /public-api/invoices/next-number` → `{"nextNumber": "INV-007", "prefix": "INV", "sequence": 7}` (inside the standard envelope's `data`).
+
+#### List Invoices
+
+`GET /public-api/invoices` — query params: `status`, `search`, `dateFrom`/`dateTo` (issue date), `dueDateFrom`/`dueDateTo`, `limit`/`offset`.
+
+#### Get an Invoice
+
+`GET /public-api/invoices/{invoiceId}` — full detail by UUID `id`.
+
+#### Resend / Void / Mark Paid
+
+- `POST /public-api/invoices/{invoiceId}/resend` — re-emails the invoice (payment reminder). `400` for terminal statuses (paid, canceled).
+- `POST /public-api/invoices/{invoiceId}/void` — status becomes `canceled`; the invoice can no longer be paid.
+- `POST /public-api/invoices/{invoiceId}/mark-paid` — records an off-platform payment; status becomes `paid_off_platform`. No card is charged.
+
+---
+
 ### Transactions
 
 A transaction is a record of a single completed payment. Every time a customer pays — one-time or recurring — a transaction is created. The Transactions API lets you pull detailed records including customer info, the product sold, Commas's fee, and your net payout.
@@ -2265,6 +2323,8 @@ commas status    # verify the connection
 ```bash
 commas keys list / add sandbox           # per-environment API keys
 commas products list                     # list products
+commas invoices send --to <email> --name <n> --item "Name:dollars[:qty]"   # create + email an invoice
+commas invoices list / get <id> / resend <id> / void <id> / mark-paid <id>
 commas customers search "<query>"       # find customers
 commas tx list / get <id> / refund <id> # transactions & refunds
 commas subs list / cancel <id>          # subscribers & subscriptions
